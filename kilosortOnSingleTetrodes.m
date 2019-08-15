@@ -1,8 +1,9 @@
 % Script to convert .mat files containing a single tetrode recording from
-% Juri and Adriano to .bin.
+% Jurij and Adriano to .bin.
+clearvars
 %% File selection
-dataFolder = 'C:\Users\caste\OneDrive\Desktop\Jurij Matlabscripts\tetrode5';
-dataFileName = 'MEL12_PG9_REM_LOW_RESP_Tetrode_5.mat';
+dataFolder = 'C:\Users\caste\OneDrive\Desktop\Jurij Matlabscripts\tetrode8';
+dataFileName = 'MEL12_PG9_REM_LOW_RESP_Tetrode_8.mat';
 load(fullfile(dataFolder,dataFileName),'EEG')
 %% Data scaling
 % The data need to be transformed from any current scale into the 16 bit
@@ -11,7 +12,7 @@ load(fullfile(dataFolder,dataFileName),'EEG')
 % slight idea of what the current scaling is. For what Melina and I,
 % Emilio, saw, the scaling is from -50 mV to 50 mV with the data in uV,
 % which gives us 100 mV -> 100.000 uV (1*10^5)
-m = (2^16)/1e5; 
+m = (2^16)/1e4; 
 
 channelSelection = [1,3,5,7];
 data = EEG.Data;
@@ -21,8 +22,8 @@ dataScaled = int16(data.*m);
 %% File writting
 % To write the data into a binary file, we need to first define the
 % location and name of the output file.
-outputDirectory = 'F:\Kilosorting\PACtetrode5';
-outputFileName = 'MEL12_PG9_REM_LOW_RESP_Tetrode_5.bin';
+outputDirectory = 'F:\Kilosorting\MB-19031_PAC Genia\PACtetrode8';
+outputFileName = 'MEL12_PG9_REM_LOW_RESP_Tetrode_8.bin';
 
 fid = fopen(fullfile(outputDirectory,outputFileName),'w');
 fwrite(fid,dataScaled,'int16');
@@ -31,7 +32,8 @@ fclose(fid);
 %% Running kilosort
 % First of all, you need to define some initial variables. For example, the
 % location of your data which is in the 'outputDirectory' variable in the
-% previous section.
+% previous section. You need to have the configuration file together with
+% the channel map!!
 pathToYourConfigFile = outputDirectory; % take from Github folder and put it somewhere else (together with the master_file)
 run(fullfile(pathToYourConfigFile, 'configFileSingleTetrode.m'))
 rootH = pathToYourConfigFile;
