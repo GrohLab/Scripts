@@ -1,8 +1,8 @@
 % 30.08.19 Jittering analysis by using the Data Explorer. 
 clearvars
 %% Load the data
-dataDir = 'E:\Data\VPM\Jittering\Silicon Probes\190712_Emilio_Jittering_3700_1520_1500\';
-binFiles = dir([dataDir,'*.bin']);
+dataDir = 'Z:\Jesus\Jittering\190619_Jesus_Emilio_Jittering_3703_1500_1520';
+binFiles = dir(fullfile(dataDir,'*.bin'));
 [~,expName,~] = fileparts( binFiles.name);
 % Loading the sampling frequency, the sorted clusters, and the conditions
 % and triggers.
@@ -16,9 +16,9 @@ end
 try
     load([expSubfix,'analysis.mat'],'Conditions','Triggers')
 catch
-    try
+    if exist([expSubfix, '_CondSig.mat'],'file')
         getDelayProtocol(dataDir);
-    catch
+    else
         try
             getConditionSignalsBF(fopen([expSubfix,'.smrx']))
             getDelayProtocol(dataDir);
@@ -78,19 +78,20 @@ continuousSignals = {piezo;laser};
 clearvars *Obj piezo laser
 %% User controlling variables
 % Time window to see the cluster activation in seconds
-timeLapse = [0.21, 0.11];
+timeLapse = [0.21, 0.31];
 % Bin size for PSTHs
 binSz = 0.0005;
 % Subscript to indicate the conditions with all whisker stimulations,
 % whisker control, laser control, and the combination whisker and laser.
 allWhiskerStimulus = 1;
+allLaserStimulus = 2;
 whiskerControl = 9;
 laserControl = 8;
 consideredConditions = 3:9;
 Nccond = length(consideredConditions);
 % Time windows to evaluate if a unit is responsive or not.
-spontaneousWindow = [-0.01, -0.002];
-responseWindow = [0.002, 0.01];
+spontaneousWindow = [-0.05, -0.002];
+responseWindow = [0.002, 0.05];
 % Adding all the triggers from the piezo and the laser in one array
 allWhiskersPlusLaserControl = ...
     union(Conditions(allWhiskerStimulus).Triggers,...
@@ -101,7 +102,7 @@ allWhiskersPlusLaserControl = ...
 % Both of these stacks have the same number of time samples and trigger
 % points. They differ only in the number of considered events.
 [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
-    'on',timeLapse,fs,fs,[spkSubs;{Conditions(laserControl).Triggers}],...
+    'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
     continuousSignals);
 % Number of clusters + the piezo as the first event + the laser as the last
 % event, number of time samples in between the time window, and number of
@@ -111,14 +112,14 @@ allWhiskersPlusLaserControl = ...
 tx = (0:Nt)/fs - timeLapse(1);
 % Boolean flags indicating which trigger belongs to which condition (delay
 % flags)
-delFlags = false(NTa,Nccond);
+delayFlags = false(NTa,Nccond);
 counter2 = 1;
 for ccond = consideredConditions
-    delFlags(:,counter2) = ismember(allWhiskersPlusLaserControl(:,1),...
+    delayFlags(:,counter2) = ismember(allWhiskersPlusLaserControl(:,1),...
         Conditions(ccond).Triggers(:,1));
     counter2 = counter2 + 1;
 end
-Na = sum(delFlags,1);
+Na = sum(delayFlags,1);
 %% Computing which units/clusters/putative neurons respond to the stimulus
 % Logical indices for fetching the stack values
 sponActStackIdx = tx >= spontaneousWindow(1) & tx <= spontaneousWindow(2);
@@ -127,12 +128,12 @@ respActStackIdx = tx >= responseWindow(1) & tx <= responseWindow(2);
 % the second until one before the last row, during the defined spontaneous
 % time window, and the whisker control condition. 
 sponTimeMarginal = sum(...
-    dst(2:Ne-1,sponActStackIdx,delFlags(:,Nccond)),2);
+    dst(2:Ne-1,sponActStackIdx,delayFlags(:,Nccond)),2);
 sponTimeMarginal = squeeze(sponTimeMarginal);
 sponActPerTrial = sum(sponTimeMarginal,2)/Na(Nccond);
 % Similarly for the responsive user-defined time window
 respTimeMarginal = sum(...
-    dst(2:Ne-1,respActStackIdx,delFlags(:,Nccond)),2);
+    dst(2:Ne-1,respActStackIdx,delayFlags(:,Nccond)),2);
 respTimeMarginal = squeeze(respTimeMarginal);
 respActPerTrial = sum(respTimeMarginal,2)/Na(Nccond);
 activationIndex = -log(sponActPerTrial./respActPerTrial);
@@ -149,8 +150,8 @@ Nwru = sum(whiskerResponsiveUnitsIdx);
 unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:Ncl);false];
 firstSpike = zeros(Nwru,Nccond);
 
-for ccond = 1:size(delFlags,2)
-    relativeSpikeTimes = getRasterFromStack(dst,~delFlags(:,ccond),...
+for ccond = 1:size(delayFlags,2)
+    relativeSpikeTimes = getRasterFromStack(dst,~delayFlags(:,ccond),...
         unitSelectionIdx, timeLapse, fs, true, true);
     relativeSpikeTimes(~whiskerResponsiveUnitsIdx(1),:) = [];
     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
@@ -165,16 +166,19 @@ for ccond = 1:size(delFlags,2)
 end
 % This line looks pretty for saving the relative spike times.
 %% Plotting the population activity
+% On the fly section: goodsIdx is the negated version of badsIdx
+goodsIdx = ~badsIdx';
 for ccond = 1:Nccond
-    [PSTH, trig, sweeps] = getPSTH(...
-        dst([true;whiskerResponsiveUnitsIdx;false],:,:),timeLapse,...
-        ~delFlags(:,ccond),binSz,fs);
+    [PSTH, trig, sweeps] = getPSTH(... dst([true;whiskerResponsiveUnitsIdx;true],:,:),timeLapse,...
+        dst,timeLapse,...
+        ~delayFlags(:,ccond),binSz,fs);
     fig = plotClusterReactivity(PSTH,trig,sweeps,timeLapse,binSz,...
-        [{'Piezo'};sortedData(goods(whiskerResponsiveUnitsIdx),1)],...
-        Conditions(consideredConditions(ccond)).name);
+        [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
+        sortedData(goods,1);{'Laser'}],...
+        strrep(expName,'_','\_'));
     configureFigureToPDF(fig);
-%     print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
-%         expName, Conditions(consideredConditions(ccond)).name)),...
-%         '-dpdf','-fillpage')
+    print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
+        expName, Conditions(consideredConditions(ccond)).name)),...
+        '-dpdf','-fillpage')
 end
 
