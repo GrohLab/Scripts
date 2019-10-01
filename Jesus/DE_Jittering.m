@@ -1,7 +1,7 @@
 % 30.08.19 Jittering analysis by using the Data Explorer. 
 clearvars
 %% Load the data
-dataDir = 'Z:\Jesus\Jittering\190619_Jesus_Emilio_Jittering_3703_1500_1520';
+dataDir = 'D:\190702_Jittering_3720_1520_1520';
 binFiles = dir(fullfile(dataDir,'*.bin'));
 [~,expName,~] = fileparts( binFiles.name);
 % Loading the sampling frequency, the sorted clusters, and the conditions

@@ -1,16 +1,11 @@
 % 30.08.19 Jittering analysis by using the Data Explorer. 
 clearvars
 %% Load the data
-dataDir = 'E:\190712_Emilio_Jittering_3700_1520_1500';
-
-%binFiles = dir([dataDir,'*.bin']); %only works for some reason if we are
-%in directory already RAM
+dataDir = 'D:\190702_Jittering_3720_1520_1520';
 cd(dataDir)
 binFiles = dir('*.bin'); %only works for some reason if we are in directory already
 [~,expName,~] = fileparts(binFiles.name);  %a basic string for the experiment name RAM
 
-
-%%
 % Loading the sampling frequency, the sorted clusters, and the conditions
 % and triggers.
 expSubfix = fullfile(dataDir,expName);
@@ -21,15 +16,15 @@ catch
     return
 end
 
-%tries to load any conditions or triggers if they have been created, if
-%not, create them RAM
+
+%load analysis files if it exists
 try
     load([expSubfix,'analysis.mat'],'Conditions','Triggers')
 catch
-    try
+    if exist([expSubfix, '_CondSig.mat'],'file')   %if CondSig exists, then directly call delay protocol
         getDelayProtocol(dataDir);
-    catch
-        try
+    else   %if not, then make it 
+        try     
             getConditionSignalsBF(fopen([expSubfix,'.smrx']))
             getDelayProtocol(dataDir);
         catch
@@ -39,6 +34,10 @@ catch
     end
     load([expSubfix,'analysis.mat'],'Conditions','Triggers')
 end
+
+
+
+
 try
     load([expSubfix,'_all_channels.mat'],'sortedData')
 catch
@@ -150,7 +149,7 @@ respTimeMarginal = sum(...
 respTimeMarginal = squeeze(respTimeMarginal);
 respActPerTrial = sum(respTimeMarginal,2)/Na(Nccond);
 activationIndex = -log(sponActPerTrial./respActPerTrial);  %ask E about this
-whiskerResponsiveUnitsIdx = activationIndex > 1;  %change this to include for all
+whiskerResponsiveUnitsIdx = activationIndex > 1;  %%change this to include for all
 display(find(whiskerResponsiveUnitsIdx))
 %% Getting the relative spike times for the whisker responsive units (wru)
 % For each condition, the first spike of each wru will be used to compute
@@ -161,6 +160,9 @@ isWithinResponsiveWindow =...
 
 Nwru = sum(whiskerResponsiveUnitsIdx);
 unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:Ncl);false];
+
+allSelectionIdx = [true(Ncl-1,1);false];   %selection index for all neurons, exclude light at end
+
 firstSpike = zeros(Nwru,Nccond);
 
 PopRelativeSpikeTimes=cell(size(delFlags,2),1); %collect population triggered spikes
@@ -168,7 +170,8 @@ for ccond = 1:size(delFlags,2)
     relativeSpikeTimes = getRasterFromStack(dst,~delFlags(:,ccond),...
         unitSelectionIdx, timeLapse, fs, true, true);
    
-    PopRelativeSpikeTimes{ccond}=relativeSpikeTimes;  %
+    PopRelativeSpikeTimes{ccond}=getRasterFromStack(dst,~delFlags(:,ccond),...
+        allSelectionIdx, timeLapse, fs, true, true);  %
     
     relativeSpikeTimes(~whiskerResponsiveUnitsIdx(1),:) = [];
     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
@@ -182,7 +185,9 @@ for ccond = 1:size(delFlags,2)
     end
 end
 
-save([expName '_PopulationSpikeAnalysis'],'PopRelativeSpikeTimes','Conditions','dataDir','expName','tx')
+ClusterIds=sortedData(goods,1);
+%psthConditions=Conditions(3:end);  %this needs to be fixed for next script
+save([expName '_PopulationSpikeAnalysis'],'PopRelativeSpikeTimes','Conditions','dataDir','expName','tx','timeLapse','ClusterIds')
 % This line looks pretty for saving the relative spike times. Indeed, it
 % does.
 %% Plotting the population activity
@@ -194,8 +199,7 @@ for ccond = 1:Nccond
         [{'Piezo'};sortedData(goods(whiskerResponsiveUnitsIdx),1)],...
         Conditions(consideredConditions(ccond)).name);
     configureFigureToPDF(fig);
-%      print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
-%          expName, Conditions(consideredConditions(ccond)).name)),...
-%         '-dpdf','-fillpage')
+   print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
+        expName, Conditions(consideredConditions(ccond)).name)),...
+       '-dpdf','-fillpage')
 end
-
