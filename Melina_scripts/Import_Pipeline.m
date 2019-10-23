@@ -30,16 +30,20 @@ if cols < rows
     cols = aux;
 end
 
-ds_factor=10; %by what factor should signal be downsampled by? 
+ds_factor=2; %by what factor should signal be downsampled by? if recorded with 20kS/sec
+%ds_factor=10; %if recorded with 30kS/sec
+
 fs_ds=fs/ds_factor;
-cutFreq_spike = [600, 1499]; %is this too narrow?
+cutFreq_spike = [500, 1499]; %is this too narrow?
 cutFreq_low  = [.1, 200]; %what are we talking about here?
 
 %%
 cd(path)
 
-save ExportParameters ds_factor fs_ds cutFreq_spike cutFreq_low path filename
-save board_dig_in_data board_dig_in_data
+save ExportParameters ds_factor fs_ds cutFreq_spike cutFreq_low fs path filename
+if exist('board_dig_in_data')
+    save board_dig_in_data board_dig_in_data -v7.3
+end
 
 %% filtering
 
@@ -59,12 +63,27 @@ for cch = 1:min(size(amplifier_data))
     dataCell_low(cch) = {iirSpikeFilter(dataCell{cch},fs_ds,cutFreq_low)};
 end
 
-fprintf(1,'Saving dataCell... %d\n', cch)
+fprintf(1,'Saving dataCell... %d\n')
 save dataCell dataCell path filename
-fprintf(1,'Saving dataCell_low... %d\n', cch)
+fprintf(1,'Saving dataCell_low... %d\n')
 save dataCell_low dataCell_low path filename
-fprintf(1,'Saving dataCell_sp... %d\n', cch)
+fprintf(1,'Saving dataCell_sp... %d\n')
 save dataCell_sp dataCell_sp path filename
+
+
+%% look at and then save accelerometer data
+close all
+figure
+ss=10  %subsampling just for plot
+for i=1:3
+    subplot(3,1,i)
+    plot(aux_input_data(i,ss:ss:end)')
+end
+acc_ds= size(amplifier_data,2)/size(aux_input_data,2) %factor to determine sampling of acceleration data (check this for next time!)
+fprintf(1,'Saving accelerometer data... %d\n')
+save accelerometer_data path filename acc_ds aux_input_data
+fprintf(1,'Done... %d\n')
+
 
 
 %%
