@@ -1,7 +1,7 @@
 % 30.08.19 Jittering analysis by using the Data Explorer. 
 clearvars
 %% Load the data
-dataDir = 'Z:\Jesus\Jittering\190619_Jesus_Emilio_Jittering_3703_1500_1520';
+dataDir = 'E:\Data\VPM\LTP\190703_LTP_3720_1520_1520\LTP2';
 binFiles = dir(fullfile(dataDir,'*.bin'));
 [~,expName,~] = fileparts( binFiles.name);
 % Loading the sampling frequency, the sorted clusters, and the conditions
@@ -62,23 +62,32 @@ spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
 % Number of good clusters 
 Ncl = numel(goods);
 % Redefining the stimulus signals from the low amplitude to logical values
-mObj = StepWaveform(Triggers.whisker,fs);
-mSubs = mObj.subTriggers;
-piezo = mObj.subs2idx(mSubs,mObj.NSamples);
-try
-    laser = Triggers.light;
-catch
-    laser = Triggers.laser;
+whStim = {'piezo','whisker'};
+cxStim = {'laser','light'};
+trigNames = fieldnames(Triggers);
+numTrigNames = numel(trigNames);
+ctn = 1;
+while ctn <= numTrigNames 
+    if contains(trigNames{ctn},whStim,'IgnoreCase',true)
+        whisker = Triggers.(trigNames{ctn});
+    end
+    if contains(trigNames{ctn},cxStim,'IgnoreCase',true)
+        laser = Triggers.(trigNames{ctn});
+    end
+    ctn = ctn + 1;
 end
+mObj = StepWaveform(whisker,fs);
+mSubs = mObj.subTriggers;
+piezo = mObj.subs2idx(mSubs,Ns);
 lObj = StepWaveform(laser,fs);
 lSubs = lObj.subTriggers;
-laser = lObj.subs2idx(lSubs,lObj.NSamples);
+laser = lObj.subs2idx(lSubs,Ns);
 mObj.delete;lObj.delete;
 continuousSignals = {piezo;laser};
 clearvars *Obj piezo laser
 %% User controlling variables
 % Time window to see the cluster activation in seconds
-timeLapse = [0.21, 0.31];
+timeLapse = [0.05, 0.15];
 % Bin size for PSTHs
 binSz = 0.0005;
 % Subscript to indicate the conditions with all whisker stimulations,
@@ -147,7 +156,7 @@ isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
 
 Nwru = sum(whiskerResponsiveUnitsIdx);
-unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:Ncl);false];
+unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:end);false];
 firstSpike = zeros(Nwru,Nccond);
 
 for ccond = 1:size(delayFlags,2)
@@ -180,5 +189,8 @@ for ccond = 1:Nccond
     print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
         expName, Conditions(consideredConditions(ccond)).name)),...
         '-dpdf','-fillpage')
+    print(fig,fullfile(dataDir,sprintf('%s %s.emf',...
+        expName, Conditions(consideredConditions(ccond)).name)),...
+        '-dmeta')
 end
 
