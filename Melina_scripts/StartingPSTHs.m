@@ -3,6 +3,7 @@
 clear all
 dataDir = 'F:\Kilosorting\MC-1-2019\2019-10-16\optoExp-70percent\intan';
 
+%dataDir = 'F:\Kilosorting\MC-1-2019\2019-10-24-freely-optoExp-0-and-70percent\intan';
 
 cd(dataDir)
 binFiles = dir('*.bin'); %only works for some reason if we are in directory already
@@ -13,20 +14,18 @@ load board_dig_in_data
 load ExportParameters fs
 laserSignal = board_dig_in_data(3,:);%cheat for this one recordings
 
-
-
 try
     load([expSubfix,'_all_channels.mat'],'sortedData')
 catch
     try
-        importPhyFiles(dataDir);
+        %importPhyFiles(dataDir,expName,false,true);  %we will try to load channel info as well
+        importPhyFiles(dataDir)
     catch
         fprintf(1,'Error importing the phy files into Matlab format\n')
         return
     end
-    load([expSubfix,'_all_channels.mat'],'sortedData')
+    load([expSubfix,'_all_channels.mat'],'sortedData')  %this needs to be changed to load in channel info as well
 end
-
 
 
 
@@ -42,16 +41,20 @@ lt = stObj.Triggers;
 % This contains the sample number at which the pulse rose. If you want to
 % change for pulse fall, write as follows: ltOn = find(lt(:,2));
 ltOn = find(lt(:,1));
+%ltOn=ltOn(1:100);  %YOU NEED TO CHANGE THIS FOR EVERY EXPERIMENT  (eg only
+%considering the first 100 triggers)
+%ltOn=ltOn(101:end);  %YOU NEED TO CHANGE THIS FOR EVERY EXPERIMENT
+
+conditionString='30 trials'
+%conditionString='laser zero'
+
 clearvars lt
 fprintf(1,'Got the condition triggers\n')
 
-
-
-
-%% grabbing good spikes
-Ns = numel(ltOn)
+% grabbing good spikes
+Ns = numel(laserSignal)
 % Total duration of the recording
-Nt =numel(laserSignal)/fs;  %seconds
+Nt =Ns/fs;  %seconds
 
 % Useless clusters (labeled as noise or they have very low firing rate)
 badsIdx = cellfun(@(x) x==3,sortedData(:,3));
@@ -63,8 +66,7 @@ silentUnits = clusterSpikeRate < MinimumSpikeRate;  %find low rate units
 bads = union(bads,find(silentUnits)); %add low rate units to bad category (merging real neural signal with noise!)
 goods = setdiff(1:size(sortedData,1),bads); %define the good units as not bad
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
-
-%%
+%
 % Logical spike trace for the first good cluster  % I don´t completely
 % understand why E is doing this but I trust it RAM
 spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
@@ -75,7 +77,7 @@ spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
 Ncl = numel(goods);
 
 
-%% this is somewhat redundant but oh well for now
+% this is somewhat redundant but oh well for now
 lObj = StepWaveform(laserSignal,fs);
 lSubs = lObj.subTriggers;
 laser = lObj.subs2idx(lSubs,lObj.NSamples);
@@ -105,40 +107,58 @@ allWhiskersPlusLaserControl = ltOn; %ugh
 % Computing the time axis for the stack
 tx = (0:Nt)/fs - timeLapse(1);
 
+binSize=.050
+[PSTH, trig, sweeps] = getPSTH(dst,timeLapse,false(size(ltOn)),binSz,fs);
+
+fig = plotClusterReactivity(PSTH,trig,sweeps,timeLapse,binSz,...
+    [{'Laser'};sortedData(goods,1)],conditionString);
+
+configureFigureToPDF(fig);
+print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
+    expName, conditionString)),...
+    '-dpdf','-fillpage')
+
+% configureFigureToPDF(fig);
+% print(fig,fullfile(dataDir,sprintf('%s %s.eps',...
+%     expName, 'laser')),...
+%     '-deps')
+savefig(fig, fullfile(dataDir,sprintf('%s %s.fig',expName, conditionString)))   %saves population psths
+
 %%
-
 ClusterIds=sortedData(goods,1);
-
-Pop={};
 tx = linspace(-timeLapse(1),timeLapse(2),Nt);
 
-for i=1:size(dst,1) %for every unit
+Pop={};
+for i=2:size(dst,1) %for every unit
     Sp={};
-    for j=1:size(dst,3) %for every trial
-    Sp{j}=tx(find(squeeze(dst(i,:,j))));
-    end
-    Pop{i}=cell2mat(Sp);
-end
-
-
-%%
-
-close all
+     for j=1:size(dst,3) %for every trial
+         Sp{j}=tx(find(squeeze(dst(i,:,j))));
+     end
+     Pop{i-1}=cell2mat(Sp);
+ end
+ 
 for i=1:numel(Pop)
-   if numel(Pop{i})>10
-    figure
-    histogram(Pop{i}*1000,200)
-    %xtick_ms=10.^get(gca,'XTick');
-   % set(gca,'XTickLabel',xtick_ms)
-    title([ 'ClusterId=' ClusterIds{i}  ' Cluster number=' num2str(i)])
-    xlabel('ms')
-    ylabel('events')
-    
-   else
-   end
+     if numel(Pop{i})>10
+        figure
+        histogram(Pop{i}*1000,200)
+        %xtick_ms=10.^get(gca,'XTick');
+        % set(gca,'XTickLabel',xtick_ms)
+        title([ClusterIds{i} '_ClusterId'], 'Interpreter', 'none')
+        xlabel('ms')
+        ylabel('event counts')
+        
+    else
+    end
     
 end
 
+%% Save an image: click on this section while the figure to save is open then it gets saved as PDF
+fig = gcf;
+name = get(get(gca,'Title'),'String');
+
+configureFigureToPDF(fig);
+print(fig,fullfile(dataDir,sprintf('%s %s.pdf',expName,[conditionString name])),'-dpdf','-fillpage')
+
 %%
-%allSelectionIdx = true(numel(goods),1);   
+%allSelectionIdx = true(numel(goods),1);
 %PopRelativeSpikeTimes=getRasterFromStack(dst,false(size(ltOn)),allSelectionIdx, timeLapse, fs, true);  %
