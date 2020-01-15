@@ -258,7 +258,7 @@ Zfull = reshape(Z(1:3,:), [3 size(firingRatesAverage,2) length(t)]);
 ZZ = mean(Zfull, 3);
 ZZ = Zfull;  %I THINK??? as we are missing a dimension
 
-
+%
 
       
 i=7;
