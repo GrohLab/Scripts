@@ -2,7 +2,8 @@
 clearvars
 %% Load the data
 % Choosing the working directory
-dataDir = uigetdir('E:\Data\VPM\LTP','Choose a working directory');
+dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
+    'Choose a working directory');
 if dataDir == 0
     return
 end
@@ -228,14 +229,21 @@ timeFlags = [sponActStackIdx;respActStackIdx];
 % Time window
 delta_t = diff(responseWindow);
 % Statistical tests
-[Results, Counts] = statTests(discStack,delayFlags,timeFlags);
+[Results, Counts] = statTests(discStack, delayFlags, timeFlags);
 % Firing rate for all clusters, for all trials
 meanfr = cellfun(@(x) mean(x,2)/delta_t,Counts,'UniformOutput',false);
 
 indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
-
-
+H = cell2mat(cellfun(@(x) x.Pvalues,...
+    arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
+    'UniformOutput', 0)) < 0.05;
+Htc = sum(H,2);
+wruIdx = Htc > Nccond/3;
+Nwru = nnz(wruIdx);
+gclID = sortedData(goods,1);
+fprintf('%d whisker responding clusters:\n', Nwru);
+fprintf('- %s\n',gclID{wruIdx})
 %{
 sponTimeMarginal = sum(...
     discStack(2:Ne-1,sponActStackIdx,delayFlags(:,Nccond)),2);
@@ -248,8 +256,7 @@ respTimeMarginal = squeeze(respTimeMarginal);
 respActPerTrial = sum(respTimeMarginal,2)/Na(Nccond);
 activationIndex = -log(sponActPerTrial./respActPerTrial);
 %}
-whiskerResponsiveUnitsIdx = activationIndex > 1;
-display(find(whiskerResponsiveUnitsIdx))
+
 %% Getting the relative spike times for the whisker responsive units (wru)
 % For each condition, the first spike of each wru will be used to compute
 % the standard deviation of it.
@@ -257,8 +264,33 @@ cellLogicalIndexing = @(x,idx) x(idx);
 isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
 
+firstSpike = zeros(Nwru,Nccond);
+
+for ccond = 1:size(delayFlags,2)
+    relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
+        wruIdx, timeLapse, fs, true, true);
+    respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
+        'UniformOutput',false);
+    spikeTimesINRespWin = cellfun(cellLogicalIndexing,...
+        relativeSpikeTimes, respIdx, 'UniformOutput',false);
+    for ccl = 1:Nwru
+        frstSpikeFlag = ~cellfun(@isempty,spikeTimesINRespWin(ccl,:));
+        firstSpike(ccl,ccond) = std(...
+            cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));    
+    end
+end
+
+%% Getting the relative spike times for the whisker responsive units (wru)
+% For each condition, the first spike of each wru will be used to compute
+% the standard deviation of it.
+
+%{
+cellLogicalIndexing = @(x,idx) x(idx);
+isWithinResponsiveWindow =...
+    @(x) x > responseWindow(1) & x < responseWindow(2);
+
 Nwru = sum(whiskerResponsiveUnitsIdx);
-unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:end);false];
+% unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:end);false];
 firstSpike = zeros(Nwru,Nccond);
 
 for ccond = 1:size(delayFlags,2)
@@ -275,7 +307,7 @@ for ccond = 1:size(delayFlags,2)
             cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));    
     end
 end
-% This line looks pretty for saving the relative spike times.
+%} 
 %% Plotting the population activity
 % On the fly section: goodsIdx is the negated version of badsIdx
 goodsIdx = ~badsIdx';
