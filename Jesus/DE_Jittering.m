@@ -7,9 +7,11 @@ dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
 if dataDir == 0
     return
 end
-%dataDir = 'E:\Data\VPM\LTP\191016_Jesus_LTP_3710_1520_1500';
-% dataDir = 'D:\LTP\190716_Jesus_Emilio LTP_3751_1520_1500';
+% Creating the figure directory
 figureDir = fullfile(dataDir,'Figures\');
+if ~mkdir(figureDir)
+    fprintf(1,'There was an issue with the figure folder...\n');
+end
 % Loading the necessary files
 if ~loadTriggerData(dataDir)
     fprintf(1,'Not possible to load all the necessary variables\n')
@@ -320,10 +322,10 @@ for ccond = 1:Nccond
         sortedData(goods,1);{'Laser'}],...
         strrep(expName,'_','\_'));
     configureFigureToPDF(fig);
-    print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
+    print(fig,fullfile(figureDir,sprintf('%s %s.pdf',...
         expName, Conditions(consideredConditions(ccond)).name)),...
         '-dpdf','-fillpage')
-    print(fig,fullfile(dataDir,sprintf('%s %s.emf',...
+    print(fig,fullfile(figureDir,sprintf('%s %s.emf',...
         expName, Conditions(consideredConditions(ccond)).name)),...
         '-dmeta')
 end
