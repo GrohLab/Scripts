@@ -65,7 +65,7 @@ bads = union(bads,find(silentUnits)); %add low rate units to bad category (mergi
 goods = setdiff(1:size(sortedData,1),bads); %define the good units as not bad
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 
-% Logical spike trace for the first good cluster  % I don´t completely
+% Logical spike trace for the first good cluster  % I don?t completely
 % understand why E is doing this but I trust it RAM
 spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
 % Subscript column vectors for the rest good clusters
@@ -171,7 +171,7 @@ for ccond = 1:size(delFlags,2)
         unitSelectionIdx, timeLapse, fs, true, true);
    
     PopRelativeSpikeTimes{ccond}=getRasterFromStack(dst,~delFlags(:,ccond),...
-        allSelectionIdx, timeLapse, fs, true, true);  %
+        allSelectionIdx, timeLapse, fs, true, 0);  %
     
     relativeSpikeTimes(~whiskerResponsiveUnitsIdx(1),:) = [];
     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...

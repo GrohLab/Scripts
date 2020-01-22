@@ -17,48 +17,7 @@ if ~loadTriggerData(dataDir)
     fprintf(1,'Not possible to load all the necessary variables\n')
     return
 end
-%{
-% dataDir = 'E:\Data\VPM\LTP\190703_LTP_3720_1520_1520\LTP2';
-% binFiles = dir(fullfile(dataDir,'*.bin'));
-% [~,expName,~] = fileparts( binFiles.name);
-% figureDir = fullfile(dataDir, 'Figures');
-% % Loading the sampling frequency, the sorted clusters, and the conditions
-% % and triggers.
-% expSubfix = fullfile(dataDir,expName);
-% try
-%     load([expSubfix,'_sampling_frequency.mat'],'fs')
-% catch
-%     fprintf(1,'Seems like the kilosort-phy pipeline hasn''t been touched!\n')
-%     return
-% end
-% try
-%     load([expSubfix,'analysis.mat'],'Conditions','Triggers')
-% catch
-%     if exist([expSubfix, '_CondSig.mat'],'file')
-%         getDelayProtocol(dataDir);
-%     else
-%         try
-%             getConditionSignalsBF(fopen([expSubfix,'.smrx']))
-%             getDelayProtocol(dataDir);
-%         catch
-%             fprintf(1,'Confusing naming. Cannot continue\n')
-%             return
-%         end
-%     end
-%     load([expSubfix,'analysis.mat'],'Conditions','Triggers')
-% end
-% try
-%     load([expSubfix,'_all_channels.mat'],'sortedData')
-% catch
-%     try
-%         importPhyFiles(dataDir);
-%     catch
-%         fprintf(1,'Error importing the phy files into Matlab format\n')
-%         return
-%     end
-%     load([expSubfix,'_all_channels.mat'],'sortedData')
-% end
-%}
+
 %% Constructing the helper 'global' variables
 % Number of total samples
 Ns = min(structfun(@numel,Triggers));
@@ -105,12 +64,6 @@ mObj.delete;lObj.delete;
 continuousSignals = {piezo;laser};
 clearvars *Obj piezo laser
 %% User controlling variables
-%{
-% Time window to see the cluster activation in seconds
-timeLapse = [0.05, 0.15];
-% Bin size for PSTHs
-binSz = 0.0005;
-%}
 % Time lapse, bin size, and spontaneous and response windows
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
     'Bin size [s]:'};
@@ -203,9 +156,7 @@ allWhiskerStimulus = chCond;
 consideredConditions = auxSubs(cchCond);
 
 Nccond = length(consideredConditions);
-% Time windows to evaluate if a unit is responsive or not.
-% spontaneousWindow = [-0.05, -0.002];
-% responseWindow = [0.002, 0.05];
+
 % Adding all the triggers from the piezo and the laser in one array
 % allWhiskersPlusLaserControl = ...
 %     union(Conditions(allWhiskerStimulus).Triggers,...
@@ -232,11 +183,15 @@ timeFlags = [sponActStackIdx;respActStackIdx];
 delta_t = diff(responseWindow);
 % Statistical tests
 [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
-% Firing rate for all clusters, for all trials
-meanfr = cellfun(@(x) mean(x,2)/delta_t,Counts,'UniformOutput',false);
 
 indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
+% Plotting statistical tests
+figs = scatterSignificance(Results, Counts, consCondNames, delta_t, sortedData(goods,1));
+% Firing rate for all clusters, for all trials
+meanfr = cellfun(@(x) mean(x,2)/delta_t,Counts,'UniformOutput',false);
+
+
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
     'UniformOutput', 0)) < 0.05;
@@ -312,21 +267,31 @@ end
 %} 
 %% Plotting the population activity
 % On the fly section: goodsIdx is the negated version of badsIdx
+% Filter question
+filterIdx = true(Ne,1);
+ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+    'Yes','No','Yes');
+filtStr = 'unfiltered';
+if strcmp(ansFilt,'Yes')
+    filterIdx = [true; wruIdx];
+    filtStr = 'filtered';
+end
+
 goodsIdx = ~badsIdx';
 for ccond = 1:Nccond
+    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms (%s)',...
+        expName, Conditions(consideredConditions(ccond)).name, timeLapse(1)*1000,...
+        timeLapse(2)*1000, binSz*1000, responseWindow(1)*1000, responseWindow(2)*1000,...
+        filtStr);
     [PSTH, trig, sweeps] = getPSTH(... dst([true;whiskerResponsiveUnitsIdx;true],:,:),timeLapse,...
-        discStack,timeLapse,...
+        discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     fig = plotClusterReactivity(PSTH,trig,sweeps,timeLapse,binSz,...
         [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
         sortedData(goods,1);{'Laser'}],...
         strrep(expName,'_','\_'));
     configureFigureToPDF(fig);
-    print(fig,fullfile(figureDir,sprintf('%s %s.pdf',...
-        expName, Conditions(consideredConditions(ccond)).name)),...
-        '-dpdf','-fillpage')
-    print(fig,fullfile(figureDir,sprintf('%s %s.emf',...
-        expName, Conditions(consideredConditions(ccond)).name)),...
-        '-dmeta')
+    print(fig,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
+    print(fig,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
 end
 
