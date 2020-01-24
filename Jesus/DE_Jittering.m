@@ -218,27 +218,7 @@ respActPerTrial = sum(respTimeMarginal,2)/Na(Nccond);
 activationIndex = -log(sponActPerTrial./respActPerTrial);
 %}
 
-%% Getting the relative spike times for the whisker responsive units (wru)
-% For each condition, the first spike of each wru will be used to compute
-% the standard deviation of it.
-cellLogicalIndexing = @(x,idx) x(idx);
-isWithinResponsiveWindow =...
-    @(x) x > responseWindow(1) & x < responseWindow(2);
 
-firstSpike = zeros(Nwru,Nccond);
-
-for ccond = 1:size(delayFlags,2)
-    relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
-        wruIdx, timeLapse, fs, true, true);
-    respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
-        'UniformOutput',false);
-    spikeTimesINRespWin = cellfun(cellLogicalIndexing,...
-        relativeSpikeTimes, respIdx, 'UniformOutput',false);
-    for ccl = 1:Nwru
-        frstSpikeFlag = ~cellfun(@isempty,spikeTimesINRespWin(ccl,:));
-        firstSpike(ccl,ccond) = std(...
-            cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));    
-    end
 end
 
 %% Getting the relative spike times for the whisker responsive units (wru)
