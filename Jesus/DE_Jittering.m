@@ -40,28 +40,26 @@ spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
 % Number of good clusters 
 Ncl = numel(goods);
 % Redefining the stimulus signals from the low amplitude to logical values
-whStim = {'piezo','whisker'};
+whStim = {'piezo','whisker','mech'};
 cxStim = {'laser','light'};
+lfpRec = {'lfp','s1','cortex','s1lfp'};
 trigNames = fieldnames(Triggers);
 numTrigNames = numel(trigNames);
 ctn = 1;
+continuousSignals = cell(numTrigNames,1);
 while ctn <= numTrigNames 
     if contains(trigNames{ctn},whStim,'IgnoreCase',true)
-        whisker = Triggers.(trigNames{ctn});
+        continuousSignals{ctn} = Triggers.(trigNames{ctn});
     end
     if contains(trigNames{ctn},cxStim,'IgnoreCase',true)
-        laser = Triggers.(trigNames{ctn});
+        continuousSignals{ctn} = Triggers.(trigNames{ctn});
+    end
+    if contains(trigNames{ctn},lfpRec,'IgnoreCase',true)
+        continuousSignals{ctn} = Triggers.(trigNames{ctn})(1:Ns);
     end
     ctn = ctn + 1;
 end
-mObj = StepWaveform(whisker,fs);
-mSubs = mObj.subTriggers;
-piezo = mObj.subs2idx(mSubs,Ns);
-lObj = StepWaveform(laser,fs);
-lSubs = lObj.subTriggers;
-laser = lObj.subs2idx(lSubs,Ns);
-mObj.delete;lObj.delete;
-continuousSignals = {piezo;laser};
+
 clearvars *Obj piezo laser
 %% User controlling variables
 % Time lapse, bin size, and spontaneous and response windows
@@ -240,49 +238,89 @@ end
 %% Getting the relative spike times for the whisker responsive units (wru)
 % For each condition, the first spike of each wru will be used to compute
 % the standard deviation of it.
-
-%{
 cellLogicalIndexing = @(x,idx) x(idx);
 isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
 
-Nwru = sum(whiskerResponsiveUnitsIdx);
-% unitSelectionIdx = [whiskerResponsiveUnitsIdx(2:end);false];
 firstSpike = zeros(Nwru,Nccond);
-
+M = 16;
+binAx = responseWindow(1):binSz:responseWindow(2);
+condHist = zeros(size(binAx,2)-1, Nccond);
+firstOrdStats = zeros(2,Nccond);
+condParams = zeros(M,3,Nccond);
+txpdf = responseWindow(1):1/fs:responseWindow(2);
+condPDF = zeros(numel(txpdf),Nccond);
+csvBase = fullfile(dataDir, expName);
+csvSubfx = sprintf(' VW%.1f-%.1f ms.csv', timeLapse(1)*1000, timeLapse(2)*1000);
+existFlag = false;
+condRelativeSpkTms = cell(Nccond,1);
+relativeSpkTmsStruct = struct('name',{},'SpikeTimes',{});
 for ccond = 1:size(delayFlags,2)
+    csvFileName = [csvBase,' ',consCondNames{ccond}, csvSubfx];
     relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
-        unitSelectionIdx, timeLapse, fs, true, true);
-    relativeSpikeTimes(~whiskerResponsiveUnitsIdx(1),:) = [];
-    respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
-        'UniformOutput',false);
+        filterIdx(3:end), timeLapse, fs, true, false);
+    relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
+    relativeSpikeTimes(~filterIdx(2),:) = [];
+    condRelativeSpkTms{ccond} = relativeSpikeTimes;
+%     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
+%         'UniformOutput',false);
+    clSpkTms = cell(size(relativeSpikeTimes,1),1);
+    if exist(csvFileName, 'file') && ccond == 1
+        existFlag = true;
+        ansOW = questdlg(['The exported .csv files exist! ',...
+            'Would you like to overwrite them?'],'Overwrite?','Yes','No','No');
+        if strcmp(ansOW,'Yes')
+            existFlag = false;
+            fprintf(1,'Overwriting... ');
+        end
+    end
+    if ~existFlag
+        fID = fopen(csvFileName,'w');
+        fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
+    end
+    for cr = 1:size(relativeSpikeTimes, 1)
+        clSpkTms(cr) = {sort(cell2mat(relativeSpikeTimes(cr,:)))};
+        if fID > 2
+            fprintf(fID,'%s,',gclID{cr});
+            fprintf(fID,'%f,',clSpkTms{cr});fprintf(fID,'\n');
+        end
+    end
+    if fID > 2
+        fclose(fID);
+    end
+    relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
+    relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
+    %{
     spikeTimesINRespWin = cellfun(cellLogicalIndexing,...
         relativeSpikeTimes, respIdx, 'UniformOutput',false);
+    allSpikeTimes = cell2mat(spikeTimesINRespWin(:)');
+    condParams(:,:,ccond) = emforgmm(allSpikeTimes, M, 1e-6, 0);
+    condPDF(:,ccond) = genP_x(condParams(:,:,ccond), txpdf);
+    firstOrdStats(:,ccond) = [mean(allSpikeTimes), std(allSpikeTimes)];
+    hfig = figure('Visible', 'off'); h = histogram(allSpikeTimes, binAx,...
+        'Normalization', 'probability');
+    condHist(:,ccond) = h.Values;
+    close(hfig)
     for ccl = 1:Nwru
         frstSpikeFlag = ~cellfun(@isempty,spikeTimesINRespWin(ccl,:));
         firstSpike(ccl,ccond) = std(...
             cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));    
     end
+    %}
 end
-%} 
+save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
+    'relativeSpkTmsStruct','configStructure')
 %% Plotting the population activity
 % On the fly section: goodsIdx is the negated version of badsIdx
-% Filter question
-filterIdx = true(Ne,1);
-ansFilt = questdlg('Would you like to filter for significance?','Filter',...
-    'Yes','No','Yes');
-filtStr = 'unfiltered';
-if strcmp(ansFilt,'Yes')
-    filterIdx = [true; wruIdx];
-    filtStr = 'filtered';
-end
+
+
 
 goodsIdx = ~badsIdx';
 for ccond = 1:Nccond
-    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms (%s)',...
+    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms %sset (%s)',...
         expName, Conditions(consideredConditions(ccond)).name, timeLapse(1)*1000,...
         timeLapse(2)*1000, binSz*1000, responseWindow(1)*1000, responseWindow(2)*1000,...
-        filtStr);
+        onOffStr, filtStr);
     [PSTH, trig, sweeps] = getPSTH(... dst([true;whiskerResponsiveUnitsIdx;true],:,:),timeLapse,...
         discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
@@ -291,7 +329,9 @@ for ccond = 1:Nccond
         gclID(filterIdx(2:end));{'Laser'}],...
         strrep(expName,'_','\_'));
     configureFigureToPDF(fig);
-    print(fig,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
-    print(fig,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
+    if ~exist([figFileName,'.pdf'], 'file') || ~exist([figFileName,'.emf'], 'file')
+        print(fig,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
+        print(fig,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
+    end
 end
 
