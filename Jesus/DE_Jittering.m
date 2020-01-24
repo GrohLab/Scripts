@@ -219,6 +219,14 @@ activationIndex = -log(sponActPerTrial./respActPerTrial);
 %}
 
 
+%% Filter question
+filterIdx = true(Ne,1);
+ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+    'Yes','No','Yes');
+filtStr = 'unfiltered';
+if strcmp(ansFilt,'Yes')
+    filterIdx = [true; wruIdx];
+    filtStr = 'filtered';
 end
 
 %% Getting the relative spike times for the whisker responsive units (wru)
