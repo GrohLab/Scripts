@@ -31,6 +31,7 @@ clusterSpikeRate = totSpkCount/Nt;
 silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
+gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 % Logical spike trace for the first good cluster
 spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
@@ -47,20 +48,31 @@ trigNames = fieldnames(Triggers);
 numTrigNames = numel(trigNames);
 ctn = 1;
 continuousSignals = cell(numTrigNames,1);
-while ctn <= numTrigNames 
+continuousNameSub = zeros(size(trigNames));
+while ctn <= numTrigNames
     if contains(trigNames{ctn},whStim,'IgnoreCase',true)
         continuousSignals{ctn} = Triggers.(trigNames{ctn});
+        continuousNameSub(ctn) = ctn;
     end
     if contains(trigNames{ctn},cxStim,'IgnoreCase',true)
         continuousSignals{ctn} = Triggers.(trigNames{ctn});
+        continuousNameSub(ctn) = ctn;
     end
     if contains(trigNames{ctn},lfpRec,'IgnoreCase',true)
         continuousSignals{ctn} = Triggers.(trigNames{ctn})(1:Ns);
+        continuousNameSub(ctn) = ctn;
     end
     ctn = ctn + 1;
 end
-
-clearvars *Obj piezo laser
+trigNames = trigNames(continuousNameSub);
+%% Inter-spike intervals
+spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
+    'UniformOutput', false);
+ISIVals = cellfun(@(x) diff(x)/fs, spkSubs2, 'UniformOutput', 0);
+ISIsignal = zeros(Ncl,Ns,'single');
+for ccl = 1:Ncl
+    ISIsignal(ccl,spkSubs2{ccl}) = [spkSubs2{ccl}(1)/fs, ISIVals{ccl}'];
+end
 %% User controlling variables
 % Time lapse, bin size, and spontaneous and response windows
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
@@ -116,7 +128,11 @@ end
 % points. They differ only in the number of considered events.
 [discStack, cst] = getStacks(spkLog,Conditions(chCond).Triggers,onOffStr,...
     timeLapse,fs,fs,spkSubs,continuousSignals);
-
+% ISI stack
+% WARNING! This will eat up a big chunk of memory
+[~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
+    timeLapse,fs,fs,[],ISIsignal);
+clearvars ISIsignal
 % [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
 %     continuousSignals);
@@ -186,38 +202,37 @@ indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
 % Plotting statistical tests
 figs = scatterSignificance(Results, Counts, consCondNames, delta_t, sortedData(goods,1));
-% Firing rate for all clusters, for all trials
-meanfr = cellfun(@(x) mean(x,2)/delta_t,Counts,'UniformOutput',false);
-
-
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
     'UniformOutput', 0)) < 0.05;
 Htc = sum(H,2);
 wruIdx = Htc > Nccond/3;
 Nwru = nnz(wruIdx);
-gclID = sortedData(goods,1);
+
 fprintf('%d whisker responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
+
+%% Addition mean signals to the Conditions variable
+if ~isfield(Conditions,'Stimulus')
+    whFlag = contains(trigNames, whStim, 'IgnoreCase', 1);
+    lrFlag = contains(trigNames, cxStim, 'IgnoreCase', 1);
+    cdel = 1;
+    for cc = consideredConditions
+        Conditions(cc).Stimulus = struct(...
+            'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
+            1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
+            1,Nt));
+        cdel = cdel + 1;
+    end
+    save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
+end
+
 
 %% Configuration structure
 configStructure = struct('Experiment', fullfile(dataDir,expName),...
     'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
     'BinSize_s', binSz, 'Trigger', struct('Name', condNames{chCond},...
     'Edge',onOffStr), 'ConsideredConditions',{consCondNames});
-%{
-sponTimeMarginal = sum(...
-    discStack(2:Ne-1,sponActStackIdx,delayFlags(:,Nccond)),2);
-sponTimeMarginal = squeeze(sponTimeMarginal);
-sponActPerTrial = sum(sponTimeMarginal,2)/Na(Nccond);
-% Similarly for the responsive user-defined time window
-respTimeMarginal = sum(...
-    discStack(2:Ne-1,respActStackIdx,delayFlags(:,Nccond)),2);
-respTimeMarginal = squeeze(respTimeMarginal);
-respActPerTrial = sum(respTimeMarginal,2)/Na(Nccond);
-activationIndex = -log(sponActPerTrial./respActPerTrial);
-%}
-
 
 %% Filter question
 filterIdx = true(Ne,1);
