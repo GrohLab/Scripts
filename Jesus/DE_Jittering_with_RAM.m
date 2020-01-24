@@ -169,7 +169,7 @@ PopRelativeSpikeTimes=cell(size(delFlags,2),1); %collect population triggered sp
 for ccond = 1:size(delFlags,2)
     relativeSpikeTimes = getRasterFromStack(dst,~delFlags(:,ccond),...
         unitSelectionIdx, timeLapse, fs, true, true);
-   
+    relativeSpikeTimes(:,~delFlags(:,ccond)) = [];
     PopRelativeSpikeTimes{ccond}=getRasterFromStack(dst,~delFlags(:,ccond),...
         allSelectionIdx, timeLapse, fs, true, 0);  %
     
