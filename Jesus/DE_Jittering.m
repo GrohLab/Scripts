@@ -68,11 +68,17 @@ trigNames = trigNames(continuousNameSub);
 %% Inter-spike intervals
 spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
     'UniformOutput', false);
-ISIVals = cellfun(@(x) diff(x)/fs, spkSubs2, 'UniformOutput', 0);
-ISIsignal = zeros(Ncl,Ns,'single');
-for ccl = 1:Ncl
-    ISIsignal(ccl,spkSubs2{ccl}) = [spkSubs2{ccl}(1)/fs, ISIVals{ccl}'];
-end
+ISIVals = cellfun(@(x) [x(1)/fs; diff(x)/fs], spkSubs2, 'UniformOutput', 0);
+NnzvPcl = cellfun(@numel,ISIVals);
+Nnzv = sum(NnzvPcl);
+rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl, 'UniformOutput', 0));
+cols = cell2mat(spkSubs2);
+vals = cell2mat(ISIVals);
+ISIspar = sparse(rows, cols, vals);
+% ISIsignal = zeros(Ncl,Ns,'single');
+% for ccl = 1:Ncl
+%     ISIsignal(ccl,spkSubs2{ccl}) = ISIVals{ccl};
+% end
 %% User controlling variables
 % Time lapse, bin size, and spontaneous and response windows
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
@@ -131,7 +137,7 @@ end
 % ISI stack
 % WARNING! This will eat up a big chunk of memory
 [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
-    timeLapse,fs,fs,[],ISIsignal);
+    timeLapse,fs,fs,[],ISIspar);
 clearvars ISIsignal
 % [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
