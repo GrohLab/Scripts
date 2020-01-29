@@ -64,6 +64,8 @@ while ctn <= numTrigNames
     end
     ctn = ctn + 1;
 end
+continuousSignals(continuousNameSub == 0) = [];
+continuousNameSub(continuousNameSub == 0) = [];
 trigNames = trigNames(continuousNameSub);
 %% Inter-spike intervals
 spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
