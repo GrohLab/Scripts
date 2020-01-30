@@ -220,16 +220,20 @@ Nwru = nnz(wruIdx);
 fprintf('%d whisker responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 
+
 %% Addition mean signals to the Conditions variable
-if ~isfield(Conditions,'Stimulus')
+if ~isfield(Conditions,'Stimulus') ||...
+        any(arrayfun(@(x) isempty(x.Stimulus), Conditions(consideredConditions)))
+    fprintf(1,'Writting the stimulus raw signal into Conditions variable:\n')
     whFlag = contains(trigNames, whStim, 'IgnoreCase', 1);
     lrFlag = contains(trigNames, cxStim, 'IgnoreCase', 1);
     cdel = 1;
     for cc = consideredConditions
+        fprintf(1,'- %s\n', Conditions(cc).name)
         Conditions(cc).Stimulus = struct(...
             'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
             1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
-            1,Nt));
+            1,Nt),'TimeAxis',(0:Nt-1)/fs - timeLapse(1));
         cdel = cdel + 1;
     end
     save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
@@ -329,8 +333,6 @@ save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
 %% Plotting the population activity
 % On the fly section: goodsIdx is the negated version of badsIdx
-
-
 
 goodsIdx = ~badsIdx';
 for ccond = 1:Nccond
