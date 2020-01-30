@@ -296,6 +296,7 @@ for ccond = 1:size(delayFlags,2)
             fprintf(1,'Overwriting... ');
         end
     end
+    fID = 1;
     if ~existFlag
         fID = fopen(csvFileName,'w');
         fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
