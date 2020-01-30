@@ -129,7 +129,7 @@ if strcmpi(onOffStr,'Cancel')
     return
 end
 
-% Constructing the stack out of the user's choice
+%% Constructing the stack out of the user's choice
 % discStack - dicrete stack has a logical nature
 % cst - continuous stack has a numerical nature
 % Both of these stacks have the same number of time samples and trigger
@@ -213,6 +213,7 @@ figs = scatterSignificance(Results, Counts, consCondNames, delta_t, sortedData(g
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
     'UniformOutput', 0)) < 0.05;
+
 Htc = sum(H,2);
 wruIdx = Htc > Nccond/3;
 Nwru = nnz(wruIdx);
