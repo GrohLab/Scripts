@@ -220,7 +220,12 @@ Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
-
+%% Get significantly different clusters
+gcans = questdlg(['Do you want to get the waveforms from the',...
+    ' ''responding'' clusters?'], 'Waveforms', 'Yes', 'No', 'No');
+if strcmp(gcans, 'Yes')
+    clWaveforms = getClusterWaveform(gclID(wruIdx), dataDir);
+end
 
 %% Addition mean signals to the Conditions variable
 if ~isfield(Conditions,'Stimulus') ||...
