@@ -68,15 +68,22 @@ continuousSignals(continuousNameSub == 0) = [];
 continuousNameSub(continuousNameSub == 0) = [];
 trigNames = trigNames(continuousNameSub);
 %% Inter-spike intervals
-spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
-    'UniformOutput', false);
-ISIVals = cellfun(@(x) [x(1)/fs; diff(x)/fs], spkSubs2, 'UniformOutput', 0);
-NnzvPcl = cellfun(@numel,ISIVals);
-Nnzv = sum(NnzvPcl);
-rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl, 'UniformOutput', 0));
-cols = cell2mat(spkSubs2);
-vals = cell2mat(ISIVals);
-ISIspar = sparse(rows, cols, vals);
+isiFile = fullfile(dataDir,[expName,'_ISIvars.mat']);
+if ~exist(isiFile,'file')
+    spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
+        'UniformOutput', false);
+    ISIVals = cellfun(@(x) [x(1)/fs; diff(x)/fs], spkSubs2,...
+        'UniformOutput', 0);
+    NnzvPcl = cellfun(@numel,ISIVals);
+    Nnzv = sum(NnzvPcl);
+    rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl,...
+        'UniformOutput', 0));
+    cols = cell2mat(spkSubs2);
+    vals = cell2mat(ISIVals);
+    ISIspar = sparse(rows, cols, vals);
+else
+    load(isiFile,'ISIspar')
+end
 % ISIsignal = zeros(Ncl,Ns,'single');
 % for ccl = 1:Ncl
 %     ISIsignal(ccl,spkSubs2{ccl}) = ISIVals{ccl};
@@ -137,14 +144,16 @@ end
 [discStack, cst] = getStacks(spkLog,Conditions(chCond).Triggers,onOffStr,...
     timeLapse,fs,fs,spkSubs,continuousSignals);
 % ISI stack
-% WARNING! This will eat up a big chunk of memory
 [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
     timeLapse,fs,fs,[],ISIspar);
-clearvars ISIsignal
 % [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
 %     continuousSignals);
-
+if ~exist(isiFile,'file')
+    fprintf(1,'Saving the inter-spike intervals for each cluster... ');
+    save(isiFile,'ISIspar','isiStack','-v7.3')
+    fprintf(1,'Done!\n')
+end
 % Number of clusters + the piezo as the first event + the laser as the last
 % event, number of time samples in between the time window, and number of
 % total triggers.
@@ -210,12 +219,25 @@ indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
 % Plotting statistical tests
 figs = scatterSignificance(Results, Counts, consCondNames, delta_t, sortedData(goods,1));
+configureFigureToPDF(figs);
+stFigBasename = fullfile(figureDir,[expName,' ']);
+stFigSubfix = sprintf(' Stat RW%.1f-%.1fms',responseWindow(1)*1e3,...
+    responseWindow(2)*1e3);
+ccn = 1;
+for cc = indCondSubs
+    stFigName = [stFigBasename, consCondNames{ccn}, stFigSubfix];
+    ccn = ccn + 1;
+    if ~exist([stFigName,'.*'],'file')
+        print(figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
+        print(figs(cc),[stFigName,'.emf'],'-dmeta')
+    end
+end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
     'UniformOutput', 0)) < 0.05;
 
 Htc = sum(H,2);
-wruIdx = Htc > Nccond/3;
+wruIdx = H(:,Nccond);
 Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
@@ -339,25 +361,47 @@ end
 save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
 %% Plotting the population activity
-% On the fly section: goodsIdx is the negated version of badsIdx
+
+orderedStr = 'ID ordered';
+dans = questdlg('Do you want to order the PSTH other than by IDs?',...
+    'Order', 'Yes', 'No', 'No');
+ordSubs = 1:Ncl;
+pclID = gclID;
+if strcmp(dans, 'Yes')
+    clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+    varClass = varfun(@class,clInfo,'OutputFormat','cell');
+    [ordSel, iOk] = listdlg('ListString', clInfo.Properties.VariableNames);
+    ordVar = clInfo.Properties.VariableNames{ordSel};
+    orderedStr = sprintf('%s ordered',ordVar);
+    pclID = gclID(filterIdx(2:Ncl+1));
+    if ~strcmp(ordVar,'id')
+        [~,ordSubs] = sort(clInfo{pclID,ordVar});
+    end
+end
+
 
 goodsIdx = ~badsIdx';
+
 for ccond = 1:Nccond
-    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms %sset (%s)',...
+    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms %sset %s (%s)',...
         expName, Conditions(consideredConditions(ccond)).name, timeLapse(1)*1000,...
         timeLapse(2)*1000, binSz*1000, responseWindow(1)*1000, responseWindow(2)*1000,...
-        onOffStr, filtStr);
+        onOffStr, orderedStr, filtStr);
     [PSTH, trig, sweeps] = getPSTH(... dst([true;whiskerResponsiveUnitsIdx;true],:,:),timeLapse,...
         discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
-    fig = plotClusterReactivity(PSTH,trig,sweeps,timeLapse,binSz,...
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
         [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
-        gclID(filterIdx(2:end));{'Laser'}],...
-        strrep(expName,'_','\_'));
-    configureFigureToPDF(fig);
+        pclID(ordSubs)],...
+        strrep(expName,'_','\_'),...
+        stims, {'WhiskerStim','Laser'});
+    configureFigureToPDF(figs); 
+    figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
+        sprintf('^{%s}',orderedStr)];
     if ~exist([figFileName,'.pdf'], 'file') || ~exist([figFileName,'.emf'], 'file')
-        print(fig,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
-        print(fig,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
+        print(figs,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
+        print(figs,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
     end
 end
 
