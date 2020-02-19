@@ -379,9 +379,9 @@ if strcmp(dans, 'Yes')
     end
 end
 
-
+%%
 goodsIdx = ~badsIdx';
-
+csNames = fieldnames(Triggers);
 for ccond = 1:Nccond
     figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms %sset %s (%s)',...
         expName, Conditions(consideredConditions(ccond)).name, timeLapse(1)*1000,...
@@ -395,7 +395,7 @@ for ccond = 1:Nccond
         [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
         pclID(ordSubs)],...
         strrep(expName,'_','\_'),...
-        stims, {'WhiskerStim','Laser'});
+        stims, csNames);
     configureFigureToPDF(figs); 
     figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
