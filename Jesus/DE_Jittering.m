@@ -365,7 +365,7 @@ save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
 orderedStr = 'ID ordered';
 dans = questdlg('Do you want to order the PSTH other than by IDs?',...
     'Order', 'Yes', 'No', 'No');
-ordSubs = 1:Ncl;
+ordSubs = 1:nnz(filterIdx(2:Ncl+1));
 pclID = gclID;
 if strcmp(dans, 'Yes')
     clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
