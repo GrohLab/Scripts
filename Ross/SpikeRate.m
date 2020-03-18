@@ -48,7 +48,7 @@ counts = zeros(nBins,sizeT(1,2));
 for b = 1:sizeT(1,2)
     
     for a = 1:nBins
-        counts(a,b) = sum(spiketrainlogical(1 + binSamples*(a-1): a*binSamples, 1));
+        counts(a,b) = sum(spiketrainlogical(1 + binSamples*(a-1): a*binSamples, b));
     end
     rate = counts/binSz;
     figure; bar(rate(:,b));
