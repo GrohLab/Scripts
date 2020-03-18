@@ -1,6 +1,6 @@
 
-% This script gives spike rate for user-specified bin width for a 1 hr
-% recording for all units. 
+% This script gives spike rate bar graphs for user-specified bin width for
+% all units in a recording.
 
 % We need the bin size.
 promptStrings = {'Bin size [s]:'};
@@ -27,20 +27,20 @@ binSamples = fs*binSz;
     
 % Now we need the no. of bins for the split up the histogram,
 % which is the length of the spiketrain vector divided by the binSamples. 
+
 nBins = round(size(spiketrainlogical, 1)/binSamples);
+
 % The reason we round is that nBins may not be an integer, which it
 % needs to be for the for-loop.
 % This will mean that the last bin for each recording may be a bit
 % off....(I can live with that...)
 
 
-% We now need to create a vector of size nBins to sum our samples into,
+% We now need to create a matrix of row size nBins, where each column represents a different cluster,
 % and we need to sum our samples bin by bin.
 
-%
-sizeT = size(spiketrain);
-counts = zeros(nBins,sizeT(1,2));
-% This column vector is the length of the no. of bins. 
+
+counts = zeros(nBins,size(spiketrainlogical, 2));
 
 % We're going to replace each element 1 by 1 for the sum of the elements of spike train for the given bin size. 
 % We're going to go cluster by cluster, each cluster being a new column.
