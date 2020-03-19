@@ -59,7 +59,7 @@ end
 % So you're dividing counts by the bin size.
 
 % We've churned out the firing rate per cluster fo a given bin width.
-% Lets plot them next to eachother to get population activity
+% Lets plot them next to eachother to get population activity.
 imagesc(rate');
 
 % Experiment time in msecs for the RateMap x-axis
