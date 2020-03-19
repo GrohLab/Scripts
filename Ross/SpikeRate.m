@@ -59,17 +59,9 @@ end
 % So you're dividing counts by the bin size.
 
 % We've churned out the firing rate per cluster fo a given bin width.
+% Lets plot them next to eachother to get population activity
+imagesc(rate');
 
-
-% We also may want the counts for each cluster for a given bin width as a
-% matrix.
-
-% counts(:,(sizeT+1)) = 0;
-
-% Whilst we're here, we may also want the binned firing rates for each
-% cluster as a matrix.
-
-
-
-
+% Experiment time in msecs for the RateMap x-axis
+exptT = [0:nBins]'*(binSz/0.01);
 
