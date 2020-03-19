@@ -41,11 +41,11 @@ nBins = round(size(spiketrainlogical, 1)/binSamples);
 
 
 counts = zeros(nBins,size(spiketrainlogical, 2));
-
+szT = size(spiketrainlogical, 2);
 % We're going to replace each element 1 by 1 for the sum of the elements of spike train for the given bin size. 
 % We're going to go cluster by cluster, each cluster being a new column.
 
-for b = 1:sizeT(1,2)
+for b = 1:szT
     
     for a = 1:nBins
         counts(a,b) = sum(spiketrainlogical(1 + binSamples*(a-1): a*binSamples, b));
@@ -63,13 +63,13 @@ end
 
 % We also may want the counts for each cluster for a given bin width as a
 % matrix.
-% countsfig = figure; bar(counts);
+
+% counts(:,(sizeT+1)) = 0;
 
 % Whilst we're here, we may also want the binned firing rates for each
 % cluster as a matrix.
 
-%rate = counts/binSz;
-%ratefig = figure; bar(rate);
+
 
 
 
