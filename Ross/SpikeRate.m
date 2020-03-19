@@ -60,10 +60,10 @@ end
 
 % We've churned out the firing rate per cluster fo a given bin width.
 % Lets plot them next to eachother to get population activity.
-% Experiment time in msecs for the RateMap x-axis
+% Experiment time in msecs for the RateMap x-axis.
 exptT = [0:nBins]'*(binSz/0.001);
-
-imagesc(exptT, [1:szT], rate');
-
+ 
+figure; imagesc(exptT, [1:szT], rate');
+% x-axis = exptT, y-axis = [1:szT], plot = rate'.
 
 
