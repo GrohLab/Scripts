@@ -37,13 +37,16 @@ szT = length(sortedData);
 counts = zeros(nBins, szT);
 
 for b = 1:szT   % cluster by cluster
-    
-    for a = 1:nBins
-        fsV = fs*sortedData{b,2}'; 
+    if sortedData{b,3} == 3 % don't want to waste time on bad clusters
+        counts(:,b) = [];
+        return
+    else
+        for a = 1:nBins
+            fsV = fs*sortedData{b,2}'; 
 
-        logicalfsV = (fsV >(a-1)*binSamples) & (fsV <= a*binSamples);
-        counts(a,b) = sum(logicalfsV);
-    end
+            logicalfsV = (fsV >(a-1)*binSamples) & (fsV <= a*binSamples);
+            counts(a,b) = sum(logicalfsV);
+        end
     rate = counts/binSz;
     figure; bar(rate(:,b));
 end
