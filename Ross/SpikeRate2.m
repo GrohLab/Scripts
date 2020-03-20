@@ -65,4 +65,3 @@ exptT = [0:nBins]'*(binSz/0.001);
  
 figure; imagesc(exptT, [1:szT], rate');
 % x-axis = exptT, y-axis = [1:szT], plot = rate'.
-
