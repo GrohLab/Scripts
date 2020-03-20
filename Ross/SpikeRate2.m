@@ -39,7 +39,6 @@ counts = zeros(nBins, szT);
 for b = 1:szT   % cluster by cluster
     if sortedData{b,3} == 3 % don't want to waste time on bad clusters
         counts(:,b) = [];
-        return
     else
         for a = 1:nBins
             fsV = fs*sortedData{b,2}'; 
