@@ -35,7 +35,7 @@ nBins = round(head68.npoints/binSamples);
 % counts.
 badsIdx = cellfun(@(x) x==3,sortedData(:,3));
 nBads = sum(badsIdx);
-% Need to know the number of bad clusters that we not going to bother with.
+% Need to know the number of bad clusters that we're not going to bother with.
 szT = length(sortedData)- nBads;
 counts = zeros(nBins, szT);
 
