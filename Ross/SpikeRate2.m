@@ -47,8 +47,9 @@ for b = 1:szT   % cluster by cluster
             logicalfsV = (fsV >(a-1)*binSamples) & (fsV <= a*binSamples);
             counts(a,b) = sum(logicalfsV);
         end
-    rate = counts/binSz;
-    figure; bar(rate(:,b));
+        rate = counts/binSz;
+        figure; bar(rate(:,b));
+    end
 end
 % rate = counts/binSz;
 % Rate will be given in Counts per Second.
