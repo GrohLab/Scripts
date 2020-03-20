@@ -22,7 +22,7 @@ fs = str2double(answ(1));
 % values fall between a bin size in seconds.
 
 
-% Need to load CondSig file as well as sortedData to get the npoints.
+% Need to load CondSig file as well as sortedData to get the npoints and the cluster times.
 
 % binSamples is the number of elements in spiketrain per bin.
 binSamples = fs*binSz;
