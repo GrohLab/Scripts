@@ -365,7 +365,7 @@ save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
 orderedStr = 'ID ordered';
 dans = questdlg('Do you want to order the PSTH other than by IDs?',...
     'Order', 'Yes', 'No', 'No');
-ordSubs = 1:Ncl;
+ordSubs = 1:nnz(filterIdx(2:Ncl+1));
 pclID = gclID;
 if strcmp(dans, 'Yes')
     clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
@@ -386,7 +386,7 @@ end
 
 %%
 goodsIdx = ~badsIdx';
-
+csNames = fieldnames(Triggers);
 for ccond = 1:Nccond
     figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms %sset %s (%s)',...
         expName, Conditions(consideredConditions(ccond)).name, timeLapse(1)*1000,...
@@ -396,11 +396,15 @@ for ccond = 1:Nccond
         discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    for cs = 1:size(stims,1)
+        [m,b] = lineariz(stims(cs,:),1,0);
+        stims(cs,:) = m*stims(cs,:) + b;
+    end
     figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
         [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
         pclID(ordSubs)],...
         strrep(expName,'_','\_'),...
-        stims, {'WhiskerStim','Laser'});
+        stims, csNames);
     configureFigureToPDF(figs); 
     figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
