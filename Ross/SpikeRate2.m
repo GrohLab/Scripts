@@ -39,12 +39,20 @@ nBads = sum(badsIdx);
 szT = length(sortedData)- nBads;
 counts = zeros(nBins, szT);
 
+
+%RAM !!! Looks to me that this doesn't go through all the clusters, only 1 to szT
+%clusters-- it correctly ignores bad clusters, but won't make it to the
+%very last clusters.  I would rewrite to first kick out bad clusters (use ~= to find those clusters that aren' bad, as in cellfun call at line 36 above) then
+%iterate through the remaining good clusters. This also has the benefit of
+%removing "blanks" from the rate matrix.
 for b = 1:szT   % cluster by cluster
     if sortedData{b,3} == 3 % don't want to waste time on bad clusters
     else
         for a = 1:nBins
             fsV = fs*sortedData{b,2}'; 
 
+            
+            %RAM where are npoints10 and npoints5 defined??
             logicalfsV = (fsV >(a-1)*binSamples + npoints5 + npoints10) & (fsV <= a*binSamples + npoints5 + npoints10);
             counts(a,b) = sum(logicalfsV);
         end
