@@ -28,7 +28,7 @@ fs = str2double(answ(1));
 binSamples = fs*binSz;
 
 % Need the number of bins we're gonna pop our data into.
-nBins = round(head68.npoints/binSamples);
+nBins = round(npoints20/binSamples);
 
 
 % Need to create an empty matrix that's eagerly awaiting all our cluster
@@ -45,7 +45,7 @@ for b = 1:szT   % cluster by cluster
         for a = 1:nBins
             fsV = fs*sortedData{b,2}'; 
 
-            logicalfsV = (fsV >(a-1)*binSamples) & (fsV <= a*binSamples);
+            logicalfsV = (fsV >(a-1)*binSamples + npoints5 + npoints10) & (fsV <= a*binSamples + npoints5 + npoints10);
             counts(a,b) = sum(logicalfsV);
         end
         % rate = counts/binSz;
