@@ -18,6 +18,8 @@ answ = inputdlg(promptStrings,'Inputs', [1, 30],defaultInputs);
 fs = str2double(answ(1));
 
 % This spiketrain variable is just dummy data.
+%RAM: this doesn't run for me because fs is not necessarily an integer
+%could also use randi command to produce integer spike times
 spiketrain = rand(fs*3600, 3);
 spiketrainlogical = spiketrain > 0.5;
 
@@ -65,5 +67,7 @@ exptT = [0:nBins]'*(binSz/0.001);
  
 figure; imagesc(exptT, [1:szT], rate');
 % x-axis = exptT, y-axis = [1:szT], plot = rate'.
+
+
 
 
