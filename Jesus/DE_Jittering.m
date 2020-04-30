@@ -370,12 +370,17 @@ pclID = gclID;
 if strcmp(dans, 'Yes')
     clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
     varClass = varfun(@class,clInfo,'OutputFormat','cell');
-    [ordSel, iOk] = listdlg('ListString', clInfo.Properties.VariableNames);
-    ordVar = clInfo.Properties.VariableNames{ordSel};
-    orderedStr = sprintf('%s ordered',ordVar);
+    [ordSel, iOk] = listdlg('ListString', clInfo.Properties.VariableNames,...
+        'SelectionMode', 'multiple');
+    orderedStr = [];
+    ordVar = clInfo.Properties.VariableNames(ordSel);
+    for cvar = 1:numel(ordVar)
+        orderedStr = [orderedStr, sprintf('%s ',ordVar{cvar})];
+    end
+    orderedStr = [orderedStr, 'ordered'];
     pclID = gclID(filterIdx(2:Ncl+1));
     if ~strcmp(ordVar,'id')
-        [~,ordSubs] = sort(clInfo{pclID,ordVar});
+        [~,ordSubs] = sortrows(clInfo,ordVar);
     end
 end
 
