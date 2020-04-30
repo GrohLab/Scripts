@@ -380,7 +380,7 @@ if strcmp(dans, 'Yes')
     orderedStr = [orderedStr, 'ordered'];
     pclID = gclID(filterIdx(2:Ncl+1));
     if ~strcmp(ordVar,'id')
-        [~,ordSubs] = sortrows(clInfo,ordVar);
+        [~,ordSubs] = sortrows(clInfo(pclID,:),ordVar);
     end
 end
 
