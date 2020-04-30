@@ -375,7 +375,7 @@ if strcmp(dans, 'Yes')
     orderedStr = [];
     ordVar = clInfo.Properties.VariableNames(ordSel);
     for cvar = 1:numel(ordVar)
-        orderedStr = [orderedStr, sprintf('%s ',ordVar{cvar})];
+        orderedStr = [orderedStr, sprintf('%s ',ordVar{cvar})]; %#ok<AGROW>
     end
     orderedStr = [orderedStr, 'ordered'];
     pclID = gclID(filterIdx(2:Ncl+1));
