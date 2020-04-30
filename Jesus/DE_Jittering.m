@@ -59,7 +59,7 @@ while ctn <= numTrigNames
         continuousNameSub(ctn) = ctn;
     end
     if contains(trigNames{ctn},lfpRec,'IgnoreCase',true)
-        continuousSignals{ctn} = Triggers.(trigNames{ctn})(1:Ns);
+        continuousSignals{ctn} = Triggers.(trigNames{ctn});
         continuousNameSub(ctn) = ctn;
     end
     ctn = ctn + 1;
@@ -379,7 +379,6 @@ if strcmp(dans, 'Yes')
     end
 end
 
-%%
 %% Plot PSTH
 goodsIdx = ~badsIdx';
 csNames = fieldnames(Triggers);
