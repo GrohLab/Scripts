@@ -380,6 +380,7 @@ if strcmp(dans, 'Yes')
 end
 
 %%
+%% Plot PSTH
 goodsIdx = ~badsIdx';
 csNames = fieldnames(Triggers);
 for ccond = 1:Nccond
@@ -391,9 +392,14 @@ for ccond = 1:Nccond
         discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    stims = stims - median(stims,2);
     for cs = 1:size(stims,1)
-        [m,b] = lineariz(stims(cs,:),1,0);
-        stims(cs,:) = m*stims(cs,:) + b;
+        if abs(log10(var(stims(cs,:),[],2))) < 13
+            [m,b] = lineariz(stims(cs,:),1,0);
+            stims(cs,:) = m*stims(cs,:) + b;
+        else
+            stims(cs,:) = zeros(1,Nt);
+        end
     end
     figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
         [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
@@ -408,4 +414,3 @@ for ccond = 1:Nccond
         print(figs,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
     end
 end
-
