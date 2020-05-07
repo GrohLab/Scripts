@@ -368,7 +368,9 @@ dans = questdlg('Do you want to order the PSTH other than by IDs?',...
 ordSubs = 1:nnz(filterIdx(2:Ncl+1));
 pclID = gclID;
 if strcmp(dans, 'Yes')
-    clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+    if ~exist('clInfo','var')
+        clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+    end
     % varClass = varfun(@class,clInfo,'OutputFormat','cell');
     [ordSel, iOk] = listdlg('ListString', clInfo.Properties.VariableNames,...
         'SelectionMode', 'multiple');
