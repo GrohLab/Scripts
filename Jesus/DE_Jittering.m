@@ -258,7 +258,8 @@ H = cell2mat(cellfun(@(x) x.Pvalues,...
     'UniformOutput', 0)) < 0.05;
 
 Htc = sum(H,2);
-wruIdx = H(:,Nccond);
+CtrlCond = contains(consCondNames,'control','IgnoreCase',true);
+wruIdx = any(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
