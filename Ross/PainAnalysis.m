@@ -247,7 +247,7 @@ for a = 1:length(consCondNames) - 1
         for c = 1: sZ(1,2)
         
         dC = mean(Counts{b,c}') - mean(Counts{a,c}');
-       clInfo{clInfo.ActiveUnit == true,[ consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+       clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
         end
         
         e = e + 1;
@@ -260,3 +260,23 @@ for a = 1:length(consCondNames) - 1
     f = f + d;
 end
 writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
+
+%% Accessing different units from table
+
+% IDs for mechanically responsive clusters per condtion
+for a = 1: length(consCondNames)
+    IdMR(a).name = [consCondNames{1,a}, '_MR']; IdMR(a).Clusters = find(clInfo.(IdMR(a).name));
+end
+
+% IDs for between condition sig differences in spontaneous vs evoked FRs
+d = 0;
+for a = 1:length(consCondNames) - 1
+    for b = (a + 1): length(consCondNames)
+        
+       for c = 1:2
+           IdVs(d+c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(1).Activity(c).Type, '_Response'];
+           IdVs(d+c).Clusters = find(clInfo.(IdVs(d+c).name));
+       end
+      d = d + 2;
+    end
+end
