@@ -297,4 +297,5 @@ for a = 1: length(consCondNames)
 end
 SpontaneousBox = SpontaneousBox/rW; 
 figure; boxplot(SpontaneousBox);
+configureFigureToPDF(SpontaneousBox);
 
