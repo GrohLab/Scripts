@@ -263,12 +263,17 @@ writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 
 %% Accessing different units from table
 
+% IDs for active units
+for a = 1: length(consCondNames)
+    IdActive.Clusters = find(clInfo.ActiveUnit);
+end
+
 % IDs for mechanically responsive clusters per condtion
 for a = 1: length(consCondNames)
     IdMR(a).name = [consCondNames{1,a}, '_MR']; IdMR(a).Clusters = find(clInfo.(IdMR(a).name));
 end
 
-% IDs for between condition sig differences in spontaneous vs evoked FRs
+% IDs for between condition sig differences in spontaneous and evoked FRs
 d = 0;
 for a = 1:length(consCondNames) - 1
     for b = (a + 1): length(consCondNames)
@@ -280,3 +285,16 @@ for a = 1:length(consCondNames) - 1
       d = d + 2;
     end
 end
+
+%% Plotting spontaneous activity rates
+
+rW = responseWindow(2)-responseWindow(1);
+
+for a = 1: length(consCondNames)
+   
+    Spont = [consCondNames{1,a}, '_Counts_Spont'];
+    SpontaneousBox(:,a) = clInfo.(Spont)(IdActive.Clusters);
+end
+SpontaneousBox = SpontaneousBox/rW; 
+figure; boxplot(SpontaneousBox);
+
