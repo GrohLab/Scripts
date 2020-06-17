@@ -437,9 +437,9 @@ for a = 1:length(consCondNames)
             index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
             c = c + 1;
             Spont = [consCondNames{1,a}, '_Counts_Spont'];
-            SpBox = clInfo.(Spont)(index);
+            SpBox = (clInfo.(Spont)(index))/rW;
             Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-            EvBox = clInfo.(Evoked)(index);
+            EvBox = (clInfo.(Evoked)(index))/rW;
             subplot(1,nShanks, shankNo);
             boxplot([SpBox, EvBox]);
             
