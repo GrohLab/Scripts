@@ -9,13 +9,13 @@
 b = Nccond;
 for a = 1 : Nccond
    
-    for c = 1:2
-     
-        fprintf([ consCondNames{1,a}, ' nMR ', Results(b).Activity(c).Type, ' = ',  num2str(sum(Results(b).Activity(c).Pvalues < 0.05)), '  \n']);
-        dC = mean(Counts{a,2}') - mean(Counts{a,1}');
-        fprintf([ consCondNames{1,a},' Increased MR ', Results(b).Activity(c).Type, ' = ',   num2str(sum((Results(b).Activity(c).Pvalues < 0.05) & dC' > 0)), '  \n']);
-        fprintf([ consCondNames{1,a},' Decreased MR ', Results(b).Activity(c).Type, ' = ',  num2str(sum((Results(b).Activity(c).Pvalues < 0.05) & dC' < 0)), '  \n']);
-    end
+    
+    
+    
+    fprintf([ consCondNames{1,a},' nMR', ' = ',  num2str(sum(Results(b).Activity(1).Pvalues < 0.05)), '  \n']);
+    dC = mean(Counts{a,2}') - mean(Counts{a,1}');
+    fprintf([ consCondNames{1,a},' Increased MR', ' = ',   num2str(sum((Results(b).Activity(1).Pvalues < 0.05) & dC' > 0)), '  \n']);
+    fprintf([ consCondNames{1,a},' Decreased MR', ' = ',  num2str(sum((Results(b).Activity(1).Pvalues < 0.05) & dC' < 0)), '  \n']);
     
     b = b + Nccond - a;
     
