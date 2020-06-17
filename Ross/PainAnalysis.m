@@ -310,10 +310,17 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     
     subplot(1, nShanks, shankNo);
     boxplot(SpontaneousBox);
-    title(['Shank ', num2str(shankNo)]);
+    if shankNo == 1
+                title(['Shank ', num2str(shankNo)]);
+                ylabel('Firing Rate (Hz)');
+                xticklabels(SLabels)
+            else
+                title([num2str(shankNo)]);
+                xticklabels({[], []});
+    end
     ylim([0 25]);
-    ylabel('Firing Rate (Hz)');
-    xticklabels(SLabels)
+    ax = gca; 
+    ax.FontSize = 12;
     ax = gca; 
     ax.FontSize = 12;
     % configureFigureToPDF(SpontaneousBox);
@@ -357,10 +364,15 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     
     subplot(1, nShanks, shankNo);
     boxplot(EvokedBox);
-    title(['Shank ', num2str(shankNo)]);
+    if shankNo == 1
+                title(['Shank ', num2str(shankNo)]);
+                ylabel('Firing Rate (Hz)');
+                xticklabels(ELabels)
+            else
+                title([num2str(shankNo)]);
+                xticklabels({[], []});
+    end
     ylim([0 25]);
-    ylabel('Firing Rate (Hz)');
-    xticklabels(ELabels)
     ax = gca; 
     ax.FontSize = 12;
     % configureFigureToPDF(EvokedBox);
@@ -384,7 +396,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
 end
 
 
-%% Population MRs for each condition (unfiltered for significance).
+%% Population MRs for each condition (unfiltered for mech significance).
 
 rW = responseWindow(2)-responseWindow(1);
 c = 0;
@@ -394,17 +406,23 @@ for a = 1:length(consCondNames)
 
         for shankNo = 1:nShanks
             index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-             c = c + 1;
+            c = c + 1;
             Spont = [consCondNames{1,a}, '_Counts_Spont'];
             SpBox = clInfo.(Spont)(index);
             Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
             EvBox = clInfo.(Evoked)(index);
             subplot(1,nShanks, shankNo);
             boxplot([SpBox, EvBox]);
-            title(['Shank ', num2str(shankNo)]);
+            
+            if shankNo == 1
+                title(['Shank ', num2str(shankNo)]);
+                ylabel('Firing Rate (Hz)');
+                xticklabels({'Spont', 'Evoked'});
+            else
+                title([num2str(shankNo)]);
+                xticklabels({[], []});
+            end
             ylim([0 25]);
-            ylabel('Firing Rate (Hz)');
-            xticklabels({'Spont', 'Evoked'});
             ax = gca; 
             ax.FontSize = 12;
             MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
