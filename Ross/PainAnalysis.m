@@ -92,6 +92,33 @@ fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow(1)*1e3, responseWin
 fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
 spontaneousWindow = -flip(responseWindow);
 
+%% Evening out Condition Trials
+
+for a = 1: length(Conditions)
+    sZ(1,a) = length(Conditions(a).Triggers);
+end
+[r, c] = min(sZ);
+minVal = min(sZ);
+for a = 1: length(Conditions)
+    if a == c
+    a = a + 1;
+    else
+        Conditions(a).Difference = length(Conditions(a).Triggers) - length(Conditions(c).Triggers);
+        Ind = randperm(length(Conditions(a).Triggers), Conditions(a).Difference)
+        Conditions(a).Triggers(Ind',:) = [];
+    end
+end
+Conditions(length(Conditions)).name = 'All';
+concatCond = Conditions(1).Triggers;
+for a = 2:length(Conditions) - 1
+    concatCond = [concatCond; Conditions(a).Triggers];
+end
+
+Conditions(length(Conditions)).Triggers = concatCond; clear concatCond;
+
+
+
+
 %% Condition triggered stacks
 condNames = arrayfun(@(x) x.name,Conditions,'UniformOutput',false);
 condGuess = contains(condNames, 'whiskerall', 'IgnoreCase', true);
@@ -220,6 +247,7 @@ save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Res
 clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
 clInfo = addvars(clInfo,~badsIdx','NewVariableNames','ActiveUnit','After','id');
 clInfo.shank = arrayfun(setShank, clInfo.channel);
+
 
 for a = 1: length(consCondNames)
     clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Counts_Spont']} = mean(Counts{a,1}')';
