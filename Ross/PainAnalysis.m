@@ -245,7 +245,7 @@ end
 save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Results', 'responseWindow','-v7.3');
 
 %% Getting cluster info and adding variables to table
-clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+% clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
 % clInfo = addvars(clInfo,~badsIdx','NewVariableNames','ActiveUnit','After','id');
 % clInfo.shank = arrayfun(setShank, clInfo.channel);
 
