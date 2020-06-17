@@ -92,7 +92,7 @@ end
 % Time lapse, bin size, and spontaneous and response windows
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
     'Bin size [s]:'};
-defInputs = {'0.1, 0.1', '0.002, 0.05', '0.001'};
+defInputs = {'-0.1, 0.1', '0.002, 0.05', '0.001'};
 answ = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
 if isempty(answ)
     fprintf(1,'Cancelling...\n')
@@ -101,7 +101,7 @@ else
     timeLapse = str2num(answ{1}); %#ok<*ST2NM>
     if numel(timeLapse) ~= 2
         timeLapse = str2num(inputdlg('Please provide the time window [s]:',...
-            'Time window',[1, 30], '0.1, 0.1'));
+            'Time window',[1, 30], '-0.1, 0.1'));
         if isnan(timeLapse) || isempty(timeLapse)
             fprintf(1,'Cancelling...')
             return
@@ -113,7 +113,27 @@ end
 fprintf(1,'Time window: %.2f - %.2f ms\n',timeLapse(1)*1e3, timeLapse(2)*1e3)
 fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow(1)*1e3, responseWindow(2)*1e3)
 fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
+sponAns = questdlg('Mirror the spontaneous window?','Spontaneous window',...
+    'Yes','No','Yes');
 spontaneousWindow = -flip(responseWindow);
+if strcmpi(sponAns,'No')
+    spontPrompt = "Time before the trigger in [s] (e.g. -0.8, -0.6 s)";
+    sponDef = string(sprintf('%.3f, %.3f',spontaneousWindow(1),...
+        spontaneousWindow(2)));
+    sponStr = inputdlg(spontPrompt, 'Inputs',[1,30],sponDef);
+    if ~isempty(sponStr)
+        spontAux = str2num(sponStr{1});
+        if length(spontAux) ~= 2 || spontAux(1) > spontAux(2) || ...
+                spontAux(1) < timeLapse(1)
+            fprintf(1, 'The given input was not valid.\n')
+            fprintf(1, 'Keeping the mirror version!\n')
+        else
+            spontaneousWindow = spontAux;
+        end
+    end
+end
+fprintf(1,'Spontaneous window: %.2f to %.2f ms before the trigger\n',...
+    spontaneousWindow(1)*1e3, spontaneousWindow(2)*1e3)
 %% Condition triggered stacks
 condNames = arrayfun(@(x) x.name,Conditions,'UniformOutput',false);
 condGuess = contains(condNames, 'whiskerall', 'IgnoreCase', true);
@@ -159,7 +179,7 @@ end
 % total triggers.
 [Ne, Nt, NTa] = size(discStack);
 % Computing the time axis for the stack
-tx = (0:Nt - 1)/fs - timeLapse(1);
+tx = (0:Nt - 1)/fs + timeLapse(1);
 %% Considered conditions selection
 % Choose the conditions to look at
 auxSubs = setdiff(1:numel(condNames), chCond);
@@ -221,8 +241,9 @@ consCondNames = condNames(consideredConditions);
 figs = scatterSignificance(Results, Counts, consCondNames, delta_t, sortedData(goods,1));
 configureFigureToPDF(figs);
 stFigBasename = fullfile(figureDir,[expName,' ']);
-stFigSubfix = sprintf(' Stat RW%.1f-%.1fms',responseWindow(1)*1e3,...
-    responseWindow(2)*1e3);
+stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
+    responseWindow(1)*1e3, responseWindow(2)*1e3, spontaneousWindow(1)*1e3,...
+    spontaneousWindow(2)*1e3);
 ccn = 1;
 for cc = indCondSubs
     stFigName = [stFigBasename, consCondNames{ccn}, stFigSubfix];
@@ -237,7 +258,8 @@ H = cell2mat(cellfun(@(x) x.Pvalues,...
     'UniformOutput', 0)) < 0.05;
 
 Htc = sum(H,2);
-wruIdx = H(:,Nccond);
+CtrlCond = contains(consCondNames,'control','IgnoreCase',true);
+wruIdx = any(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
@@ -261,7 +283,7 @@ if ~isfield(Conditions,'Stimulus') ||...
         Conditions(cc).Stimulus = struct(...
             'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
             1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
-            1,Nt),'TimeAxis',(0:Nt-1)/fs - timeLapse(1));
+            1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
         cdel = cdel + 1;
     end
     save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
@@ -300,10 +322,11 @@ condParams = zeros(M,3,Nccond);
 txpdf = responseWindow(1):1/fs:responseWindow(2);
 condPDF = zeros(numel(txpdf),Nccond);
 csvBase = fullfile(dataDir, expName);
-csvSubfx = sprintf(' VW%.1f-%.1f ms.csv', timeLapse(1)*1000, timeLapse(2)*1000);
+csvSubfx = sprintf(' VW%.1f-%.1f ms.csv', timeLapse(1)*1e3, timeLapse(2)*1e3);
 existFlag = false;
 condRelativeSpkTms = cell(Nccond,1);
 relativeSpkTmsStruct = struct('name',{},'SpikeTimes',{});
+spkDir = fullfile(dataDir, 'SpikeTimes');
 for ccond = 1:size(delayFlags,2)
     csvFileName = [csvBase,' ',consCondNames{ccond}, csvSubfx];
     relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
@@ -366,7 +389,7 @@ orderedStr = 'ID ordered';
 dans = questdlg('Do you want to order the PSTH other than by IDs?',...
     'Order', 'Yes', 'No', 'No');
 ordSubs = 1:nnz(filterIdx(2:Ncl+1));
-pclID = gclID;
+pclID = gclID(filterIdx(2:Ncl+1));
 if strcmp(dans, 'Yes')
     if ~exist('clInfo','var')
         clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
@@ -380,7 +403,7 @@ if strcmp(dans, 'Yes')
         orderedStr = [orderedStr, sprintf('%s ',ordVar{cvar})]; %#ok<AGROW>
     end
     orderedStr = [orderedStr, 'ordered'];
-    pclID = gclID(filterIdx(2:Ncl+1));
+    
     if ~strcmp(ordVar,'id')
         [~,ordSubs] = sortrows(clInfo(pclID,:),ordVar);
     end
@@ -390,12 +413,11 @@ end
 goodsIdx = ~badsIdx';
 csNames = fieldnames(Triggers);
 for ccond = 1:Nccond
-    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms %sset %s (%s)',...
-        expName, Conditions(consideredConditions(ccond)).name, timeLapse(1)*1000,...
-        timeLapse(2)*1000, binSz*1000, responseWindow(1)*1000, responseWindow(2)*1000,...
-        onOffStr, orderedStr, filtStr);
-    [PSTH, trig, sweeps] = getPSTH(... dst([true;whiskerResponsiveUnitsIdx;true],:,:),timeLapse,...
-        discStack(filterIdx,:,:),timeLapse,...
+    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
+        expName, Conditions(consideredConditions(ccond)).name, timeLapse*1e3,...
+        binSz*1e3, responseWindow*1e3, spontaneousWindow*1e3, onOffStr,...
+        orderedStr, filtStr);
+    [PSTH, trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     stims = mean(cst(:,:,delayFlags(:,ccond)),3);
     stims = stims - median(stims,2);
@@ -408,7 +430,7 @@ for ccond = 1:Nccond
         end
     end
     figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
-        [{Conditions(consideredConditions(ccond)).name};... sortedData(goods(whiskerResponsiveUnitsIdx),1);{'Laser'}],...
+        [{Conditions(consideredConditions(ccond)).name};... 
         pclID(ordSubs)],...
         strrep(expName,'_','\_'),...
         stims, csNames);
