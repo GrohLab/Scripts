@@ -98,7 +98,6 @@ for a = 1: length(Conditions)
     sZ(1,a) = length(Conditions(a).Triggers);
 end
 [r, c] = min(sZ);
-minVal = min(sZ);
 for a = 1: length(Conditions)
     if a == c
     a = a + 1;
