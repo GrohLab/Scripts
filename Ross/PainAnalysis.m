@@ -244,10 +244,8 @@ sZ = size(Counts);
 for a = 1:length(consCondNames) - 1
     for b = (a + 1): length(consCondNames)
         
-        for c = 1: sZ(1,2)
-        
-        dC = mean(Counts{b,c}') - mean(Counts{a,c}');
-       clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+        for c = 1: sZ(1,2)             
+        clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
         end
         
         e = e + 1;
@@ -296,7 +294,7 @@ nShanks = sum(tShanks ~= false);
 rW = responseWindow(2)-responseWindow(1);
 c = 1;
 d = 0;
-figure;
+figure('Name', 'Spontaneous_Rates', 'Color', 'white');
 for shankNo = 1:nShanks
     
 index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
@@ -343,7 +341,7 @@ end
 rW = responseWindow(2)-responseWindow(1);
 c = 1;
 d = 0;
-figure;
+figure('Name', 'Evoked_Rates', 'Color', 'white');
 for shankNo = 1:nShanks
     
 index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
@@ -386,4 +384,35 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
 end
 
 
+%% Population MRs for each condition (unfiltered for significance).
 
+rW = responseWindow(2)-responseWindow(1);
+a = 1;
+figure('Name',['MechResponse_', consCondNames{1,a}], 'Color', 'white') 
+c = 1;  
+    
+    for shankNo = 1:nShanks
+        index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+        
+        Spont = [consCondNames{1,a}, '_Counts_Spont'];
+        SpBox = clInfo.(Spont)(index);
+        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+        EvBox = clInfo.(Evoked)(index);
+        subplot(1,nShanks, shankNo);
+        boxplot([SpBox, EvBox]);
+        title(['Shank ', num2str(shankNo)]);
+        ylim([0 25]);
+        ylabel('Firing Rate (Hz)');
+        xticklabels({'Spont', 'Evoked'});
+        ax = gca; 
+        ax.FontSize = 12;
+        MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
+        MechRS(c).RankSum = ranksum(SpBox, EvBox);
+        if MechRS(c).RankSum <= 0.05
+                MechRS(c).Signifcant = true;
+        end
+        c = c + 1;
+        clear SpBox; clear EvBox;
+    end
+    
+    
