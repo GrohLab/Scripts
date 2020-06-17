@@ -387,32 +387,35 @@ end
 %% Population MRs for each condition (unfiltered for significance).
 
 rW = responseWindow(2)-responseWindow(1);
-a = 1;
-figure('Name',['MechResponse_', consCondNames{1,a}], 'Color', 'white') 
-c = 1;  
-    
-    for shankNo = 1:nShanks
-        index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-        
-        Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        SpBox = clInfo.(Spont)(index);
-        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        EvBox = clInfo.(Evoked)(index);
-        subplot(1,nShanks, shankNo);
-        boxplot([SpBox, EvBox]);
-        title(['Shank ', num2str(shankNo)]);
-        ylim([0 25]);
-        ylabel('Firing Rate (Hz)');
-        xticklabels({'Spont', 'Evoked'});
-        ax = gca; 
-        ax.FontSize = 12;
-        MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
-        MechRS(c).RankSum = ranksum(SpBox, EvBox);
-        if MechRS(c).RankSum <= 0.05
-                MechRS(c).Signifcant = true;
+c = 0;
+for a = 1:length(consCondNames)
+    figure('Name',['MechResponse_', consCondNames{1,a}], 'Color', 'white') 
+      
+
+        for shankNo = 1:nShanks
+            index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+             c = c + 1;
+            Spont = [consCondNames{1,a}, '_Counts_Spont'];
+            SpBox = clInfo.(Spont)(index);
+            Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+            EvBox = clInfo.(Evoked)(index);
+            subplot(1,nShanks, shankNo);
+            boxplot([SpBox, EvBox]);
+            title(['Shank ', num2str(shankNo)]);
+            ylim([0 25]);
+            ylabel('Firing Rate (Hz)');
+            xticklabels({'Spont', 'Evoked'});
+            ax = gca; 
+            ax.FontSize = 12;
+            MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
+            MechRS(c).RankSum = ranksum(SpBox, EvBox);
+            if MechRS(c).RankSum <= 0.05
+                    MechRS(c).Signifcant = true;
+            end
+
+            clear SpBox; clear EvBox;
         end
-        c = c + 1;
-        clear SpBox; clear EvBox;
-    end
+end
+
     
     
