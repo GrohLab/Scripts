@@ -282,42 +282,59 @@ for a = 1:length(consCondNames) - 1
            IdVs(d+c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(1).Activity(c).Type, '_Response'];
            IdVs(d+c).Clusters = find(clInfo.(IdVs(d+c).name));
        end
-      d = d + 2;
+      d = d + length(consCondNames);
     end
 end
+
+%% Determining nShanks
+
+tShanks = sum(clInfo.shank == [1:100]);
+nShanks = sum (tShanks ~= false);
 
 %% Plotting spontaneous activity rates
 
 rW = responseWindow(2)-responseWindow(1);
-
-for a = 1: length(consCondNames)
-   
-    Spont = [consCondNames{1,a}, '_Counts_Spont'];
-    SpontaneousBox(:,a) = clInfo.(Spont)(IdActive.Clusters);
-    Med(1,a) = median(SpontaneousBox(:,a))/rW;
-    Labels{a,1} = consCondNames{1,a};
-end
-SpontaneousBox = SpontaneousBox/rW; 
-figure; boxplot(SpontaneousBox);
-title('Spontaneous Activity');
-ylabel('Firing Rate (Hz)');
-xticklabels(Labels)
-% configureFigureToPDF(SpontaneousBox);
-
-
-% Getting Wilcoxon rank sums for box plots
 c = 1;
-for a = 1: length(consCondNames) - 1
-    for b = (a + 1): length(consCondNames)        
-        rs(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}];
-        rs(c).RankSum = ranksum(SpontaneousBox(:,a), SpontaneousBox(:,b));
-        if rs(c).RankSum <= 0.05
-            rs(c).Signifcant = true;
-        else
-            rs(c).Significant = false;
-        end
-        
-        c = c + 1;
+d = 0;
+figure;
+for shankNo = 1:nShanks
+    
+index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+    
+    for a = 1: length(consCondNames)
+
+        Spont = [consCondNames{1,a}, '_Counts_Spont'];
+        SpontaneousBox(:,a) = clInfo.(Spont)(index);
+        Med(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
+        Labels{a,1} = consCondNames{1,a};
     end
+    SpontaneousBox = SpontaneousBox/rW; 
+    
+    subplot(1, nShanks, shankNo);
+    boxplot(SpontaneousBox);
+    title(['Shank ', num2str(shankNo)]);
+    ylim([0 25]);
+    ylabel('Firing Rate (Hz)');
+    xticklabels(Labels)
+    ax = gca; 
+    ax.FontSize = 12;
+    % configureFigureToPDF(SpontaneousBox);
+
+
+    % Getting Wilcoxon rank sums for box plots
+    
+    for a = 1: length(consCondNames) - 1
+        for b = (a + 1): length(consCondNames)        
+            rs(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+            rs(c).RankSum = ranksum(SpontaneousBox(:,a), SpontaneousBox(:,b));
+            if rs(c).RankSum <= 0.05
+                rs(c).Signifcant = true;
+            end
+
+            c = c + 1;
+        end
+    end 
+    d = d + length(consCondNames);
+    clear SpontaneousBox
 end
 
