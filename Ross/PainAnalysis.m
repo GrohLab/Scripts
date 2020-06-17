@@ -289,7 +289,7 @@ end
 %% Determining nShanks
 
 tShanks = sum(clInfo.shank == [1:100]);
-nShanks = sum (tShanks ~= false);
+nShanks = sum(tShanks ~= false);
 
 %% Plotting spontaneous activity rates
 
@@ -305,8 +305,8 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
 
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         SpontaneousBox(:,a) = clInfo.(Spont)(index);
-        Med(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
-        Labels{a,1} = consCondNames{1,a};
+        SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
+        SLabels{a,1} = consCondNames{1,a};
     end
     SpontaneousBox = SpontaneousBox/rW; 
     
@@ -315,7 +315,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     title(['Shank ', num2str(shankNo)]);
     ylim([0 25]);
     ylabel('Firing Rate (Hz)');
-    xticklabels(Labels)
+    xticklabels(SLabels)
     ax = gca; 
     ax.FontSize = 12;
     % configureFigureToPDF(SpontaneousBox);
@@ -325,10 +325,10 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     
     for a = 1: length(consCondNames) - 1
         for b = (a + 1): length(consCondNames)        
-            rs(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-            rs(c).RankSum = ranksum(SpontaneousBox(:,a), SpontaneousBox(:,b));
-            if rs(c).RankSum <= 0.05
-                rs(c).Signifcant = true;
+            SpontRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+            SpontRS(c).RankSum = ranksum(SpontaneousBox(:,a), SpontaneousBox(:,b));
+            if SpontRS(c).RankSum <= 0.05
+                SpontRS(c).Signifcant = true;
             end
 
             c = c + 1;
@@ -337,4 +337,53 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     d = d + length(consCondNames);
     clear SpontaneousBox
 end
+
+%% PLotting evoked activity rates
+
+rW = responseWindow(2)-responseWindow(1);
+c = 1;
+d = 0;
+figure;
+for shankNo = 1:nShanks
+    
+index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+    
+    for a = 1: length(consCondNames)
+
+        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+        EvokedBox(:,a) = clInfo.(Evoked)(index);
+        EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
+        ELabels{a,1} = consCondNames{1,a};
+    end
+    EvokedBox = EvokedBox/rW; 
+    
+    subplot(1, nShanks, shankNo);
+    boxplot(EvokedBox);
+    title(['Shank ', num2str(shankNo)]);
+    ylim([0 25]);
+    ylabel('Firing Rate (Hz)');
+    xticklabels(ELabels)
+    ax = gca; 
+    ax.FontSize = 12;
+    % configureFigureToPDF(EvokedBox);
+
+
+    % Getting Wilcoxon rank sums for box plots
+    
+    for a = 1: length(consCondNames) - 1
+        for b = (a + 1): length(consCondNames)        
+            EvRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+            EvRS(c).RankSum = ranksum(EvokedBox(:,a), EvokedBox(:,b));
+            if EvRS(c).RankSum <= 0.05
+                EvRS(c).Signifcant = true;
+            end
+
+            c = c + 1;
+        end
+    end 
+    d = d + length(consCondNames);
+    clear EvokedBox
+end
+
+
 
