@@ -294,8 +294,29 @@ for a = 1: length(consCondNames)
    
     Spont = [consCondNames{1,a}, '_Counts_Spont'];
     SpontaneousBox(:,a) = clInfo.(Spont)(IdActive.Clusters);
+    Med(1,a) = median(SpontaneousBox(:,a))/rW;
 end
 SpontaneousBox = SpontaneousBox/rW; 
 figure; boxplot(SpontaneousBox);
+title('Spontaneous Activity');
+ylabel('Firing Rate (Hz)');
+% need xticks to be consCondNames
 configureFigureToPDF(SpontaneousBox);
+
+
+% Getting Wilcoxon rank sum for box plots
+c = 1;
+for a = 1: length(consCondNames) - 1
+    for b = (a + 1): length(consCondNames)        
+        rs(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}];
+        rs(c).RankSum = ranksum(SpontaneousBox(:,a), SpontaneousBox(:,b));
+        if rs(c).RankSum <= 0.05
+            rs(c).Signifcant = true;
+        else
+            rs(c).Significant = false;
+        end
+        
+        c = c + 1;
+    end
+end
 
