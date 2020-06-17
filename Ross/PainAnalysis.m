@@ -41,7 +41,7 @@ end
     % Number of good clusters 
     Ncl = numel(goods);
     
-    continuousSignals = 
+   % continuousSignals = 
     
     %% Inter-spike intervals
 isiFile = fullfile(dataDir,[expName,'_ISIvars.mat']);
@@ -295,16 +295,17 @@ for a = 1: length(consCondNames)
     Spont = [consCondNames{1,a}, '_Counts_Spont'];
     SpontaneousBox(:,a) = clInfo.(Spont)(IdActive.Clusters);
     Med(1,a) = median(SpontaneousBox(:,a))/rW;
+    Labels{a,1} = consCondNames{1,a};
 end
 SpontaneousBox = SpontaneousBox/rW; 
 figure; boxplot(SpontaneousBox);
 title('Spontaneous Activity');
 ylabel('Firing Rate (Hz)');
-% need xticks to be consCondNames
-configureFigureToPDF(SpontaneousBox);
+xticklabels(Labels)
+% configureFigureToPDF(SpontaneousBox);
 
 
-% Getting Wilcoxon rank sum for box plots
+% Getting Wilcoxon rank sums for box plots
 c = 1;
 for a = 1: length(consCondNames) - 1
     for b = (a + 1): length(consCondNames)        
