@@ -92,7 +92,7 @@ fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow(1)*1e3, responseWin
 fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
 spontaneousWindow = -flip(responseWindow);
 
-%% Evening out Condition Trials
+%% Evening out Condition trials
 
 for a = 1: length(Conditions)
     sZ(1,a) = length(Conditions(a).Triggers);
@@ -208,6 +208,7 @@ for ccond = consideredConditions
     counter2 = counter2 + 1;
 end
 Na = sum(delayFlags,1);
+figure; imagesc(delayFlags);
 %% Computing which units/clusters/putative neurons respond to the stimulus
 % Logical indices for fetching the stack values
 sponActStackIdx = tx >= spontaneousWindow(1) & tx <= spontaneousWindow(2);
@@ -245,8 +246,8 @@ save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Res
 
 %% Getting cluster info and adding variables to table
 clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
-clInfo = addvars(clInfo,~badsIdx','NewVariableNames','ActiveUnit','After','id');
-clInfo.shank = arrayfun(setShank, clInfo.channel);
+% clInfo = addvars(clInfo,~badsIdx','NewVariableNames','ActiveUnit','After','id');
+% clInfo.shank = arrayfun(setShank, clInfo.channel);
 
 
 for a = 1: length(consCondNames)
@@ -371,7 +372,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     clear SpontaneousBox
 end
 
-%% PLotting evoked activity rates
+%% Plotting evoked activity rates
 
 rW = responseWindow(2)-responseWindow(1);
 c = 1;
