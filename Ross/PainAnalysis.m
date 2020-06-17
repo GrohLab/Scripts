@@ -104,7 +104,7 @@ for a = 1: length(Conditions)
     a = a + 1;
     else
         Conditions(a).Difference = length(Conditions(a).Triggers) - length(Conditions(c).Triggers);
-        Ind = randperm(length(Conditions(a).Triggers), Conditions(a).Difference)
+        Ind = randperm(length(Conditions(a).Triggers), Conditions(a).Difference);
         Conditions(a).Triggers(Ind',:) = [];
     end
 end
