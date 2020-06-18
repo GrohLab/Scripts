@@ -50,9 +50,15 @@ ltOn = find(lt(:,1));
  hold on
  plot(ltOn,laserSignal(ltOn),'o')
 
+<<<<<<< HEAD
 lstrength = [0,2,5,10,50,70,100,0,2,5,10,50,70,100]; %strength of laser
 lsub=8; %which laser strength do you want to look at ?
 nstim=50;  %How many stimuli were applied with this laserintensity?
+=======
+lstrength = [70,50,10,0,70,50,10,0]; %strength of laser
+lsub=1; %which laser strength do you want to look at ?
+nstim=100;  %How many stimuli were applied with this laserintensity?
+>>>>>>> d4043cd55906b135efeca0773f1c2b2e2e3bd346
 
 %lstrength = [0,10,50,70]; %strength of laser
 %lsub=5; %which laser strength do you want to look at ?
@@ -262,7 +268,7 @@ lims=[100 500] %manually insert limits here
 numplots=numel(Pop)
 
 tall=4% column
-wide=2 %row
+wide=2 %row 
 
 for i=1:numplots
     subplot(tall,wide,i)
@@ -309,8 +315,49 @@ end
 
 xlabel ms
 grid on
+<<<<<<< HEAD
 xlim([0 50])
+=======
+xlim([0 25])
+
+
+%%    DISTRIBUTION OF LATENCY TO FIRST SPIKE PER UNIT
+%desired window to measure within
+minspike=0;maxspike=15;
+
+
+for j=1:numel(TriggeredUnitSpikeTimes)
+    Sp=TriggeredUnitSpikeTimes{j}  %get 1 unit
+    Sp =cellfun(@(sp) sp((sp>0 & sp<=15)),Sp,'UniformOutput',0);  %limit spikes to desire range
+    subset=1;
+    for i=1:numel(Sp)
+        if ~isempty(Sp{i})
+            Sp{i}=Sp{i}(subset),
+        else Sp{i}= [];
+        end
+    end
+    
+    sp=cell2mat(Sp);
+    
+    
+    subplot(tall,wide,j)
+    hist(sp,maxspike*2)
+    xlabel 'latency in ms'
+end
+
+%how many trials have response
+%how many counts per trial
+
+%%
+
+>>>>>>> d4043cd55906b135efeca0773f1c2b2e2e3bd346
 %% 
+
+%latency to spike of a certain order
+
+sp=TSpT{1}
+
+Sp =cellfun(@(x) x*1000, Sp,'UniformOutput',0);
 
 %close all
 figure
