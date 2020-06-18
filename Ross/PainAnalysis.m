@@ -246,6 +246,13 @@ save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Res
 %% Getting cluster info and adding variables to table
 % clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
 % clInfo = addvars(clInfo,~badsIdx','NewVariableNames','ActiveUnit','After','id');
+% chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
+% chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
+% [m,b] = lineariz(chanPos(:,1), 6, 1)
+% shank = m*chanPos(:,1) + b
+% shank = round(shank)
+% shMap = containers.Map(chanMap, shank);
+% setShank = @(x) shMap(x);
 % clInfo.shank = arrayfun(setShank, clInfo.channel);
 
 
@@ -346,7 +353,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
                 title([num2str(shankNo)]);
                 xticklabels({[], []});
     end
-    ylim([0 25]);
+    ylim([0 20]);
     ax = gca; 
     ax.FontSize = 12;
     ax = gca; 
@@ -400,7 +407,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
                 title([num2str(shankNo)]);
                 xticklabels({[], []});
     end
-    ylim([0 25]);
+    ylim([0 20]);
     ax = gca; 
     ax.FontSize = 12;
     % configureFigureToPDF(EvokedBox);
@@ -450,7 +457,7 @@ for a = 1:length(consCondNames)
                 title([num2str(shankNo)]);
                 xticklabels({[], []});
             end
-            ylim([0 25]);
+            ylim([0 20]);
             ax = gca; 
             ax.FontSize = 12;
             MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
@@ -463,5 +470,49 @@ for a = 1:length(consCondNames)
         end
 end
 
+%% Relative Responses (unfiltered for mech significance) 
+
+rW = responseWindow(2)-responseWindow(1);
+c = 1;
+d = 0;
+
+for shankNo = 1:nShanks
+figure('Name', ['Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
+index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+    
+    for a = 1: length(consCondNames)
+        Spont = [consCondNames{1,a}, '_Counts_Spont'];
+        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+        RRBox(:,a) = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index));
+        RRMed(1,(d+a)) = median(RRBox(:,a))/rW;
+        RLabels{a,1} = consCondNames{1,a};
+    end
+    RRBox = RRBox/rW; 
     
     
+    boxplot(RRBox);
+    title(['Shank ', num2str(shankNo)]);
+    ylabel('Relative Response (Hz)');
+    xticklabels(RLabels)
+    ylim([0 5]);
+    ax = gca; 
+    ax.FontSize = 12;
+    % configureFigureToPDF(EvokedBox);
+
+
+    % Getting Wilcoxon rank sums for box plots
+    
+    for a = 1: length(consCondNames) - 1
+        for b = (a + 1): length(consCondNames)        
+            RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+            RR_RS(c).RankSum = ranksum(RRBox(:,a), RRBox(:,b));
+            if RR_RS(c).RankSum <= 0.05
+                RR_RS(c).Signifcant = true;
+            end
+
+            c = c + 1;
+        end
+    end 
+    d = d + length(consCondNames);
+    clear RRBox
+end
