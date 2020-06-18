@@ -218,10 +218,13 @@ for i=2:size(dst,1) %for every unit
 end
 
 
+%%
+
 figure
 nsp=floor(sqrt(numel(Pop)));
 
-%look here to change parameters if too many neurons
+ %overall scaling for y axis
+%look here tyscaling = 1.05 o change parameters if too many neurons
 tiled=true
 tall=1% column
 wide=2 %row
@@ -234,7 +237,7 @@ for i=1:numel(Pop)
         else
             figure
         end
-        h=histogram(Pop{i},'binwidth',binSz)
+        h=histogram(Pop{i}*1000,'binwidth',binSz*1000,'Normalization','count')
         %xtick_ms=10.^get(gca,'XTick');
         %set(gca,'XTickLabel',xtick_ms)
         title([ClusterIds{i} '_ClusterId'], 'Interpreter', 'none')
@@ -243,11 +246,35 @@ for i=1:numel(Pop)
         hold on
         plot(psthTX*1000, PSTH(i,:))
         axis tight
-        ylim([0 max(max(PSTH))*1.05])
+        ylim([0 max(max(PSTH))*yscaling])
     else
     end
 end
 
+%% now manual change if necessary
+%  click on figure, then run block of code
+lims=[100 500] %manually insert limits here
+count=0
+numplots=2
+
+tall=1% column
+wide=2 %row
+
+for i=1:numplots
+    subplot(tall,wide,i)
+    ylim([0 lims(i)])
+end
+
+
+%%
+%if you wanted to zoom
+for i=1:numplots
+    subplot(tall,wide,i)
+    xlim([-1 10])
+end
+
+
+%%
 print -dmeta
 print(gcf,'allPSTHs','-dmeta')
 
