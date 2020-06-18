@@ -1,8 +1,9 @@
 %% light triggered psths
 
 clear all
-dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
-dataDir = 'C:\Users\Rebecca Mease\Seafile\Time Axis MatlabProblem- StartingPSTH.m';
+%dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
+%dataDir = 'C:\Users\Rebecca Mease\Seafile\Time Axis MatlabProblem- StartingPSTH.m';
+dataDir = 'Z:\Melina\y axis scalling\optoExp-pre-post-DREADD_100x10ms-2sec_70,50,10,0_merged';
 
 
 cd(dataDir)
@@ -50,7 +51,7 @@ ltOn = find(lt(:,1));
  plot(ltOn,laserSignal(ltOn),'o')
 
 lstrength = [70,50,10,0,70,50,10,0]; %strength of laser
-lsub=1; %which laser strength do you want to look at ?
+lsub=5; %which laser strength do you want to look at ?
 nstim=100;  %How many stimuli were applied with this laserintensity?
 
 %lstrength = [0,10,50,70]; %strength of laser
@@ -103,9 +104,9 @@ sortedData(goods,:)  %display which units will be used
 %2. 
 
 labels={'BC','POm'}  
-regionAssignment={[207,407]... %cluster ID from channels in 'BC'  %#17; 50x_merged
-   % [71,72,81,90,107,118,148,159,165,173,181,217,244,301,323,354,360,366,381,386,397]}  %cluster ID from channels in 'POm'
-      [79,80,124,138,189,213,261,277,294,315,330,403]}        %VPM 
+regionAssignment={[358,373,388,449,481,496,556,557]... %cluster ID from channels in 'BC'  %#17; 50x_merged
+    [392,410,431,195,461,126,459,494,501,508,511,515,525,529,545,551]}  %cluster ID from channels in 'POm'
+    %  [284,285,286,306,326,338,407,427,63,483,543,553]}        %VPM 
  
 unit_labels=str2num(char(sortedData(goods,1)));
 
@@ -150,14 +151,14 @@ clearvars *Obj laser
 %% User controlling variables to change details of PSTHs
 % Time window to see the cluster activation in seconds
 
-timeLapse = [0.02, 0.05];
+timeLapse = [0.02, 0.2];
 %timeLapse = [0.040, 0.040];
 %timeLapse = [0.040, 0.5];  % time before and time after, seconds (this variable will control output data that we save below)
 %timeLapse = [0.01, 0.7];
 
 % Bin size for PSTHs
-binSz = 0.0005; %in seconds
-%binSz = 0.0005; % 0,5ms
+%binSz = 0.0005; %in seconds
+binSz = 0.0005; % 0,5ms
 consideredConditions = 1;
 Nccond = length(consideredConditions);
 % Adding all the triggers from the piezo and the laser in one array
@@ -208,13 +209,16 @@ ClusterIds=sortedData(desiredUnits,1);
 tx = linspace(-timeLapse(1),timeLapse(2),Nt);
 psthTX = linspace(-timeLapse(1),timeLapse(2),size(PSTH,2));
 
-Pop={};
+Pop={};TriggeredUnitSpikeTimes={};
 for i=2:size(dst,1) %for every unit
     Sp={};
      for j=1:size(dst,3) %for every trial
          Sp{j}=tx(find(squeeze(dst(i,:,j))));
      end
+     
      Pop{i-1}=cell2mat(Sp);
+     Sp =cellfun(@(x) x*1000, Sp,'UniformOutput',0);
+     TriggeredUnitSpikeTimes{i-1}=cellfun(@transpose,Sp,'UniformOutput',0);
 end
 
 
@@ -224,9 +228,10 @@ figure
 nsp=floor(sqrt(numel(Pop)));
 
  %overall scaling for y axis
-%look here tyscaling = 1.05 o change parameters if too many neurons
+%look here to change parameters if too many neurons
 tiled=true
-tall=1% column
+yscaling = 1.05 
+tall=4% column
 wide=2 %row
 count=0
 for i=1:numel(Pop)
@@ -254,10 +259,9 @@ end
 %% now manual change if necessary
 %  click on figure, then run block of code
 lims=[100 500] %manually insert limits here
-count=0
-numplots=2
+numplots=numel(Pop)
 
-tall=1% column
+tall=4% column
 wide=2 %row
 
 for i=1:numplots
@@ -268,9 +272,11 @@ end
 
 %%
 %if you wanted to zoom
+numplots=numel(Pop)
+
 for i=1:numplots
     subplot(tall,wide,i)
-    xlim([-1 10])
+    xlim([-5 25])
 end
 
 
@@ -290,14 +296,27 @@ print(fig,fullfile(dataDir,sprintf('%s %s.pdf',expName,[conditionString name])),
 %PopRelativeSpikeTimes=getRasterFromStack(dst,false(size(ltOn)),allSelectionIdx, timeLapse, fs, true);  %
 
 
+%% nicer rasters for later 
+figure
+lastlevel=0;
+TSpT=TriggeredUnitSpikeTimes([1:7])  %which of the clusters do you want?
+ppms=1;
+for n=1:numel(TSpT)
+    if mod(n,2)==0, col='b';else col='k';end
+    [R lastlevel]=manyRasters(TSpT{n},col,.9,ppms,0+lastlevel);
+end
 
+
+xlabel ms
+grid on
+xlim([0 25])
 %% 
 
 %close all
 figure
 Spikes=sortedData(desiredUnits,2);
 
-binsize=.050 %in seconds CHANGE THIS AND LOOK IN PCA
+binsize=.500 %in seconds CHANGE THIS AND LOOK IN PCA
 %binsize=0.0001
 spikes =Spikes{:};
 H=histogram(spikes,'BinWidth',binsize)   
@@ -307,8 +326,8 @@ Rs=[];
 
 %change these if need be=========================
 tiled=true
-tall=4 %rows
-wide=5 %columns
+tall=7 %rows
+wide=1 %columns
 maxSubPanels=20; 
 %=========================
 
@@ -358,7 +377,7 @@ hist(rcoeff(:))
 [i,j,rcoeff(ind2sub(size(rcoeff),find(rcoeff>0.5)))]             % display their (row,col) indices
 
 
-%%
+%%  lazy neural manifold
    [COEFF, SCORE, LATENT] = pca(Rs)
    figure
    plot(1:numel(LATENT),cumsum(LATENT)/sum(LATENT))
