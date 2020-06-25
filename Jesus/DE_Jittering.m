@@ -31,6 +31,8 @@ clusterSpikeRate = totSpkCount/Nt;
 silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
+clInfo = addvars(clInfo,~badsIdx,'After','id','NewVariableNames','ActiveUnit');
+
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 % Logical spike trace for the first good cluster

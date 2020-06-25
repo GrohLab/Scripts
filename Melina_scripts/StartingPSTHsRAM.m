@@ -3,7 +3,7 @@
 clear all
 %dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
 %dataDir = 'C:\Users\Rebecca Mease\Seafile\Time Axis MatlabProblem- StartingPSTH.m';
-dataDir = 'Z:\Melina\y axis scalling\optoExp-pre-post-DREADD_100x10ms-2sec_70,50,10,0_merged';
+dataDir = 'F:\Kilosorting\#29\2020-03-23\optoExp-pre-post_DREADD_50x10ms-2sec_0,2,5,10,50,70,100_merged';
 
 
 cd(dataDir)
@@ -50,9 +50,15 @@ ltOn = find(lt(:,1));
  hold on
  plot(ltOn,laserSignal(ltOn),'o')
 
+<<<<<<< HEAD
+lstrength = [0,2,5,10,50,70,100,0,2,5,10,50,70,100]; %strength of laser
+lsub=8; %which laser strength do you want to look at ?
+nstim=50;  %How many stimuli were applied with this laserintensity?
+=======
 lstrength = [70,50,10,0,70,50,10,0]; %strength of laser
 lsub=1; %which laser strength do you want to look at ?
 nstim=100;  %How many stimuli were applied with this laserintensity?
+>>>>>>> d4043cd55906b135efeca0773f1c2b2e2e3bd346
 
 %lstrength = [0,10,50,70]; %strength of laser
 %lsub=5; %which laser strength do you want to look at ?
@@ -104,9 +110,9 @@ sortedData(goods,:)  %display which units will be used
 %2. 
 
 labels={'BC','POm'}  
-regionAssignment={[358,373,388,449,481,496,556,557]... %cluster ID from channels in 'BC'  %#17; 50x_merged
-    [392,410,431,195,461,126,459,494,501,508,511,515,525,529,545,551]}  %cluster ID from channels in 'POm'
-    %  [284,285,286,306,326,338,407,427,63,483,543,553]}        %VPM 
+regionAssignment={[381,405,444,74,459,460,461,462,38]... %cluster ID from channels in 'BC'  %#17; 50x_merged
+    [309,353,153,436,456,457,263,128,175,215,186,129]}  %cluster ID from channels in 'POm'
+    %  [290,301,318,343,366,427,137,94]}        %VPM 
  
 unit_labels=str2num(char(sortedData(goods,1)));
 
@@ -299,7 +305,7 @@ print(fig,fullfile(dataDir,sprintf('%s %s.pdf',expName,[conditionString name])),
 %% nicer rasters for later 
 figure
 lastlevel=0;
-TSpT=TriggeredUnitSpikeTimes([1:7])  %which of the clusters do you want?
+TSpT=TriggeredUnitSpikeTimes([1:9])  %which of the clusters do you want?
 ppms=1;
 for n=1:numel(TSpT)
     if mod(n,2)==0, col='b';else col='k';end
@@ -309,6 +315,9 @@ end
 
 xlabel ms
 grid on
+<<<<<<< HEAD
+xlim([0 50])
+=======
 xlim([0 25])
 
 
@@ -341,6 +350,7 @@ end
 
 %%
 
+>>>>>>> d4043cd55906b135efeca0773f1c2b2e2e3bd346
 %% 
 
 %latency to spike of a certain order
