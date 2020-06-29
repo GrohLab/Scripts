@@ -1,5 +1,5 @@
 % 30.08.19 Jittering analysis by using the Data Explorer. 
-clearvars
+% clearvars
 %% Load the data
 % Choosing the working directory
 dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
@@ -431,12 +431,56 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
 end
 
 
-%% Population MRs for each condition (unfiltered for mech significance).
+%% Population MRs for each condition.
 
-rW = responseWindow(2)-responseWindow(1);
+% Filter for only mechanically responsive clusters?
+ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+    'Yes','No','Yes');
+if strcmp(ansFilt,'Yes')
+    rW = responseWindow(2)-responseWindow(1);
+    c = 0;
+    d = 0;
+   for shankNo = 1:nShanks
+    figure('Name', ['Filtered_Mechanical_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
+    
+
+         for a = 1: length(consCondNames)
+            Sig = [consCondNames{1,a}, '_MR'];
+            index = find(clInfo.(Sig) & clInfo.shank == shankNo);
+            Spont = [consCondNames{1,a}, '_Counts_Spont'];
+            Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+            SpBox{a} = clInfo.(Spont)(index)/rW; 
+            EvBox{a} = clInfo.(Evoked)(index)/rW;
+            SpMed(1,(d+a)) = median(SpBox{a});
+            EvMed(1,(d+a)) = median(EvBox{a});
+            MLabels{a,1} = consCondNames{1,a};
+            subplot(1,length(consCondNames), a);
+            boxplot([SpBox{a}, EvBox{a}]);
+             title(consCondNames{a});
+             if a == 1
+                ylabel('Firing Rate (Hz)');
+            end
+            xticklabels({'Spont', 'Evoked'});
+            ylim([0 40]);
+            ax = gca; 
+            ax.FontSize = 12;
+            if sum(SpBox{a}) ~= false && sum(EvBox{a} ~= false)
+                c = c + 1;
+                MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
+                MechRS(c).RankSum = ranksum(clInfo.(Spont)(index)/rW, clInfo.(Evoked)(index)/rW);
+                if MechRS(c).RankSum <= 0.05
+                        MechRS(c).Signifcant = true;
+                end
+            end
+         end
+        d = d + length(consCondNames);
+   end
+   
+else
+rW = responseWindow(2) - responseWindow(1);
 c = 0;
 for a = 1:length(consCondNames)
-    figure('Name',['MechResponse_', consCondNames{1,a}], 'Color', 'white') 
+    figure('Name',['Unfiltered MechResponse_', consCondNames{1,a}], 'Color', 'white') 
       
 
         for shankNo = 1:nShanks
@@ -469,50 +513,282 @@ for a = 1:length(consCondNames)
             clear SpBox; clear EvBox;
         end
 end
+end
 
-%% Relative Responses (unfiltered for mech significance) 
+%% Relative Responses
 
-rW = responseWindow(2)-responseWindow(1);
-c = 1;
-d = 0;
-
-for shankNo = 1:nShanks
-figure('Name', ['Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+% Filter for only mechanically responsive clusters?
+ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+    'Yes','No','Yes');
+if strcmp(ansFilt,'Yes')
+    rW = responseWindow(2)-responseWindow(1);
+    c = 1;
+    d = 0;
+    for shankNo = 1:nShanks
+    figure('Name', ['Filtered_Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
     
-    for a = 1: length(consCondNames)
-        Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        RRBox(:,a) = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index));
-        RRMed(1,(d+a)) = median(RRBox(:,a))/rW;
-        RLabels{a,1} = consCondNames{1,a};
-    end
-    RRBox = RRBox/rW; 
-    
-    
-    boxplot(RRBox);
-    title(['Shank ', num2str(shankNo)]);
-    ylabel('Relative Response (Hz)');
-    xticklabels(RLabels)
-    ylim([0 5]);
-    ax = gca; 
-    ax.FontSize = 12;
-    % configureFigureToPDF(EvokedBox);
 
-
-    % Getting Wilcoxon rank sums for box plots
-    
-    for a = 1: length(consCondNames) - 1
-        for b = (a + 1): length(consCondNames)        
-            RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-            RR_RS(c).RankSum = ranksum(RRBox(:,a), RRBox(:,b));
-            if RR_RS(c).RankSum <= 0.05
-                RR_RS(c).Signifcant = true;
+        for a = 1: length(consCondNames)
+            Sig = [consCondNames{1,a}, '_MR'];
+            index = find(clInfo.(Sig) & clInfo.shank == shankNo);
+            Spont = [consCondNames{1,a}, '_Counts_Spont'];
+            Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+            RRBox{a} = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index))/rW; 
+            RRMed(1,(d+a)) = median(RRBox{a});
+            RLabels{a,1} = consCondNames{1,a};
+            subplot(1,length(consCondNames), a);
+            boxplot(RRBox{a});
+            if a == 1
+                title(['Shank ', num2str(shankNo)]);
+                ylabel('Relative Responses (Hz)');
             end
-
-            c = c + 1;
+            xticklabels(RLabels{a,1})
+            ylim([0 5]);
+            ax = gca; 
+            ax.FontSize = 12;
         end
-    end 
-    d = d + length(consCondNames);
-    clear RRBox
+       
+
+
+        % Getting Wilcoxon rank sums for box plots
+
+        for a = 1: length(consCondNames) - 1
+            for b = (a + 1): length(consCondNames)        
+                if sum(RRBox{a}) ~= false && sum(RRBox{b} ~= false)
+                    RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+                    RR_RS(c).RankSum = ranksum(RRBox{a}, RRBox{b});
+                    if RR_RS(c).RankSum <= 0.05
+                        RR_RS(c).Signifcant = true;
+                    end
+                end
+
+                c = c + 1;
+            end
+        end 
+        d = d + length(consCondNames);
+        
+    end
+else
+    
+    rW = responseWindow(2)-responseWindow(1);
+    c = 1;
+    d = 0;
+
+    for shankNo = 1:nShanks
+    figure('Name', ['Unfiltered_Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
+    index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+
+        for a = 1: length(consCondNames)
+            Spont = [consCondNames{1,a}, '_Counts_Spont'];
+            Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+            RrBox(:,a) = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index))/rW;
+            RrMed(1,(d+a)) = median(RrBox(:,a));
+            RLabels{a,1} = consCondNames{1,a};
+        end
+
+        boxplot(RrBox);
+        title(['Shank ', num2str(shankNo)]);
+        ylabel('Relative Responses (Hz)');
+        xticklabels(RLabels)
+        ylim([0 5]);
+        ax = gca; 
+        ax.FontSize = 12;
+        % configureFigureToPDF(EvokedBox);
+
+
+        % Getting Wilcoxon rank sums for box plots
+
+        for a = 1: length(consCondNames) - 1
+            for b = (a + 1): length(consCondNames)        
+                RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+                RR_RS(c).RankSum = ranksum(RrBox(:,a), RrBox(:,b));
+                if RR_RS(c).RankSum <= 0.05
+                    RR_RS(c).Signifcant = true;
+                end
+
+                c = c + 1;
+            end
+        end 
+        d = d + length(consCondNames);
+        clear RrBox
+    end
+end
+
+%% Get significantly different clusters
+gcans = questdlg(['Do you want to get the waveforms from the',...
+    ' ''responding'' clusters?'], 'Waveforms', 'Yes', 'No', 'No');
+if strcmp(gcans, 'Yes')
+    clWaveforms = getClusterWaveform(gclID(wruIdx), dataDir);
+end
+
+%% Addition mean signals to the Conditions variable
+if ~isfield(Conditions,'Stimulus') ||...
+        any(arrayfun(@(x) isempty(x.Stimulus), Conditions(consideredConditions)))
+    fprintf(1,'Writting the stimulus raw signal into Conditions variable:\n')
+    whFlag = contains(trigNames, whStim, 'IgnoreCase', 1);
+    lrFlag = contains(trigNames, cxStim, 'IgnoreCase', 1);
+    cdel = 1;
+    for cc = consideredConditions
+        fprintf(1,'- %s\n', Conditions(cc).name)
+        Conditions(cc).Stimulus = struct(...
+            'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
+            1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
+            1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
+        cdel = cdel + 1;
+    end
+    save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
+end
+
+
+%% Configuration structure
+configStructure = struct('Experiment', fullfile(dataDir,expName),...
+    'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
+    'BinSize_s', binSz, 'Trigger', struct('Name', condNames{chCond},...
+    'Edge',onOffStr), 'ConsideredConditions',{consCondNames});
+
+%% Filter question
+filterIdx = true(Ne,1);
+ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+    'Yes','No','Yes');
+filtStr = 'unfiltered';
+if strcmp(ansFilt,'Yes')
+    filterIdx = [true; wruIdx];
+    filtStr = 'filtered';
+end
+
+%% Getting the relative spike times for the whisker responsive units (wru)
+% For each condition, the first spike of each wru will be used to compute
+% the standard deviation of it.
+cellLogicalIndexing = @(x,idx) x(idx);
+isWithinResponsiveWindow =...
+    @(x) x > responseWindow(1) & x < responseWindow(2);
+
+firstSpike = zeros(Nwru,Nccond);
+M = 16;
+binAx = responseWindow(1):binSz:responseWindow(2);
+condHist = zeros(size(binAx,2)-1, Nccond);
+firstOrdStats = zeros(2,Nccond);
+condParams = zeros(M,3,Nccond);
+txpdf = responseWindow(1):1/fs:responseWindow(2);
+condPDF = zeros(numel(txpdf),Nccond);
+csvBase = fullfile(dataDir, expName);
+csvSubfx = sprintf(' VW%.1f-%.1f ms.csv', timeLapse(1)*1e3, timeLapse(2)*1e3);
+existFlag = false;
+condRelativeSpkTms = cell(Nccond,1);
+relativeSpkTmsStruct = struct('name',{},'SpikeTimes',{});
+spkDir = fullfile(dataDir, 'SpikeTimes');
+for ccond = 1:size(delayFlags,2)
+    csvFileName = [csvBase,' ',consCondNames{ccond}, csvSubfx];
+    relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
+        filterIdx(3:end), timeLapse, fs, true, false);
+    relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
+    relativeSpikeTimes(~filterIdx(2),:) = [];
+    condRelativeSpkTms{ccond} = relativeSpikeTimes;
+%     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
+%         'UniformOutput',false);
+    clSpkTms = cell(size(relativeSpikeTimes,1),1);
+    if exist(csvFileName, 'file') && ccond == 1
+        existFlag = true;
+        ansOW = questdlg(['The exported .csv files exist! ',...
+            'Would you like to overwrite them?'],'Overwrite?','Yes','No','No');
+        if strcmp(ansOW,'Yes')
+            existFlag = false;
+            fprintf(1,'Overwriting... ');
+        end
+    end
+    fID = 1;
+    if ~existFlag
+        fID = fopen(csvFileName,'w');
+        fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
+    end
+    for cr = 1:size(relativeSpikeTimes, 1)
+        clSpkTms(cr) = {sort(cell2mat(relativeSpikeTimes(cr,:)))};
+        if fID > 2
+            fprintf(fID,'%s,',gclID{cr});
+            fprintf(fID,'%f,',clSpkTms{cr});fprintf(fID,'\n');
+        end
+    end
+    if fID > 2
+        fclose(fID);
+    end
+    relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
+    relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
+    %{
+    spikeTimesINRespWin = cellfun(cellLogicalIndexing,...
+        relativeSpikeTimes, respIdx, 'UniformOutput',false);
+    allSpikeTimes = cell2mat(spikeTimesINRespWin(:)');
+    condParams(:,:,ccond) = emforgmm(allSpikeTimes, M, 1e-6, 0);
+    condPDF(:,ccond) = genP_x(condParams(:,:,ccond), txpdf);
+    firstOrdStats(:,ccond) = [mean(allSpikeTimes), std(allSpikeTimes)];
+    hfig = figure('Visible', 'off'); h = histogram(allSpikeTimes, binAx,...
+        'Normalization', 'probability');
+    condHist(:,ccond) = h.Values;
+    close(hfig)
+    for ccl = 1:Nwru
+        frstSpikeFlag = ~cellfun(@isempty,spikeTimesINRespWin(ccl,:));
+        firstSpike(ccl,ccond) = std(...
+            cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));    
+    end
+    %}
+end
+save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
+    'relativeSpkTmsStruct','configStructure')
+%% Plotting the population activity
+
+orderedStr = 'ID ordered';
+dans = questdlg('Do you want to order the PSTH other than by IDs?',...
+    'Order', 'Yes', 'No', 'No');
+ordSubs = 1:nnz(filterIdx(2:Ncl+1));
+pclID = gclID(filterIdx(2:Ncl+1));
+if strcmp(dans, 'Yes')
+    if ~exist('clInfo','var')
+        clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+    end
+    % varClass = varfun(@class,clInfo,'OutputFormat','cell');
+    [ordSel, iOk] = listdlg('ListString', clInfo.Properties.VariableNames,...
+        'SelectionMode', 'multiple');
+    orderedStr = [];
+    ordVar = clInfo.Properties.VariableNames(ordSel);
+    for cvar = 1:numel(ordVar)
+        orderedStr = [orderedStr, sprintf('%s ',ordVar{cvar})]; %#ok<AGROW>
+    end
+    orderedStr = [orderedStr, 'ordered'];
+    
+    if ~strcmp(ordVar,'id')
+        [~,ordSubs] = sortrows(clInfo(pclID,:),ordVar);
+    end
+end
+
+%% Plot PSTH
+goodsIdx = ~badsIdx';
+csNames = fieldnames(Triggers);
+for ccond = 1:Nccond
+    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
+        expName, Conditions(consideredConditions(ccond)).name, timeLapse*1e3,...
+        binSz*1e3, responseWindow*1e3, spontaneousWindow*1e3, onOffStr,...
+        orderedStr, filtStr);
+    [PSTH, trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
+        ~delayFlags(:,ccond),binSz,fs);
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    stims = stims - median(stims,2);
+    for cs = 1:size(stims,1)
+        if abs(log10(var(stims(cs,:),[],2))) < 13
+            [m,b] = lineariz(stims(cs,:),1,0);
+            stims(cs,:) = m*stims(cs,:) + b;
+        else
+            stims(cs,:) = zeros(1,Nt);
+        end
+    end
+    figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
+        [{Conditions(consideredConditions(ccond)).name};... 
+        pclID(ordSubs)],...
+        strrep(expName,'_','\_'),...
+        stims, csNames);
+    configureFigureToPDF(figs); 
+    figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
+        sprintf('^{%s}',orderedStr)];
+    if ~exist([figFileName,'.pdf'], 'file') || ~exist([figFileName,'.emf'], 'file')
+        print(figs,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
+        print(figs,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
+    end
 end
