@@ -95,7 +95,7 @@ end
 %norm_acc=norm_acc-mean(norm_acc);
 norm_acc = l2norm(aux_input_data)
 acc_t=1:numel(norm_acc);
-acc_t=acc_t/(fs/acc_ds)/2; % timebase in seconds BUT WHERE IS THIS 2 FACTOR COMING FROM?
+acc_t=acc_t/(fs/acc_ds); % timebase in seconds BUT WHERE IS THIS 2 FACTOR COMING FROM?
 
 %grab window of interest
 tsub=find(acc_t>=minTime & acc_t<maxTime);
