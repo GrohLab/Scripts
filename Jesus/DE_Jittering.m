@@ -247,9 +247,16 @@ stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
     responseWindow(1)*1e3, responseWindow(2)*1e3, spontaneousWindow(1)*1e3,...
     spontaneousWindow(2)*1e3);
 ccn = 1;
-for cc = indCondSubs
-    stFigName = [stFigBasename, consCondNames{ccn}, stFigSubfix];
-    ccn = ccn + 1;
+%for cc = indCondSubs
+for cc = 1:numel(figs)
+    if ~ismember(cc, indCondSubs)
+        altCondNames = strsplit(figs(cc).Children(2).Title.String,': ');
+        altCondNames = altCondNames{2};
+    else
+        altCondNames = consCondNames{ccn};
+        ccn = ccn + 1;
+    end
+    stFigName = [stFigBasename, altCondNames, stFigSubfix];
     if ~exist([stFigName,'.*'],'file')
         print(figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
         print(figs(cc),[stFigName,'.emf'],'-dmeta')
