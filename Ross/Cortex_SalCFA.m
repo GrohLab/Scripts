@@ -64,8 +64,8 @@ d = 0;
 figure('Name', ['Unfiltered_Mechanical_Responses'], 'Color', 'white');   
 
 for a = 1: length(consCondNames)
-        sIndex = find(Cortex.ActiveUnit & Cortex.shank == shankNo & Cortex.CFA_1 == false);
-        cIndex = find(Cortex.ActiveUnit & Cortex.shank == shankNo & Cortex.CFA_1 == true);
+        sIndex = find(Cortex.ActiveUnit & Cortex.CFA_1 == false);
+        cIndex = find(Cortex.ActiveUnit & Cortex.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalSpBox{a} = Cortex.(Spont)(sIndex)/rW; 
@@ -112,8 +112,8 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
 
  for a = 1: length(consCondNames)
         Sig = [consCondNames{1,a}, '_MR'];
-        sIndex = find(Cortex.(Sig) & Cortex.shank == shankNo & Cortex.CFA_1 == false);
-        cIndex = find(Cortex.(Sig) & Cortex.shank == shankNo & Cortex.CFA_1 == true);
+        sIndex = find(Cortex.(Sig) &  Cortex.CFA_1 == false);
+        cIndex = find(Cortex.(Sig) &  Cortex.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalSpBox{a} = Cortex.(Spont)(sIndex)/rW; 
@@ -148,14 +148,14 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
         ax.FontSize = 15;
 
         subplot(2 ,2*length(consCondNames), a + 2* length(consCondNames));
-        pie([(sum(Cortex.ActiveUnit & Cortex.shank == shankNo & Cortex.CFA_1 == false) - length(sIndex)), length(sIndex)]);
+        pie([(sum(Cortex.ActiveUnit & Cortex.CFA_1 == false) - length(sIndex)), length(sIndex)]);
         labels = {'Unesponsive','Responsive'};
         legend(labels,'Location','southoutside','Orientation','vertical')
         ax = gca;
         ax.FontSize = 15;
 
         subplot(2, 2*length(consCondNames), 2*a + 2* length(consCondNames));
-        pie([(sum(Cortex.ActiveUnit & Cortex.shank == shankNo & Cortex.CFA_1 == true) - length(cIndex)), length(cIndex)]);
+        pie([(sum(Cortex.ActiveUnit & Cortex.CFA_1 == true) - length(cIndex)), length(cIndex)]);
         labels = {'Unesponsive','Responsive'};
         legend(labels,'Location','southoutside','Orientation','vertical')
         ax = gca;
@@ -191,8 +191,8 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
 figure('Name', ['Unfiltered_Relative_Responses'], 'Color', 'white');   
 
 for a = 1: length(consCondNames)
-        sIndex = find(Cortex.ActiveUnit & Cortex.shank == shankNo & Cortex.CFA_1 == false);
-        cIndex = find(Cortex.ActiveUnit & Cortex.shank == shankNo & Cortex.CFA_1 == true);
+        sIndex = find(Cortex.ActiveUnit & Cortex.CFA_1 == false);
+        cIndex = find(Cortex.ActiveUnit & Cortex.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalRrBox{a} = Cortex.(Evoked)(sIndex)/rW - Cortex.(Spont)(sIndex)/rW;
@@ -238,8 +238,8 @@ figure('Name', 'Filtered_Relative_Responses', 'Color', 'white');
 
 for a = 1: length(consCondNames)
         Sig = [consCondNames{1,a}, '_MR'];
-        sIndex = find(Cortex.(Sig) & Cortex.shank == shankNo & Cortex.CFA_1 == false);
-        cIndex = find(Cortex.(Sig) & Cortex.shank == shankNo & Cortex.CFA_1 == true);
+        sIndex = find(Cortex.(Sig) & Cortex.CFA_1 == false);
+        cIndex = find(Cortex.(Sig) & Cortex.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalRrBox{a} = Cortex.(Evoked)(sIndex)/rW - Cortex.(Spont)(sIndex)/rW;
