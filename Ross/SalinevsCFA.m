@@ -241,23 +241,23 @@ for cc = indCondSubs
 end
 
 %% Saving variables
-save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
+save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Conditions', 'Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
 
 %% Getting cluster info and adding variables to table
-clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
-chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
-chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
-[m,b] = lineariz(chanPos(:,1), 6, 1);
-shank = m*chanPos(:,1) + b;
-shank = round(shank);
-shMap = containers.Map(chanMap, shank);
-setShank = @(x) shMap(x);
-clInfo.shank = arrayfun(setShank, clInfo.channel);
-tb = size(clInfo);
-sz = tb(1);
-ActiveUnit = false(sz,1);
-clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
-clInfo{gclID, 'ActiveUnit'} = true;
+% clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+% chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
+% chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
+% [m,b] = lineariz(chanPos(:,1), 6, 1);
+% shank = m*chanPos(:,1) + b;
+% shank = round(shank);
+% shMap = containers.Map(chanMap, shank);
+% setShank = @(x) shMap(x);
+% clInfo.shank = arrayfun(setShank, clInfo.channel);
+% tb = size(clInfo);
+% sz = tb(1);
+% ActiveUnit = false(sz,1);
+% clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
+% clInfo{gclID, 'ActiveUnit'} = true;
 
 for a = 1: length(consCondNames)
     clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Counts_Spont']} = mean(Counts{a,1}')';
@@ -332,8 +332,6 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
                 xticklabels({[], []});
     end
     ylim([0 20]);
-    ax = gca; 
-    ax.FontSize = 12;
     ax = gca; 
     ax.FontSize = 12;
     % configureFigureToPDF(SpontaneousBox);

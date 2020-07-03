@@ -1,7 +1,7 @@
 % First, un PainAnalysis  to adda data to clInfo tables, and then add this
 % table to VPL table
 
-
+shankNo = 1;
 
 %% Determining nShanks
 
@@ -16,8 +16,8 @@ d = 0;
 
 for a = 1: length(consCondNames)
             
-        sInd = find(VPL.ActiveUnit & VPL.Saline_0_or_CFA_1 == false);
-        cInd = find(VPL.ActiveUnit & VPL.Saline_0_or_CFA_1 == true);
+        sInd = find(VPL.ActiveUnit & VPL.CFA_1 == false);
+        cInd = find(VPL.ActiveUnit & VPL.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         SalSpBox{a} = VPL.(Spont)(sInd)/rW;
         CfaSpBox{a} = VPL.(Spont)(cInd)/rW;
@@ -32,7 +32,7 @@ for a = 1: length(consCondNames)
             ylabel('Firing Rates (Hz)');
         end
         xticklabels({});
-        ylim([0 8]);
+        ylim([0 6]);
         ax = gca; 
         ax.FontSize = 20;
         
@@ -43,14 +43,16 @@ for a = 1: length(consCondNames)
             ylabel('Firing Rates (Hz)');
         end
         xticklabels({});
-        ylim([0 8]);
+        ylim([0 6]);
         ax = gca; 
         ax.FontSize = 20;
         
         Sp_Rs(a).name  = ['Saline vs CFA', consCondNames{1,a}];
-        Sp_Rs(a).results = ranksum(SalRrBox{a}, CfaRrBox{a});
+        Sp_Rs(a).RankSum = ranksum(SalSpBox{a}, CfaSpBox{a});
         if Sp_Rs(a).RankSum <= 0.05
                         Sp_Rs(a).Signifcant = true;
+        else
+            Sp_Rs(a).Signifcant = false;
         end
         d = d + length(consCondNames);
 end
@@ -62,8 +64,8 @@ d = 0;
 figure('Name', ['Unfiltered_Mechanical_Responses'], 'Color', 'white');   
 
 for a = 1: length(consCondNames)
-        sIndex = find(VPL.ActiveUnit & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == false);
-        cIndex = find(VPL.ActiveUnit & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == true);
+        sIndex = find(VPL.ActiveUnit & VPL.CFA_1 == false);
+        cIndex = find(VPL.ActiveUnit & VPL.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalSpBox{a} = VPL.(Spont)(sIndex)/rW; 
@@ -110,8 +112,8 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
 
  for a = 1: length(consCondNames)
         Sig = [consCondNames{1,a}, '_MR'];
-        sIndex = find(VPL.(Sig) & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == false);
-        cIndex = find(VPL.(Sig) & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == true);
+        sIndex = find(VPL.(Sig) & VPL.CFA_1 == false);
+        cIndex = find(VPL.(Sig) & VPL.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalSpBox{a} = VPL.(Spont)(sIndex)/rW; 
@@ -146,14 +148,14 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
         ax.FontSize = 15;
 
         subplot(2 ,2*length(consCondNames), a + 2* length(consCondNames));
-        pie([(sum(VPL.ActiveUnit & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == false) - length(sIndex)), length(sIndex)]);
+        pie([(sum(VPL.ActiveUnit & VPL.CFA_1 == false) - length(sIndex)), length(sIndex)]);
         labels = {'Unesponsive','Responsive'};
         legend(labels,'Location','southoutside','Orientation','vertical')
         ax = gca;
         ax.FontSize = 15;
 
         subplot(2, 2*length(consCondNames), 2*a + 2* length(consCondNames));
-        pie([(sum(VPL.ActiveUnit & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == true) - length(cIndex)), length(cIndex)]);
+        pie([(sum(VPL.ActiveUnit & VPL.CFA_1 == true) - length(cIndex)), length(cIndex)]);
         labels = {'Unesponsive','Responsive'};
         legend(labels,'Location','southoutside','Orientation','vertical')
         ax = gca;
@@ -172,6 +174,8 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
             MechRS(c).RankSum = ranksum(VPL.(Spont)(cIndex)/rW, VPL.(Evoked)(cIndex)/rW);
             if MechRS(c).RankSum <= 0.05
                     MechRS(c).Signifcant = true;
+            else
+                MechRS(c).Signifcant = false;
             end
 
         end
@@ -180,15 +184,62 @@ figure('Name', ['Filtered_Mechanical_Responses'], 'Color', 'white');
     d = d + length(consCondNames);
  end
 
-%% Relative Responses
+ %% Unfiltered Relative Responses
+ 
+ d = 0;
+
+figure('Name', ['Unfiltered_Relative_Responses'], 'Color', 'white');   
+
+for a = 1: length(consCondNames)
+        sIndex = find(VPL.ActiveUnit & VPL.CFA_1 == false);
+        cIndex = find(VPL.ActiveUnit & VPL.CFA_1 == true);
+        Spont = [consCondNames{1,a}, '_Counts_Spont'];
+        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+        SalRrBox{a} = VPL.(Evoked)(sIndex)/rW - VPL.(Spont)(sIndex)/rW;
+        CfaRrBox{a} = VPL.(Evoked)(cIndex)/rW - VPL.(Spont)(cIndex)/rW;
+        SalRrMed(1,(d+a)) = median(SalRrBox{a});
+        CfaRrMed(1,(d+a)) = median(CfaRrBox{a});
+        MLabels{a,1} = consCondNames{1,a};
+        
+        subplot(1,2*length(consCondNames),a);
+        boxplot([SalRrBox{a}]);
+         title(['Saline ', consCondNames{a}]);
+        if a == 1
+            ylabel('Relative Responses (Hz)');
+        end
+        xticklabels({});
+        ylim([0 5]);
+        ax = gca; 
+        ax.FontSize = 20;
+        
+        subplot(1, 2*length(consCondNames), 2*a);
+        boxplot([CfaRrBox{a}]);
+         title(['CFA ', consCondNames{a}]);
+        if a == 1
+            ylabel('Relative Responses (Hz)');
+        end
+        xticklabels({});
+        ylim([0 5]);
+        ax = gca; 
+        ax.FontSize = 20;
+        UnfRr_Rs(a).name  = ['Saline vs CFA', consCondNames{1,a}];
+        UnfRr_Rs(a).RankSum = ranksum(SalRrBox{a}, CfaRrBox{a});
+        if UnfRr_Rs(a).RankSum <= 0.05
+                        UnfRr_Rs(a).Signifcant = true;
+        else
+            UnfRr_Rs(a).Signifcant = false;
+        end
+        d = d + length(consCondNames);
+end
+%% Filtered Relative Responses 
 d = 0;
 
 figure('Name', 'Filtered_Relative_Responses', 'Color', 'white');   
 
 for a = 1: length(consCondNames)
         Sig = [consCondNames{1,a}, '_MR'];
-        sIndex = find(VPL.(Sig) & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == false);
-        cIndex = find(VPL.(Sig) & VPL.shank == shankNo & VPL.Saline_0_or_CFA_1 == true);
+        sIndex = find(VPL.(Sig) & VPL.CFA_1 == false);
+        cIndex = find(VPL.(Sig) & VPL.CFA_1 == true);
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         SalRrBox{a} = VPL.(Evoked)(sIndex)/rW - VPL.(Spont)(sIndex)/rW;
@@ -204,7 +255,7 @@ for a = 1: length(consCondNames)
             ylabel('Relative Responses (Hz)');
         end
         xticklabels({});
-        ylim([0 14]);
+        ylim([0 8]);
         ax = gca; 
         ax.FontSize = 20;
         
@@ -215,14 +266,16 @@ for a = 1: length(consCondNames)
             ylabel('Relative Responses (Hz)');
         end
         xticklabels({});
-        ylim([0 14]);
+        ylim([0 8]);
         ax = gca; 
         ax.FontSize = 20;
         
-        Rr_Rs(a).name  = ['Saline vs CFA', consCondNames{1,a}];
-        Rr_Rs(a).results = ranksum(SalRrBox{a}, CfaRrBox{a});
-        if Rr_Rs(a).RankSum <= 0.05
-                        Rr_Rs(a).Signifcant = true;
+        FRr_Rs(a).name  = ['Saline vs CFA', consCondNames{1,a}];
+        FRr_Rs(a).RankSum = ranksum(SalRrBox{a}, CfaRrBox{a});
+        if FRr_Rs(a).RankSum <= 0.05
+                        FRr_Rs(a).Signifcant = true;
+        else
+            FRr_Rs(a).Signifcant = false;
         end
         d = d + length(consCondNames);
 end
