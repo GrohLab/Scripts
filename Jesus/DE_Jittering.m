@@ -46,7 +46,7 @@ spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
 % Number of good clusters 
 Ncl = numel(goods);
 % Redefining the stimulus signals from the low amplitude to logical values
-whStim = {'piezo','whisker','mech'};
+whStim = {'piezo','whisker','mech','audio'};
 cxStim = {'laser','light'};
 lfpRec = {'lfp','s1','cortex','s1lfp'};
 trigNames = fieldnames(Triggers);
@@ -484,6 +484,7 @@ if strcmpi(rasAns,'Yes')
     clSub = find(ismember(gclID, pclID(clSel)))+1;
     [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
     clSub = clSub(rasOrd(rasIdx));
+    clSel = clSel(rasOrd(rasOrd ~= 0));
     Nma = min(Na);
     rasFig = figure;
     ax = gobjects(Nccond*Nrcl,1);
@@ -498,14 +499,14 @@ if strcmpi(rasAns,'Yes')
         trigChange = find(diff(timeDur) ~= 0);
         for ccl = 1:Nrcl
             lidx = ccl + (cc - 1) * Nrcl;
-            ax(lidx) = subplot(Nrcl, Nccond, lidx);
+            ax(lidx) = subplot(Nccond, Nrcl, lidx);
             title(ax(lidx),sprintf('%s cl:%s',consCondNames{cc},pclID{clSel(ccl)}))
             plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
                 timeLapse, fs,'',ax(lidx));
             ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
-            ax(lidx).YAxis.Label.String = num2str(Na(cc));
-            ax(lidx).XAxis.Label.Position = ax(lidx).XAxis.Label.Position.*...
-                [-1,1,1];
+            ax(lidx).YAxis.Label.String = Nma;
+            ax(lidx).YAxis.Label.Position =...
+                [timeLapse(1)-timeLapse(1)*0.7, Nma,0];
             ax(lidx).XAxis.TickLabels =...
                 cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
                 'UniformOutput', 0);
@@ -522,7 +523,8 @@ if strcmpi(rasAns,'Yes')
         end
     end
     linkaxes(ax,'x')
-    rasFigName = sprintf('%s cl_%sVW%.1f-%.1f ms', expName, pclID{clSel},...
+    rasFigName = sprintf('%s cl_%sVW%.1f-%.1f ms', expName,...
+        sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
     configureFigureToPDF (rasFig);
     if ~exist([rasFigName,'.pdf'], 'file') || ~exist([rasFigName,'.emf'], 'file')
