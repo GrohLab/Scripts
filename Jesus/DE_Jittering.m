@@ -31,8 +31,11 @@ clusterSpikeRate = totSpkCount/Nt;
 silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
-clInfo = addvars(clInfo,~badsIdx,'After','id','NewVariableNames','ActiveUnit');
-
+badsIdx = badsIdx | silentUnits;
+if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
+    clInfo = addvars(clInfo,~badsIdx,'After','id',...
+        'NewVariableNames','ActiveUnit');
+end
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 % Logical spike trace for the first good cluster
@@ -247,9 +250,16 @@ stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
     responseWindow(1)*1e3, responseWindow(2)*1e3, spontaneousWindow(1)*1e3,...
     spontaneousWindow(2)*1e3);
 ccn = 1;
-for cc = indCondSubs
-    stFigName = [stFigBasename, consCondNames{ccn}, stFigSubfix];
-    ccn = ccn + 1;
+%for cc = indCondSubs
+for cc = 1:numel(figs)
+    if ~ismember(cc, indCondSubs)
+        altCondNames = strsplit(figs(cc).Children(2).Title.String,': ');
+        altCondNames = altCondNames{2};
+    else
+        altCondNames = consCondNames{ccn};
+        ccn = ccn + 1;
+    end
+    stFigName = [stFigBasename, altCondNames, stFigSubfix];
     if ~exist([stFigName,'.*'],'file')
         print(figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
         print(figs(cc),[stFigName,'.emf'],'-dmeta')
@@ -442,5 +452,81 @@ for ccond = 1:Nccond
     if ~exist([figFileName,'.pdf'], 'file') || ~exist([figFileName,'.emf'], 'file')
         print(figs,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
         print(figs,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
+    end
+end
+
+%% Rasters from interesting clusters
+rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
+if strcmpi(rasAns,'Yes')
+    [clSel, iOk] = listdlg('ListString',pclID,...
+        'Name', 'Selection of clusters',...
+        'CancelString', 'None',...
+        'PromptString', 'Select clusters',...
+        'SelectionMode', 'multiple');
+    if ~iOk
+        return
+    end
+    cmap = [{[0.6, 0.6, 0.6]};... gray
+        {[1, 0.6, 0]};... orange
+        {[0.5, 0.6, 0.5]};... greenish gray (poo)
+        {[0, 0.6, 1]};... baby blue
+        {[0.6, 0.6, 1]};... lila
+        {[1, 0.6, 1]}]; % pink
+    clrNames = {'Gray','Orange','Poo','Baby Blue','Lila','Pink'}';
+    clrmap = containers.Map(clrNames,cmap);
+    if contains(Conditions(chCond).name, {'piezo','whisker'},'IgnoreCase', 1)
+        rectColor = clrmap('Orange');
+    elseif contains(Conditions(chCond).name, {'laser','light'}, 'IgnoreCase', 1)
+        rectColor = clrmap('Baby Blue');
+    end
+    Nrcl = numel(clSel);
+    % Reorganize the rasters in the required order.
+    clSub = find(ismember(gclID, pclID(clSel)))+1;
+    [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
+    clSub = clSub(rasOrd(rasIdx));
+    Nma = min(Na);
+    rasFig = figure;
+    ax = gobjects(Nccond*Nrcl,1);
+    for cc = 1:Nccond
+        % Equalize trial number
+        trigSubset = sort(randsample(Na(cc),Nma));
+        tLoc = find(delayFlags(:,cc));
+        tSubs = tLoc(trigSubset);
+        % Trigger subset for stimulation shading
+        trigAlSubs = Conditions(consideredConditions(cc)).Triggers(trigSubset,:);
+        timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
+        trigChange = find(diff(timeDur) ~= 0);
+        for ccl = 1:Nrcl
+            lidx = ccl + (cc - 1) * Nrcl;
+            ax(lidx) = subplot(Nrcl, Nccond, lidx);
+            title(ax(lidx),sprintf('%s cl:%s',consCondNames{cc},pclID{clSel(ccl)}))
+            plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
+                timeLapse, fs,'',ax(lidx));
+            ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
+            ax(lidx).YAxis.Label.String = num2str(Na(cc));
+            ax(lidx).XAxis.Label.Position = ax(lidx).XAxis.Label.Position.*...
+                [-1,1,1];
+            ax(lidx).XAxis.TickLabels =...
+                cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
+                'UniformOutput', 0);
+            xlabel(ax(lidx), 'Time [ms]')
+            initSub = 0;
+            optsRect = {'EdgeColor','none','FaceColor',rectColor};
+            for ctr = 1:numel(trigChange)
+                rectangle('Position',[0, initSub,...
+                    timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
+                initSub = trigChange(ctr);
+            end
+            rectangle('Position', [0, initSub, timeDur(Nma),...
+                Nma - initSub],optsRect{:})
+        end
+    end
+    linkaxes(ax,'x')
+    rasFigName = sprintf('%s cl_%sVW%.1f-%.1f ms', expName, pclID{clSel},...
+        timeLapse*1e3);
+    configureFigureToPDF (rasFig);
+    if ~exist([rasFigName,'.pdf'], 'file') || ~exist([rasFigName,'.emf'], 'file')
+        print(rasFig,fullfile(figureDir,[rasFigName, '.pdf']),'-dpdf','-fillpage')
+        print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
     end
 end
