@@ -1,4 +1,4 @@
-% 30.08.19 Jittering analysis by using the Data Explorer. 
+% 30.08.19 Jittering analysis stolen from Emilio by Ross
 % clearvars
 %% Load the data
 % Choosing the working directory
@@ -333,9 +333,9 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     end
     ylim([0 20]);
     ax = gca; 
-    ax.FontSize = 12;
+    ax.FontSize = 14;
     ax = gca; 
-    ax.FontSize = 12;
+    ax.FontSize = 14;
     % configureFigureToPDF(SpontaneousBox);
 
 
@@ -441,7 +441,7 @@ if strcmp(ansFilt,'Yes')
             xticklabels({'Spont', 'Evoked'});
             ylim([0 25]);
             ax = gca; 
-            ax.FontSize = 12;
+            ax.FontSize = 20;
             subplot(2,length(consCondNames), a + length(consCondNames));
             pie([(sum(clInfo.ActiveUnit & clInfo.shank == shankNo) - length(index)), length(index)]);
             labels = {'Unesponsive','Responsive'};
@@ -491,7 +491,7 @@ for a = 1:length(consCondNames)
             end
             ylim([0 20]);
             ax = gca; 
-            ax.FontSize = 12;
+            ax.FontSize = 13;
             MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
             MechRS(c).RankSum = ranksum(SpBox, EvBox);
             if MechRS(c).RankSum <= 0.05
@@ -531,9 +531,9 @@ if strcmp(ansFilt,'Yes')
                 ylabel('Relative Responses (Hz)');
             end
             xticklabels(RLabels{a,1})
-            ylim([0 15]);
+            ylim([0 5]);
             ax = gca; 
-            ax.FontSize = 12;
+            ax.FontSize = 20;
         end
        
 
@@ -580,7 +580,7 @@ else
         xticklabels(RLabels)
         ylim([0 5]);
         ax = gca; 
-        ax.FontSize = 12;
+        ax.FontSize = 20;
         % configureFigureToPDF(EvokedBox);
 
 
