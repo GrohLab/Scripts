@@ -1,7 +1,9 @@
 %% light triggered psths
 
 clear all
-dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
+%dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
+%dataDir = 'F:\Kilosorting\#29\2020-03-23\optoExp-DREADD_100x10ms-2sec_70,50,10,0_POST';
+dataDir = 'Z:\Melina\MC-2-2019\2019-12-12_DREADD-optoExp2\concatenated files_50x10ms before and after';
 
 
 cd(dataDir)
@@ -48,17 +50,14 @@ ltOn = find(lt(:,1));
  hold on
  plot(ltOn,laserSignal(ltOn),'o')
 
-lstrength = [70,50,10,0,70,50,10,0]; %strength of laser
-lsub=1; %which laser strength do you want to look at ?
-nstim=100;  %How many stimuli were applied with this laserintensity?
+%lstrength = [0,2,5,10,50,70,100,0,2,5,10,50,70,100]; %strength of laser
+%lsub=7; %which laser strength do you want to look at ?
+%nstim=50;  %How many stimuli were applied with this laserintensity?
 
-%lstrength = [0,10,50,70]; %strength of laser
-%lsub=5; %which laser strength do you want to look at ?
-%nstim=100;  %How many stimuli were applied with this laserintensity?lstrength = [0,10,50,70]; %strength of laser
+lstrength = [0,2,5,10,50,70,100,0,2,5,10,50,70,100]; %strength of laser
+lsub=14; %which laser strength do you want to look at ?
+nstim=50;  %How many stimuli were applied with this laserintensity?
 
-%lstrength = [70]; %strength of laser
-%lsub=1; %which laser strength do you want to look at ?
-%nstim=30;
 subset = [1:nstim]+nstim*(lsub-1);
 ltOn = ltOn(subset);
 %ltOn=ltOn(1:100);  %YOU NEED TO CHANGE THIS FOR EVERY EXPERIMENT  (eg only
@@ -93,8 +92,6 @@ bads = union(bads,find(silentUnits)); %add low rate units to bad category (mergi
 goods = setdiff(1:size(sortedData,1),bads); %define the good units as not bad
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 
-
-
 sortedData(goods,:)  %display which units will be used
 %% inferring neuron identify
 % 1. channel information: user provides likely location based on channel
@@ -104,9 +101,9 @@ sortedData(goods,:)  %display which units will be used
 %2. 
 
 labels={'BC','POm'}  
-regionAssignment={[207,407]... %cluster ID from channels in 'BC'  %#17; 50x_merged
-   % [71,72,81,90,107,118,148,159,165,173,181,217,244,301,323,354,360,366,381,386,397]}  %cluster ID from channels in 'POm'
-      [79,80,124,138,189,213,261,277,294,315,330,403]}        %VPM 
+regionAssignment={[68,93,106,129]... %cluster ID from channels in 'BC'  %#17; 50x_merged
+    [34,47,50,56,76,84,135]}  %cluster ID from channels in 'POm'
+    %  []}        %VPM 
  
 unit_labels=str2num(char(sortedData(goods,1)));
 
@@ -150,18 +147,20 @@ clearvars *Obj laser
 
 %% User controlling variables to change details of PSTHs
 % Time window to see the cluster activation in seconds
+
+timeLapse = [0.02, 0.2];
+%timeLapse = [0.040, 0.040];
 %timeLapse = [0.040, 0.5];  % time before and time after, seconds (this variable will control output data that we save below)
 %timeLapse = [0.01, 0.7];
-%timeLapse = [0.040, 0.040];
-timeLapse = [0.01, 0.05];
+
 % Bin size for PSTHs
-binSz = 0.00005; %in seconds
-%binSz = 0.0005; % 0,5ms
+%binSz = 0.0005; %in seconds
+binSz = 0.0005; % 0,5ms
 consideredConditions = 1;
 Nccond = length(consideredConditions);
 % Adding all the triggers from the piezo and the laser in one array
 allWhiskersPlusLaserControl = ltOn; %ugh
-%% Logical and numerical stack for computations
+% Logical and numerical stack for computations
 % dst - dicrete stack has a logical nature
 % cst - continuous stack has a numerical nature
 % Both of these stacks have the same number of time samples and trigger
@@ -202,28 +201,35 @@ savefig(fig,figureFileName)   %saves population psths
 
 %think about automating 
 
-%%
+%
 ClusterIds=sortedData(desiredUnits,1);
 tx = linspace(-timeLapse(1),timeLapse(2),Nt);
 psthTX = linspace(-timeLapse(1),timeLapse(2),size(PSTH,2));
 
-Pop={};
+Pop={};TriggeredUnitSpikeTimes={};
 for i=2:size(dst,1) %for every unit
     Sp={};
      for j=1:size(dst,3) %for every trial
          Sp{j}=tx(find(squeeze(dst(i,:,j))));
      end
+     
      Pop{i-1}=cell2mat(Sp);
+     Sp =cellfun(@(x) x*1000, Sp,'UniformOutput',0);
+     TriggeredUnitSpikeTimes{i-1}=cellfun(@transpose,Sp,'UniformOutput',0);
 end
 
+
+%%
 
 figure
 nsp=floor(sqrt(numel(Pop)));
 
+ %overall scaling for y axis
 %look here to change parameters if too many neurons
 tiled=true
-tall=1% column
-wide=2 %row
+yscaling = 1.05 
+tall=3% column
+wide=3 %row
 count=0
 for i=1:numel(Pop)
     if numel(Pop{i})>10
@@ -233,20 +239,45 @@ for i=1:numel(Pop)
         else
             figure
         end
-        h=histogram(Pop{i},'binwidth',binSz)
+        h=histogram(Pop{i}*1000,'binwidth',binSz*1000,'Normalization','count')
         %xtick_ms=10.^get(gca,'XTick');
-        % set(gca,'XTickLabel',xtick_ms)
+        %set(gca,'XTickLabel',xtick_ms)
         title([ClusterIds{i} '_ClusterId'], 'Interpreter', 'none')
-        xlabel('s')
+        xlabel('ms')
         ylabel('event counts')
         hold on
-        plot(psthTX, PSTH(i,:))
+        plot(psthTX*1000, PSTH(i,:))
         axis tight
-        ylim([0 max(max(PSTH))])
+        ylim([0 max(max(PSTH))*yscaling])
     else
     end
 end
 
+%% now manual change if necessary
+%  click on figure, then run block of code
+lims=[100 500] %manually insert limits here
+numplots=numel(Pop)
+
+tall=4% column
+wide=2 %row 
+
+for i=1:numplots
+    subplot(tall,wide,i)
+    ylim([0 lims(i)])
+end
+
+
+%%
+%if you wanted to zoom
+numplots=numel(Pop)
+
+for i=1:numplots
+    subplot(tall,wide,i)
+    xlim([-5 25])
+end
+
+
+%%
 print -dmeta
 print(gcf,'allPSTHs','-dmeta')
 
@@ -262,14 +293,66 @@ print(fig,fullfile(dataDir,sprintf('%s %s.pdf',expName,[conditionString name])),
 %PopRelativeSpikeTimes=getRasterFromStack(dst,false(size(ltOn)),allSelectionIdx, timeLapse, fs, true);  %
 
 
+%% nicer rasters for later 
+figure
+lastlevel=0;
+TSpT=TriggeredUnitSpikeTimes([1:3])  %which of the clusters do you want?
+ppms=1;
+for n=1:numel(TSpT)
+    if mod(n,2)==0, col='b';else col='k';end
+    [R lastlevel]=manyRasters(TSpT{n},col,.9,ppms,0+lastlevel);
+end
+
+
+xlabel ms
+grid on
+xlim([0 50])
+xlim([0 40])
+
+
+%%    DISTRIBUTION OF LATENCY TO FIRST SPIKE PER UNIT
+%desired window to measure within
+minspike=0;maxspike=15;
+
+
+for j=1:numel(TriggeredUnitSpikeTimes)
+    Sp=TriggeredUnitSpikeTimes{j}  %get 1 unit
+    Sp =cellfun(@(sp) sp((sp>0 & sp<=15)),Sp,'UniformOutput',0);  %limit spikes to desire range
+    subset=1;
+    for i=1:numel(Sp)
+        if ~isempty(Sp{i})
+            Sp{i}=Sp{i}(subset),
+        else Sp{i}= [];
+        end
+    end
+    
+    sp=cell2mat(Sp);
+    
+    
+    subplot(tall,wide,j)
+    hist(sp,maxspike*2)
+    xlabel 'latency in ms'
+end
+
+%how many trials have response
+%how many counts per trial
+
+%%
+
 
 %% 
+
+%latency to spike of a certain order
+
+sp=TSpT{1}
+
+Sp =cellfun(@(x) x*1000, Sp,'UniformOutput',0);
 
 %close all
 figure
 Spikes=sortedData(desiredUnits,2);
 
-binsize=.050 %in seconds CHANGE THIS AND LOOK IN PCA
+binsize=.500 %in seconds CHANGE THIS AND LOOK IN PCA
 %binsize=0.0001
 spikes =Spikes{:};
 H=histogram(spikes,'BinWidth',binsize)   
@@ -279,8 +362,8 @@ Rs=[];
 
 %change these if need be=========================
 tiled=true
-tall=4 %rows
-wide=5 %columns
+tall=7 %rows
+wide=1 %columns
 maxSubPanels=20; 
 %=========================
 
@@ -330,7 +413,7 @@ hist(rcoeff(:))
 [i,j,rcoeff(ind2sub(size(rcoeff),find(rcoeff>0.5)))]             % display their (row,col) indices
 
 
-%%
+%%  lazy neural manifold
    [COEFF, SCORE, LATENT] = pca(Rs)
    figure
    plot(1:numel(LATENT),cumsum(LATENT)/sum(LATENT))

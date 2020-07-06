@@ -73,16 +73,16 @@ try
     load( [path,'accelerometer_data.mat'],'aux_input_data','acc_ds')  
 catch
 end
-% uncomment this if you want to look at accelerometer data
+%uncomment this if you want to look at accelerometer data
 %    depicts you all the three accelerometers (x y z axis) single:
 
-% figure
-% ss=10  %subsampling just for plot   (means we skip every ss for nicer
-% illustration)
-% for i=1:3
-%     subplot(3,1,i)
-%     plot(aux_input_data(i,ss:ss:end)')
-%     hold on
+%figure
+ %ss=10  %subsampling just for plot   (means we skip every ss for nicer
+ %illustration)
+ %for i=1:3
+  %   subplot(3,1,i)
+   %  plot(aux_input_data(i,ss:ss:end)')
+   %  hold on
 % end
 
 %TASK: make a function out of this code: takes aux_input_data and returns norm_acc
@@ -95,7 +95,7 @@ end
 %norm_acc=norm_acc-mean(norm_acc);
 norm_acc = l2norm(aux_input_data)
 acc_t=1:numel(norm_acc);
-acc_t=acc_t/(fs/acc_ds)/2; % timebase in seconds BUT WHERE IS THIS 2 FACTOR COMING FROM?
+acc_t=acc_t/(fs/acc_ds); % timebase in seconds BUT WHERE IS THIS 2 FACTOR COMING FROM?
 
 %grab window of interest
 tsub=find(acc_t>=minTime & acc_t<maxTime);
