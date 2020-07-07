@@ -315,14 +315,18 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     for a = 1: length(consCondNames)
 
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        SpontaneousBox(:,a) = clInfo.(Spont)(index);
+        SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
         SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
         SLabels{a,1} = consCondNames{1,a};
     end
-    SpontaneousBox = SpontaneousBox/rW; 
-    
     subplot(1, nShanks, shankNo);
     boxplot(SpontaneousBox);
+    if a ~= 1
+                hold on
+                for i = 1:length(SpontaneousBox)
+                    plot([1, 2],[SpontaneousBox(i,(a-1)) SpontaneousBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
+                end
+    end
     if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Firing Rate (Hz)');
@@ -369,14 +373,18 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     for a = 1: length(consCondNames)
 
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        EvokedBox(:,a) = clInfo.(Evoked)(index);
+        EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
         EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
         ELabels{a,1} = consCondNames{1,a};
     end
-    EvokedBox = EvokedBox/rW; 
-    
     subplot(1, nShanks, shankNo);
     boxplot(EvokedBox);
+    if a ~= 1
+                hold on
+                for i = 1:length(EvokedBox)
+                    plot([1, 2],[EvokedBox(i,(a-1)) EvokedBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
+                end
+    end
     if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Firing Rate (Hz)');
@@ -434,6 +442,10 @@ if strcmp(ansFilt,'Yes')
             MLabels{a,1} = consCondNames{1,a};
             subplot(2,length(consCondNames), a);
             boxplot([SpBox{a}, EvBox{a}]);
+            hold on
+            for i = 1:numel(EvBox{a})
+                plot([1, 2],[SpBox{a}(i) EvBox{a}(i)],'-o', 'color', [0.9,0.9,0.9]) ;
+            end
              title(consCondNames{a});
              if a == 1
                 ylabel('Firing Rate (Hz)');
@@ -480,6 +492,10 @@ for a = 1:length(consCondNames)
             EvBox = (clInfo.(Evoked)(index))/rW;
             subplot(1,nShanks, shankNo);
             boxplot([SpBox, EvBox]);
+            hold on
+            for i = 1:numel(EvBox)
+                plot([1 2],[SpBox(i) EvBox(i)],'-o', 'color', [0.9,0.9,0.9]) ;
+            end
             
             if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
@@ -526,6 +542,12 @@ if strcmp(ansFilt,'Yes')
             RLabels{a,1} = consCondNames{1,a};
             subplot(1,length(consCondNames), a);
             boxplot(RRBox{a});
+%             if a ~= 1
+%                 hold on
+%                 for i = 1:numel(RRBox{a})
+%                     plot([1 2],[RRBox{a-1}(i) RRBox{a}(i)],'-o', 'color', [0.9,0.9,0.9]) ;
+%                 end
+%             end
             if a == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Relative Responses (Hz)');
@@ -575,6 +597,12 @@ else
         end
 
         boxplot(RrBox);
+        if a ~= 1
+                hold on
+                for i = 1:length(RrBox)
+                    plot([1 2],[RrBox(i,(a-1)), RrBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
+                end
+        end
         title(['Shank ', num2str(shankNo)]);
         ylabel('Relative Responses (Hz)');
         xticklabels(RLabels)
