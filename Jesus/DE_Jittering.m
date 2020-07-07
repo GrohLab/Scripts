@@ -466,6 +466,7 @@ if strcmpi(rasAns,'Yes')
     if ~iOk
         return
     end
+    % Color of the rectangle
     cmap = [{[0.6, 0.6, 0.6]};... gray
         {[1, 0.6, 0]};... orange
         {[0.5, 0.6, 0.5]};... greenish gray (poo)
@@ -474,11 +475,27 @@ if strcmpi(rasAns,'Yes')
         {[1, 0.6, 1]}]; % pink
     clrNames = {'Gray','Orange','Poo','Baby Blue','Lila','Pink'}';
     clrmap = containers.Map(clrNames,cmap);
-    if contains(Conditions(chCond).name, {'piezo','whisker'},'IgnoreCase', 1)
+    if contains(Conditions(chCond).name, whStim,'IgnoreCase', 1)
         rectColor = clrmap('Orange');
-    elseif contains(Conditions(chCond).name, {'laser','light'}, 'IgnoreCase', 1)
+    elseif contains(Conditions(chCond).name, cxStim, 'IgnoreCase', 1)
         rectColor = clrmap('Baby Blue');
+    else
+        rectColor = clrmap('Gray');
     end
+    % Choose the conditions to be plotted
+    resCondNames = arrayfun(@(x) x.name, Conditions(consideredConditions),...
+        'UniformOutput', 0);
+    [rasCondSel, iOk] = listdlg('ListString', resCondNames,...
+        'PromptString', 'Which conditions to plot?',...
+        'InitialValue', 1:length(consideredConditions),...
+        'CancelString', 'None',...
+        'Name', 'Conditions for raster',...
+        'SelectionMode', 'multiple');
+    if ~iOk
+        return
+    end
+    rasCond = consideredConditions(rasCondSel);
+    rasCondNames = consCondNames(rasCondSel);
     Nrcl = numel(clSel);
     % Reorganize the rasters in the required order.
     clSub = find(ismember(gclID, pclID(clSel)))+1;
@@ -487,26 +504,27 @@ if strcmpi(rasAns,'Yes')
     clSel = clSel(rasOrd(rasOrd ~= 0));
     Nma = min(Na);
     rasFig = figure;
-    ax = gobjects(Nccond*Nrcl,1);
-    for cc = 1:Nccond
+    Nrcond = length(rasCond);
+    ax = gobjects(Nrcond*Nrcl,1);
+    for cc = 1:length(rasCond)
         % Equalize trial number
-        trigSubset = sort(randsample(Na(cc),Nma));
-        tLoc = find(delayFlags(:,cc));
+        trigSubset = sort(randsample(Na(rasCondSel(cc)),Nma));
+        tLoc = find(delayFlags(:,rasCondSel(cc)));
         tSubs = tLoc(trigSubset);
         % Trigger subset for stimulation shading
-        trigAlSubs = Conditions(consideredConditions(cc)).Triggers(trigSubset,:);
+        trigAlSubs = Conditions(rasCond(cc)).Triggers(trigSubset,:);
         timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
         trigChange = find(diff(timeDur) ~= 0);
         for ccl = 1:Nrcl
             lidx = ccl + (cc - 1) * Nrcl;
-            ax(lidx) = subplot(Nccond, Nrcl, lidx);
-            title(ax(lidx),sprintf('%s cl:%s',consCondNames{cc},pclID{clSel(ccl)}))
+            ax(lidx) = subplot(Nrcond, Nrcl, lidx);
+            title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}))
             plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
                 timeLapse, fs,'',ax(lidx));
             ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
             ax(lidx).YAxis.Label.String = Nma;
             ax(lidx).YAxis.Label.Position =...
-                [timeLapse(1)-timeLapse(1)*0.7, Nma,0];
+                [timeLapse(1)-timeLapse(1)*0.65, Nma,0];
             ax(lidx).XAxis.TickLabels =...
                 cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
                 'UniformOutput', 0);
@@ -523,8 +541,8 @@ if strcmpi(rasAns,'Yes')
         end
     end
     linkaxes(ax,'x')
-    rasFigName = sprintf('%s cl_%sVW%.1f-%.1f ms', expName,...
-        sprintf('%s ', pclID{clSel}),...
+    rasFigName = sprintf('%s R-%scl_%sVW%.1f-%.1f ms', expName,...
+        sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
     configureFigureToPDF (rasFig);
     if ~exist([rasFigName,'.pdf'], 'file') || ~exist([rasFigName,'.emf'], 'file')
