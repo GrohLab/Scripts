@@ -326,6 +326,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
                 for i = 1:length(SpontaneousBox)
                     plot([1, 2],[SpontaneousBox(i,(a-1)) SpontaneousBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
                 end
+                
     end
     if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
@@ -359,6 +360,61 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     d = d + length(consCondNames);
     clear SpontaneousBox
 end
+
+%% Plotting normalised spontaneous activity rates
+rW = responseWindow(2)-responseWindow(1);
+c = 1;
+d = 0;
+
+for shankNo = 1:nShanks
+figure('Name', ['Normalised_Spontaneous_Rates_shank ', num2str(shankNo)], 'Color', 'white');   
+index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+     
+    for a = 1: length(consCondNames)
+
+        Spont = [consCondNames{1,a}, '_Counts_Spont'];
+        SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
+        SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
+        SLabels{a,1} = consCondNames{1,a};
+        if a ~= 1
+                subplot(1, (length(consCondNames) - 1), (a-1));
+                hold on
+                plot([1:1:2], [0, 0], 'color', [0,0,0]);
+                for i = 1:length(SpontaneousBox)
+                    delta(i,(a-1)) = ((SpontaneousBox(i,a)- SpontaneousBox(i,1))/(SpontaneousBox(i,1)))*100;
+                    if delta(i,(a-1)) > 1
+                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
+                    elseif delta(i,(a-1)) < 1
+                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
+                    else
+                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
+                    end
+                end
+            ind = find(delta(:,1)~= false & delta(:,1)~= inf);
+            mn = min(delta(ind,(a-1)));
+            mx = max(delta(ind,(a-1)));
+            md = median(delta(ind,(a-1)));
+            lim = iqr(delta(ind,(a-1)));
+            ylim([mn, lim]);
+            title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
+            ylabel('% FR Change');
+            ax = gca; 
+            ax.FontSize = 20;
+            ax.XTick = [1, 2];
+            xticklabels(SLabels);
+        end
+    end
+hold off
+clear SpontaneousBox
+clear delta  
+end
+    
+    
+
+
+
+    % configureFigureToPDF(SpontaneousBox);
+   
 
 %% Plotting evoked activity rates
 
@@ -416,6 +472,53 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     clear EvokedBox
 end
 
+%% Plotting normalised evoked activity rates
+rW = responseWindow(2)-responseWindow(1);
+c = 1;
+d = 0;
+
+for shankNo = 1:nShanks
+figure('Name', ['Normalised_Evoked_Rates_shank ', num2str(shankNo)], 'Color', 'white');   
+index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+     
+    for a = 1: length(consCondNames)
+
+        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
+        EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
+        EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
+        ELabels{a,1} = consCondNames{1,a};
+        if a ~= 1
+                subplot(1, (length(consCondNames) - 1), (a-1));
+                hold on
+                plot([1:1:2], [0, 0], 'color', [0,0,0]);
+                for i = 1:length(EvokedBox)
+                    delta(i,(a-1)) = (EvokedBox(i,a)/EvokedBox(i,1));
+                    if delta(i,(a-1)) > 1
+                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
+                    elseif delta(i,(a-1)) < 1
+                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
+                    else
+                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
+                    end
+                end
+                ind = find(delta(:,1)~= false & delta(:,1)~= inf);
+            mn = min(delta(ind,(a-1)));
+            mx = max(delta(ind,(a-1)));
+            md = median(delta(ind,(a-1)));
+            lim = iqr(delta(ind,(a-1)));
+            ylim([mn, lim]);
+            title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
+            ylabel('% FR Change');
+            ax = gca; 
+            ax.FontSize = 20;
+            ax.XTick = [1, 2];
+            xticklabels(SLabels);
+        end
+    end
+hold off
+clear EvokedBox
+clear delta  
+end
 
 %% Population MRs for each condition.
 
