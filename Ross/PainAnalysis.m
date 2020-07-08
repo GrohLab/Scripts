@@ -381,7 +381,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
                 hold on
                 plot([1:1:2], [0, 0], 'color', [0,0,0]);
                 for i = 1:length(SpontaneousBox)
-                    delta(i,(a-1)) = ((SpontaneousBox(i,a)- SpontaneousBox(i,1))/(SpontaneousBox(i,1)))*100;
+                    delta(i,(a-1)) = ((SpontaneousBox(i,a)/(SpontaneousBox(i,1)))-1)*100;
                     if delta(i,(a-1)) > 1
                         plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
                     elseif delta(i,(a-1)) < 1
@@ -492,7 +492,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
                 hold on
                 plot([1:1:2], [0, 0], 'color', [0,0,0]);
                 for i = 1:length(EvokedBox)
-                    delta(i,(a-1)) = (EvokedBox(i,a)/EvokedBox(i,1));
+                    delta(i,(a-1)) = ((EvokedBox(i,a)/(EvokedBox(i,1)))-1)*100;
                     if delta(i,(a-1)) > 1
                         plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
                     elseif delta(i,(a-1)) < 1
