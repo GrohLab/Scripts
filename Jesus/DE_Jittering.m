@@ -396,7 +396,7 @@ for ccond = 1:size(delayFlags,2)
 end
 save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
-%% Plotting the population activity
+%% Ordering PSTH
 
 orderedStr = 'ID ordered';
 dans = questdlg('Do you want to order the PSTH other than by IDs?',...
