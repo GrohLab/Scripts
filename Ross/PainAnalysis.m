@@ -507,7 +507,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
             md = median(delta(ind,(a-1)));
             lim = iqr(delta(ind,(a-1)));
             ylim([mn, lim]);
-            title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
+            title(['Normalised Evoked Rates: Shank ', num2str(shankNo)]);
             ylabel('% FR Change');
             ax = gca; 
             ax.FontSize = 20;
