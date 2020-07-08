@@ -243,7 +243,8 @@ delta_t = diff(responseWindow);
 indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
 % Plotting statistical tests
-figs = scatterSignificance(Results, Counts, consCondNames, delta_t, sortedData(goods,1));
+[figs, Results] = scatterSignificance(Results, Counts,...
+    consCondNames, delta_t, sortedData(goods,1));
 configureFigureToPDF(figs);
 stFigBasename = fullfile(figureDir,[expName,' ']);
 stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
@@ -395,7 +396,7 @@ for ccond = 1:size(delayFlags,2)
 end
 save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
-%% Plotting the population activity
+%% Ordering PSTH
 
 orderedStr = 'ID ordered';
 dans = questdlg('Do you want to order the PSTH other than by IDs?',...
