@@ -385,7 +385,7 @@ for shankNo = 1:nShanks
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
         SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
-        SLabels{a,1} = consCondNames{1,a};
+        SLabels = {consCondNames{1,1}, consCondNames{1,2}};
         if a ~= 1
             subplot(1, (length(consCondNames) - 1), (a-1));
             hold on
@@ -491,7 +491,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
         EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
-        ELabels{a,1} = consCondNames{1,a};
+        ELabels = {consCondNames{1,1}, consCondNames{1,2}};
     end
     subplot(1, nShanks, shankNo);
     boxplot(EvokedBox);
@@ -546,7 +546,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
         EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
         EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
-        ELabels{a,1} = consCondNames{1,a};
+        ELabels = {consCondNames{1,1}, consCondNames{1,2}};
         if a ~= 1
                 subplot(1, (length(consCondNames) - 1), (a-1));
                 hold on
