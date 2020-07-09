@@ -1,9 +1,9 @@
 %% light triggered psths
 
 clear all
-%dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
+dataDir = 'Z:\Melina\Time Axis MatlabProblem- StartingPSTH.m';
 %dataDir = 'C:\Users\Rebecca Mease\Seafile\Time Axis MatlabProblem- StartingPSTH.m';
-dataDir = 'F:\Kilosorting\#29\2020-03-23\optoExp-pre-post_DREADD_50x10ms-2sec_0,2,5,10,50,70,100_merged';
+%dataDir = 'F:\Kilosorting\#29\2020-03-23\optoExp-pre-post_DREADD_50x10ms-2sec_0,2,5,10,50,70,100_merged';
 
 
 cd(dataDir)
@@ -50,15 +50,13 @@ ltOn = find(lt(:,1));
  hold on
  plot(ltOn,laserSignal(ltOn),'o')
 
-<<<<<<< HEAD
 lstrength = [0,2,5,10,50,70,100,0,2,5,10,50,70,100]; %strength of laser
 lsub=8; %which laser strength do you want to look at ?
 nstim=50;  %How many stimuli were applied with this laserintensity?
-=======
+
 lstrength = [70,50,10,0,70,50,10,0]; %strength of laser
 lsub=1; %which laser strength do you want to look at ?
 nstim=100;  %How many stimuli were applied with this laserintensity?
->>>>>>> d4043cd55906b135efeca0773f1c2b2e2e3bd346
 
 %lstrength = [0,10,50,70]; %strength of laser
 %lsub=5; %which laser strength do you want to look at ?
@@ -195,10 +193,10 @@ x(1).Limits=[0 .2]   %% change the axis
 %colormap parula
 %shading interp
 
-configureFigureToPDF(fig);
-print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
-    expName, conditionString)),...
-    '-dpdf','-fillpage')
+%configureFigureToPDF(fig);
+%print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
+%    expName, conditionString)),...
+ %   '-dpdf','-fillpage')
 
 % configureFigureToPDF(fig);
 % print(fig,fullfile(dataDir,sprintf('%s %s.eps',...
@@ -206,7 +204,7 @@ print(fig,fullfile(dataDir,sprintf('%s %s.pdf',...
 %     '-deps')
 
 figureFileName=fullfile(dataDir,sprintf('%s %s.fig',expName, conditionString))
-savefig(fig,figureFileName)   %saves population psths
+%savefig(fig,figureFileName)   %saves population psths
 
 %think about automating 
 
@@ -315,9 +313,8 @@ end
 
 xlabel ms
 grid on
-<<<<<<< HEAD
+
 xlim([0 50])
-=======
 xlim([0 25])
 
 
@@ -350,7 +347,6 @@ end
 
 %%
 
->>>>>>> d4043cd55906b135efeca0773f1c2b2e2e3bd346
 %% 
 
 %latency to spike of a certain order
