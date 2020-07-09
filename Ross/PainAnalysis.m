@@ -65,7 +65,7 @@ end
 %     ISIsignal(ccl,spkSubs2{ccl}) = ISIVals{ccl};
 % end
 
-%% User controlling variables
+%% User controlling variables RAM Change defaults
 % Time lapse, bin size, and spontaneous and response windows
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
     'Bin size [s]:'};
@@ -92,15 +92,15 @@ fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow(1)*1e3, responseWin
 fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
 spontaneousWindow = -flip(responseWindow);
 
-%% Evening out Condition trials
-
+%% Evening out Condition trials  RAM: comment!
+% turn into function
 for a = 1: length(Conditions)
     sZ(1,a) = length(Conditions(a).Triggers);
 end
 [r, c] = min(sZ);
 for a = 1: length(Conditions)
     if a == c
-    a = a + 1;
+        a = a + 1;
     else
         Conditions(a).Difference = length(Conditions(a).Triggers) - length(Conditions(c).Triggers);
         Ind = randperm(length(Conditions(a).Triggers), Conditions(a).Difference);
@@ -112,12 +112,12 @@ concatCond = Conditions(1).Triggers;
 for a = 2:length(Conditions) - 1
     concatCond = [concatCond; Conditions(a).Triggers];
 end
-
-Conditions(length(Conditions)).Triggers = concatCond; clear concatCond;
-
-
+Conditions(length(Conditions)).Triggers = concatCond; 
+clear concatCond;
 
 
+
+%this can be put into a function or replaced?
 %% Condition triggered stacks
 condNames = arrayfun(@(x) x.name,Conditions,'UniformOutput',false);
 condGuess = contains(condNames, 'whiskerall', 'IgnoreCase', true);
@@ -240,8 +240,14 @@ for cc = indCondSubs
     end
 end
 
+
+
+
 %% Saving variables
 save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
+
+%RAM: shove all of this previous stuff into functions and then replace
+%with one or more function calls.
 
 %% Getting cluster info and adding variables to table
 clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
@@ -266,7 +272,6 @@ end
 
 
 % Significant mechanical responses per condition
-
 b = length(consCondNames);
 for a = 1 : length(consCondNames)
     clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_MR']} = Results(b).Activity(1).Pvalues < 0.05;
@@ -274,16 +279,20 @@ for a = 1 : length(consCondNames)
 end
 
 % Comparing Across Conditions (i.e. manipulation effect on spontaneous and evoked activity)
-
+% RAM: comment to explain what you are doing
 sZ = size(Counts);
-     d = length(consCondNames);
-     e = 1;
-     f = length(consCondNames);
+d = length(consCondNames);
+e = 1;
+f = length(consCondNames);
 for a = 1:length(consCondNames) - 1
     for b = (a + 1): length(consCondNames)
         
-        for c = 1: sZ(1,2)             
-        clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_', consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+        for c = 1: sZ(1,2)
+            clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+            %RAM example
+            %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
+            %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
+
         end
         
         e = e + 1;
@@ -303,6 +312,7 @@ tShanks = sum(clInfo.shank == [1:100]);
 nShanks = sum(tShanks ~= false);
 
 %% Plotting spontaneous activity rates
+% RAM separate calculations and plotting
 
 rW = responseWindow(2)-responseWindow(1);
 c = 1;
@@ -367,56 +377,106 @@ c = 1;
 d = 0;
 
 for shankNo = 1:nShanks
-figure('Name', ['Normalised_Spontaneous_Rates_shank ', num2str(shankNo)], 'Color', 'white');   
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-     
+    figure('Name', ['Normalised_Spontaneous_Rates_shank ', num2str(shankNo)], 'Color', 'white');
+    index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+    
     for a = 1: length(consCondNames)
-
+        
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
         SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
         SLabels{a,1} = consCondNames{1,a};
         if a ~= 1
-                subplot(1, (length(consCondNames) - 1), (a-1));
-                hold on
-                plot([1:1:2], [0, 0], 'color', [0,0,0]);
-                for i = 1:length(SpontaneousBox)
-                    delta(i,(a-1)) = ((SpontaneousBox(i,a)/(SpontaneousBox(i,1)))-1)*100;
-                    if delta(i,(a-1)) > 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
-                    elseif delta(i,(a-1)) < 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
-                    else
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
-                    end
+            subplot(1, (length(consCondNames) - 1), (a-1));
+            hold on
+            plot([1:1:2], [0, 0], 'color', [0,0,0]);
+            for i = 1:length(SpontaneousBox)
+                delta(i,(a-1)) = ((SpontaneousBox(i,a)/(SpontaneousBox(i,1)))-1)*100;
+                if delta(i,(a-1)) > 1
+                    plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
+                elseif delta(i,(a-1)) < 1
+                    plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
+                else
+                    plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
                 end
+            end
             ind = find(delta(:,1)~= false & delta(:,1)~= inf);
             mn = min(delta(ind,(a-1)));
             mx = max(delta(ind,(a-1)));
             md = median(delta(ind,(a-1)));
             lim = iqr(delta(ind,(a-1)));
-            ylim([mn, lim]);
+            % ylim([mn, lim]);
+            
             title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
             ylabel('% FR Change');
-            ax = gca; 
+            ax = gca;
             ax.FontSize = 20;
+            %fix this somehow
             ax.XTick = [1, 2];
             xticklabels(SLabels);
         end
     end
-hold off
-clear SpontaneousBox
-clear delta  
+    hold off
+    clear SpontaneousBox
+
+    
+    %RAM changed this
+    %clear delta 
 end
-    
-    
+
+
+%% making a histogram of delta values for 2?? conditions (check which ones these are)
+figure
+nBins=200;
+[h bins]=hist(delta,nBins);
+plot(bins,h,'linewidth', 2)
+% configureFigureToPDF(SpontaneousBox);
+legend(SLabels(2:end))
+legend boxoff
+
+%% small aside for noise correlation population  --should be put into a different script, better labels
+close all
+
+Rs=[];Re=[];
+for i=1:numel(Counts(:,1))
+    C=Counts{i,1};
+    %correlation matrix for population
+    Rs(:,:,i)=corrcoef(C');
+end
+for i=1:numel(Counts(:,2))
+    C=Counts{i,2};
+    %correlation matrix for population
+    Re(:,:,i)=corrcoef(C');
+end
+figure
+pcolor([Rs(:,:);Re(:,:)]),shading flat
+
+%[colormap] = cbrewer(ctype, cname, ncol [, interp_method])  FIX THIS
+%REBECCA
+%plotting stuff
+
+figure
+[h bins]=hist([Rs(:) Re(:)],100)
+plot(bins,h,'linewidth', 2)
+legend('spont', 'evoked')
+%
+%scatter plot for a neuron pair
+
+n1=1; %neuron 1
+n2=2; %neuron 2
+figure
+plot(C(n1,:),C(n2,:),'.','markersize',15)
+xlabel 'n1'
+ylabel 'n2'
+axis square
+grid on
 
 
 
-    % configureFigureToPDF(SpontaneousBox);
-   
 
 %% Plotting evoked activity rates
+
+% add another mech control for 10 Hz
 
 rW = responseWindow(2)-responseWindow(1);
 c = 1;
@@ -456,7 +516,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
 
 
     % Getting Wilcoxon rank sums for box plots
-    
+    % RAM: sign rank instead (paired!)
     for a = 1: length(consCondNames) - 1
         for b = (a + 1): length(consCondNames)        
             EvRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
@@ -911,3 +971,26 @@ for ccond = 1:Nccond
         print(figs,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
     end
 end
+
+
+
+%% rasters for testing
+figure
+lastlevel=0;
+thisCondition=3;
+for n=40:50 %numel(clusters)
+    if mod(n,2)==0, col='b';else col='k';end
+    [R lastlevel]=manyRasters(relativeSpikeTimes(n,thisCondition).sp,col,.9,ppms,0+lastlevel);
+end
+title(relativeSpikeTimes(1,thisCondition).condition)
+grid on
+
+%% to-do
+%all files to run Emilio code on SDS for sample file Z:\Ross\Experiments\10mW_CFA_VPL
+% compare rasters created by different triggering methods
+% compare rasters for problematic PSTHs
+% trial-by-trial rasters (grouped by trial rather than neuron)
+% can we find actual mechanical stimulus?
+% add triggered stimulus (especially light) to plots to check for artifacts
+% or units directly driven by light
+
