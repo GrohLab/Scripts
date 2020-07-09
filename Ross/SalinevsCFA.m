@@ -1,4 +1,4 @@
-% 30.08.19 Jittering analysis stolen from Emilio by Ross
+% 30.08.19 Jittering analysis by using the Data Explorer. 
 % clearvars
 %% Load the data
 % Choosing the working directory
@@ -241,23 +241,23 @@ for cc = indCondSubs
 end
 
 %% Saving variables
-save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
+save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Conditions', 'Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
 
 %% Getting cluster info and adding variables to table
-clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
-chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
-chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
-[m,b] = lineariz(chanPos(:,1), 6, 1);
-shank = m*chanPos(:,1) + b;
-shank = round(shank);
-shMap = containers.Map(chanMap, shank);
-setShank = @(x) shMap(x);
-clInfo.shank = arrayfun(setShank, clInfo.channel);
-tb = size(clInfo);
-sz = tb(1);
-ActiveUnit = false(sz,1);
-clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
-clInfo{gclID, 'ActiveUnit'} = true;
+% clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+% chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
+% chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
+% [m,b] = lineariz(chanPos(:,1), 6, 1);
+% shank = m*chanPos(:,1) + b;
+% shank = round(shank);
+% shMap = containers.Map(chanMap, shank);
+% setShank = @(x) shMap(x);
+% clInfo.shank = arrayfun(setShank, clInfo.channel);
+% tb = size(clInfo);
+% sz = tb(1);
+% ActiveUnit = false(sz,1);
+% clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
+% clInfo{gclID, 'ActiveUnit'} = true;
 
 for a = 1: length(consCondNames)
     clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Counts_Spont']} = mean(Counts{a,1}')';
@@ -315,19 +315,14 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     for a = 1: length(consCondNames)
 
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
+        SpontaneousBox(:,a) = clInfo.(Spont)(index);
         SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
         SLabels{a,1} = consCondNames{1,a};
     end
+    SpontaneousBox = SpontaneousBox/rW; 
+    
     subplot(1, nShanks, shankNo);
     boxplot(SpontaneousBox);
-    if a ~= 1
-                hold on
-                for i = 1:length(SpontaneousBox)
-                    plot([1, 2],[SpontaneousBox(i,(a-1)) SpontaneousBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
-                end
-                
-    end
     if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Firing Rate (Hz)');
@@ -338,9 +333,7 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     end
     ylim([0 20]);
     ax = gca; 
-    ax.FontSize = 14;
-    ax = gca; 
-    ax.FontSize = 14;
+    ax.FontSize = 12;
     % configureFigureToPDF(SpontaneousBox);
 
 
@@ -361,61 +354,6 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     clear SpontaneousBox
 end
 
-%% Plotting normalised spontaneous activity rates
-rW = responseWindow(2)-responseWindow(1);
-c = 1;
-d = 0;
-
-for shankNo = 1:nShanks
-figure('Name', ['Normalised_Spontaneous_Rates_shank ', num2str(shankNo)], 'Color', 'white');   
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-     
-    for a = 1: length(consCondNames)
-
-        Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
-        SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
-        SLabels{a,1} = consCondNames{1,a};
-        if a ~= 1
-                subplot(1, (length(consCondNames) - 1), (a-1));
-                hold on
-                plot([1:1:2], [0, 0], 'color', [0,0,0]);
-                for i = 1:length(SpontaneousBox)
-                    delta(i,(a-1)) = ((SpontaneousBox(i,a)/(SpontaneousBox(i,1)))-1)*100;
-                    if delta(i,(a-1)) > 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
-                    elseif delta(i,(a-1)) < 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
-                    else
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
-                    end
-                end
-            ind = find(delta(:,1)~= false & delta(:,1)~= inf);
-            mn = min(delta(ind,(a-1)));
-            mx = max(delta(ind,(a-1)));
-            md = median(delta(ind,(a-1)));
-            lim = iqr(delta(ind,(a-1)));
-            ylim([mn, lim]);
-            title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
-            ylabel('% FR Change');
-            ax = gca; 
-            ax.FontSize = 20;
-            ax.XTick = [1, 2];
-            xticklabels(SLabels);
-        end
-    end
-hold off
-clear SpontaneousBox
-clear delta  
-end
-    
-    
-
-
-
-    % configureFigureToPDF(SpontaneousBox);
-   
-
 %% Plotting evoked activity rates
 
 rW = responseWindow(2)-responseWindow(1);
@@ -429,18 +367,14 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     for a = 1: length(consCondNames)
 
         Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
+        EvokedBox(:,a) = clInfo.(Evoked)(index);
         EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
         ELabels{a,1} = consCondNames{1,a};
     end
+    EvokedBox = EvokedBox/rW; 
+    
     subplot(1, nShanks, shankNo);
     boxplot(EvokedBox);
-    if a ~= 1
-                hold on
-                for i = 1:length(EvokedBox)
-                    plot([1, 2],[EvokedBox(i,(a-1)) EvokedBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
-                end
-    end
     if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Firing Rate (Hz)');
@@ -472,53 +406,6 @@ index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     clear EvokedBox
 end
 
-%% Plotting normalised evoked activity rates
-rW = responseWindow(2)-responseWindow(1);
-c = 1;
-d = 0;
-
-for shankNo = 1:nShanks
-figure('Name', ['Normalised_Evoked_Rates_shank ', num2str(shankNo)], 'Color', 'white');   
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-     
-    for a = 1: length(consCondNames)
-
-        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
-        EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
-        ELabels{a,1} = consCondNames{1,a};
-        if a ~= 1
-                subplot(1, (length(consCondNames) - 1), (a-1));
-                hold on
-                plot([1:1:2], [0, 0], 'color', [0,0,0]);
-                for i = 1:length(EvokedBox)
-                    delta(i,(a-1)) = ((EvokedBox(i,a)/(EvokedBox(i,1)))-1)*100;
-                    if delta(i,(a-1)) > 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
-                    elseif delta(i,(a-1)) < 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
-                    else
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
-                    end
-                end
-                ind = find(delta(:,1)~= false & delta(:,1)~= inf);
-            mn = min(delta(ind,(a-1)));
-            mx = max(delta(ind,(a-1)));
-            md = median(delta(ind,(a-1)));
-            lim = iqr(delta(ind,(a-1)));
-            ylim([mn, lim]);
-            title(['Normalised Evoked Rates: Shank ', num2str(shankNo)]);
-            ylabel('% FR Change');
-            ax = gca; 
-            ax.FontSize = 20;
-            ax.XTick = [1, 2];
-            xticklabels(SLabels);
-        end
-    end
-hold off
-clear EvokedBox
-clear delta  
-end
 
 %% Population MRs for each condition.
 
@@ -545,10 +432,6 @@ if strcmp(ansFilt,'Yes')
             MLabels{a,1} = consCondNames{1,a};
             subplot(2,length(consCondNames), a);
             boxplot([SpBox{a}, EvBox{a}]);
-            hold on
-            for i = 1:numel(EvBox{a})
-                plot([1, 2],[SpBox{a}(i) EvBox{a}(i)],'-o', 'color', [0.9,0.9,0.9]) ;
-            end
              title(consCondNames{a});
              if a == 1
                 ylabel('Firing Rate (Hz)');
@@ -556,7 +439,7 @@ if strcmp(ansFilt,'Yes')
             xticklabels({'Spont', 'Evoked'});
             ylim([0 25]);
             ax = gca; 
-            ax.FontSize = 20;
+            ax.FontSize = 12;
             subplot(2,length(consCondNames), a + length(consCondNames));
             pie([(sum(clInfo.ActiveUnit & clInfo.shank == shankNo) - length(index)), length(index)]);
             labels = {'Unesponsive','Responsive'};
@@ -595,10 +478,6 @@ for a = 1:length(consCondNames)
             EvBox = (clInfo.(Evoked)(index))/rW;
             subplot(1,nShanks, shankNo);
             boxplot([SpBox, EvBox]);
-            hold on
-            for i = 1:numel(EvBox)
-                plot([1 2],[SpBox(i) EvBox(i)],'-o', 'color', [0.9,0.9,0.9]) ;
-            end
             
             if shankNo == 1
                 title(['Shank ', num2str(shankNo)]);
@@ -610,7 +489,7 @@ for a = 1:length(consCondNames)
             end
             ylim([0 20]);
             ax = gca; 
-            ax.FontSize = 13;
+            ax.FontSize = 12;
             MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
             MechRS(c).RankSum = ranksum(SpBox, EvBox);
             if MechRS(c).RankSum <= 0.05
@@ -645,20 +524,14 @@ if strcmp(ansFilt,'Yes')
             RLabels{a,1} = consCondNames{1,a};
             subplot(1,length(consCondNames), a);
             boxplot(RRBox{a});
-%             if a ~= 1
-%                 hold on
-%                 for i = 1:numel(RRBox{a})
-%                     plot([1 2],[RRBox{a-1}(i) RRBox{a}(i)],'-o', 'color', [0.9,0.9,0.9]) ;
-%                 end
-%             end
             if a == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Relative Responses (Hz)');
             end
             xticklabels(RLabels{a,1})
-            ylim([0 5]);
+            ylim([0 15]);
             ax = gca; 
-            ax.FontSize = 20;
+            ax.FontSize = 12;
         end
        
 
@@ -700,18 +573,12 @@ else
         end
 
         boxplot(RrBox);
-        if a ~= 1
-                hold on
-                for i = 1:length(RrBox)
-                    plot([1 2],[RrBox(i,(a-1)), RrBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
-                end
-        end
         title(['Shank ', num2str(shankNo)]);
         ylabel('Relative Responses (Hz)');
         xticklabels(RLabels)
         ylim([0 5]);
         ax = gca; 
-        ax.FontSize = 20;
+        ax.FontSize = 12;
         % configureFigureToPDF(EvokedBox);
 
 
