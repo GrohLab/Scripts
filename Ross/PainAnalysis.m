@@ -314,115 +314,93 @@ nShanks = sum(tShanks ~= false);
 %% Plotting spontaneous activity rates
 % RAM separate calculations and plotting
 
-rW = responseWindow(2)-responseWindow(1);
+% rW = responseWindow(2)-responseWindow(1);
 c = 1;
 d = 0;
-figure('Name', 'Spontaneous_Rates', 'Color', 'white');
 for shankNo = 1:nShanks
     
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-    
-    for a = 1: length(consCondNames)
-
-        Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
-        SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
-        SLabels{a,1} = consCondNames{1,a};
-    end
-    subplot(1, nShanks, shankNo);
-    boxplot(SpontaneousBox);
-    if a ~= 1
-                hold on
-                for i = 1:length(SpontaneousBox)
-                    plot([1, 2],[SpontaneousBox(i,(a-1)) SpontaneousBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
-                end
-                
-    end
-    if shankNo == 1
-                title(['Shank ', num2str(shankNo)]);
-                ylabel('Firing Rate (Hz)');
-                xticklabels(SLabels)
-            else
-                title([num2str(shankNo)]);
-                xticklabels({[], []});
-    end
-    ylim([0 20]);
-    ax = gca; 
-    ax.FontSize = 14;
-    ax = gca; 
-    ax.FontSize = 14;
-    % configureFigureToPDF(SpontaneousBox);
-
-
-    % Getting Wilcoxon rank sums for box plots
-    
-    for a = 1: length(consCondNames) - 1
-        for b = (a + 1): length(consCondNames)        
-            SpontRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-            SpontRS(c).RankSum = ranksum(SpontaneousBox(:,a), SpontaneousBox(:,b));
-            if SpontRS(c).RankSum <= 0.05
-                SpontRS(c).Signifcant = true;
-            end
-
-            c = c + 1;
-        end
-    end 
-    d = d + length(consCondNames);
-    clear SpontaneousBox
-end
-
-%% Plotting normalised spontaneous activity rates
-rW = responseWindow(2)-responseWindow(1);
-c = 1;
-d = 0;
-
-for shankNo = 1:nShanks
-    figure('Name', ['Normalised_Spontaneous_Rates_shank ', num2str(shankNo)], 'Color', 'white');
     index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     
     for a = 1: length(consCondNames)
-        
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
-        SpontaneousBox(:,a) = clInfo.(Spont)(index)/rW;
-        SpontMed(1,(d+a)) = median(SpontaneousBox(:,a))/rW;
-        SLabels = {consCondNames{1,1}, consCondNames{1,2}};
-        if a ~= 1
-            subplot(1, (length(consCondNames) - 1), (a-1));
-            hold on
-            plot([1:1:2], [0, 0], 'color', [0,0,0]);
-            for i = 1:length(SpontaneousBox)
-                delta(i,(a-1)) = ((SpontaneousBox(i,a)/(SpontaneousBox(i,1)))-1)*100;
-                if delta(i,(a-1)) > 1
-                    plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
-                elseif delta(i,(a-1)) < 1
-                    plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
-                else
-                    plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
-                end
+        SpontaneousBox{d+a} = clInfo.(Spont)(index)/rW;
+        SpontMed(1,(d+a)) = median(SpontaneousBox{a})/rW;
+        SLabels = {consCondNames{1,1}, consCondNames{1,a}};
+    end
+    
+    for a = 2:length(consCondNames)
+        figure('Name', ['Spontaneous_Rates_Shank_', num2str(shankNo)], 'Color', 'white');
+        boxplot([SpontaneousBox{1,1}, SpontaneousBox{1,a}]);
+        hold on
+        for i = 1:length(SpontaneousBox{1,1})
+            plot([1, 2],[SpontaneousBox{1,1}(i,1) SpontaneousBox{1,a}(i,1)],'-o', 'color', [0.9,0.9,0.9]);
+        end
+        SLabels = {consCondNames{1,1}, consCondNames{1,a}};
+        title(['Shank ', num2str(shankNo)]);
+        ylabel('Firing Rate (Hz)');
+        xticklabels(SLabels)
+        
+        ax = gca;
+        ax.FontSize = 14;
+        ax = gca;
+        ax.FontSize = 14;
+    end
+    
+    % configureFigureToPDF(SpontaneousBox);
+    
+    
+    
+    % Getting Wilcoxon rank sums for box plots
+    
+    for a = 1: length(consCondNames) - 1
+        for b = (a + 1): length(consCondNames)
+            SpontRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+            SpontRS(c).RankSum = ranksum(SpontaneousBox{a}, SpontaneousBox{b});
+            if SpontRS(c).RankSum <= 0.05
+                SpontRS(c).Signifcant = true;
             end
-            ind = find(delta(:,1)~= false & delta(:,1)~= inf);
-            mn = min(delta(ind,(a-1)));
-            mx = max(delta(ind,(a-1)));
-            md = median(delta(ind,(a-1)));
-            lim = iqr(delta(ind,(a-1)));
-            % ylim([mn, lim]);
             
-            title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
-            ylabel('% FR Change');
-            ax = gca;
-            ax.FontSize = 20;
-            %fix this somehow
-            ax.XTick = [1, 2];
-            xticklabels(SLabels);
+            c = c + 1;
         end
     end
-    hold off
-    clear SpontaneousBox
-
-    
-    %RAM changed this
-    %clear delta 
+    d = d + length(consCondNames);
 end
+%% Plotting normalised spontaneous activity rates
+% rW = responseWindow(2)-responseWindow(1);
+d = 0;
+% Fix SLabels
+for shankNo = 1:nShanks
+    index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+    figure('Name', ['Normalised_Spontaneous_Rates_Shank_', num2str(shankNo)], 'Color', 'white');
+    for a = 2: length(consCondNames)
+        hold on
+        plot([0, length(consCondNames)], [0, 0], 'color', [0,0,0]);
+        for i = 1:length(SpontaneousBox{1,1})
+            delta{a}(i,1) = ((SpontaneousBox{1,d+1}(i,1)/(SpontaneousBox{1,d+a}(i,1)))-1)*100;
+            if delta{a}(i,1) > 1
+                plot((a-1),[delta{a}(i,1)-1],'-o', 'color', [0,0,1]);
+            elseif delta{a}(i,1) < 1
+                plot((a-1),[delta{a}(i,1)-1],'-o', 'color', [1,0,0]);
+            else
+                plot((a-1),[delta{a}(i,1)-1],'-o', 'color', [0,0,0]);
+            end
+            
+        end
+       
+        title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
+        ylabel('% FR Change');
+        ax = gca;
+        ax.FontSize = 20;
+        %fix this somehow
+        ax.XTick = [1, 2];
+        %xticklabels(SLabels);
+    end
+    d = d + length(consCondNames);
+end
+
+%RAM changed this
+%clear delta
+
 
 
 %% making a histogram of delta values for 2?? conditions (check which ones these are)
