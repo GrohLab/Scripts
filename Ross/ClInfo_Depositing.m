@@ -13,7 +13,8 @@ setShank = @(x) shMap(x);
 clInfo.shank = arrayfun(setShank, clInfo.channel);
 groupsummary(clInfo,'group')
 size(badsIdx)
-clInfo = addvars(clInfo,~badsIdx','NewVariableNames','ActiveUnit','After','id');
+clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
+clInfo.ActiveUnit(~badsIdx','NewVariableNames','ActiveUnit','After','id');
 groupsummary(clInfo,'shank')
 groupsummary(clInfo,'shank','nnz','ActiveUnit')
 clInfo{gclID(H(:,1)),'ControlMR'} = true;

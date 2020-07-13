@@ -18,32 +18,32 @@ if ~loadTriggerData(dataDir)
     return
 end
 
-    %% Constructing the helper 'global' variables
-    % Number of total samples
-    Ns = min(structfun(@numel,Triggers));
-    % Total duration of the recording
-    Nt = Ns/fs;
-    % Useless clusters (labeled as noise or they have very low firing rate)
-    badsIdx = cellfun(@(x) x==3,sortedData(:,3));
-    bads = find(badsIdx);
-    totSpkCount = cellfun(@numel,sortedData(:,2));
-    clusterSpikeRate = totSpkCount/Nt;
-    silentUnits = clusterSpikeRate < 0.1;
-    bads = union(bads,find(silentUnits));
-    goods = setdiff(1:size(sortedData,1),bads);
-    gclID = sortedData(goods,1);
-    badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
-    % Logical spike trace for the first good cluster
-    spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
-    % Subscript column vectors for the rest good clusters
-    spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
-        'UniformOutput',false);
-    % Number of good clusters 
-    Ncl = numel(goods);
-    
-   % continuousSignals = 
-    
-    %% Inter-spike intervals
+%% Constructing the helper 'global' variables
+% Number of total samples
+Ns = min(structfun(@numel,Triggers));
+% Total duration of the recording
+Nt = Ns/fs;
+% Useless clusters (labeled as noise or they have very low firing rate)
+badsIdx = cellfun(@(x) x==3,sortedData(:,3));
+bads = find(badsIdx);
+totSpkCount = cellfun(@numel,sortedData(:,2));
+clusterSpikeRate = totSpkCount/Nt;
+silentUnits = clusterSpikeRate < 0.1;
+bads = union(bads,find(silentUnits));
+goods = setdiff(1:size(sortedData,1),bads);
+gclID = sortedData(goods,1);
+badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
+% Logical spike trace for the first good cluster
+spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
+% Subscript column vectors for the rest good clusters
+spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
+    'UniformOutput',false);
+% Number of good clusters
+Ncl = numel(goods);
+
+% continuousSignals =
+
+%% Inter-spike intervals
 isiFile = fullfile(dataDir,[expName,'_ISIvars.mat']);
 if ~exist(isiFile,'file')
     spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
@@ -112,7 +112,7 @@ concatCond = Conditions(1).Triggers;
 for a = 2:length(Conditions) - 1
     concatCond = [concatCond; Conditions(a).Triggers];
 end
-Conditions(length(Conditions)).Triggers = concatCond; 
+Conditions(length(Conditions)).Triggers = concatCond;
 clear concatCond;
 
 
@@ -198,7 +198,7 @@ Nccond = length(consideredConditions);
 % allWhiskersPlusLaserControl = ...
 %     union(Conditions(allWhiskerStimulus).Triggers,...
 %     Conditions(laserControl).Triggers,'rows');
-%% Boolean flags 
+%% Boolean flags
 delayFlags = false(NTa,Nccond);
 counter2 = 1;
 for ccond = consideredConditions
@@ -214,7 +214,7 @@ sponActStackIdx = tx >= spontaneousWindow(1) & tx <= spontaneousWindow(2);
 respActStackIdx = tx >= responseWindow(1) & tx <= responseWindow(2);
 % The spontaneous activity of all the clusters, which are allocated from
 % the second until one before the last row, during the defined spontaneous
-% time window, and the whisker control condition. 
+% time window, and the whisker control condition.
 
 timeFlags = [sponActStackIdx;respActStackIdx];
 % Time window
@@ -292,7 +292,7 @@ for a = 1:length(consCondNames) - 1
             %RAM example
             %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
             %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
-
+            
         end
         
         e = e + 1;
@@ -324,16 +324,16 @@ for shankNo = 1:nShanks
     for a = 1: length(consCondNames)
         Spont = [consCondNames{1,a}, '_Counts_Spont'];
         SpontaneousBox{d+a} = clInfo.(Spont)(index)/rW;
-        SpontMed(1,(d+a)) = median(SpontaneousBox{a})/rW;
+        SpontMed(1,(d+a)) = median(SpontaneousBox{a});
         SLabels = {consCondNames{1,1}, consCondNames{1,a}};
     end
     
     for a = 2:length(consCondNames)
         figure('Name', ['Spontaneous_Rates_Shank_', num2str(shankNo)], 'Color', 'white');
-        boxplot([SpontaneousBox{1,1}, SpontaneousBox{1,a}]);
+        boxplot([SpontaneousBox{1,d+1}, SpontaneousBox{1,d+a}]);
         hold on
-        for i = 1:length(SpontaneousBox{1,1})
-            plot([1, 2],[SpontaneousBox{1,1}(i,1) SpontaneousBox{1,a}(i,1)],'-o', 'color', [0.9,0.9,0.9]);
+        for i = 1:length(SpontaneousBox{1,d+1})
+            plot([1, 2],[SpontaneousBox{1,d+1}(i,1) SpontaneousBox{1,d+a}(i,1)],'-o', 'color', [0.9,0.9,0.9]);
         end
         SLabels = {consCondNames{1,1}, consCondNames{1,a}};
         title(['Shank ', num2str(shankNo)]);
@@ -355,8 +355,8 @@ for shankNo = 1:nShanks
     for a = 1: length(consCondNames) - 1
         for b = (a + 1): length(consCondNames)
             SpontRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-            SpontRS(c).RankSum = ranksum(SpontaneousBox{a}, SpontaneousBox{b});
-            if SpontRS(c).RankSum <= 0.05
+            SpontRS(c).SignRank = signrank(SpontaneousBox{d+a}, SpontaneousBox{d+b});
+            if SpontRS(c).SignRank <= 0.05
                 SpontRS(c).Signifcant = true;
             end
             
@@ -365,44 +365,38 @@ for shankNo = 1:nShanks
     end
     d = d + length(consCondNames);
 end
+clear SLabels
 %% Plotting normalised spontaneous activity rates
 % rW = responseWindow(2)-responseWindow(1);
 d = 0;
-% Fix SLabels
+
 for shankNo = 1:nShanks
-    index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     figure('Name', ['Normalised_Spontaneous_Rates_Shank_', num2str(shankNo)], 'Color', 'white');
     for a = 2: length(consCondNames)
         hold on
         plot([0, length(consCondNames)], [0, 0], 'color', [0,0,0]);
-        for i = 1:length(SpontaneousBox{1,1})
-            delta{a}(i,1) = ((SpontaneousBox{1,d+1}(i,1)/(SpontaneousBox{1,d+a}(i,1)))-1)*100;
-            if delta{a}(i,1) > 1
-                plot((a-1),[delta{a}(i,1)-1],'-o', 'color', [0,0,1]);
-            elseif delta{a}(i,1) < 1
-                plot((a-1),[delta{a}(i,1)-1],'-o', 'color', [1,0,0]);
+        for i = 1:length(SpontaneousBox{1,d+1})
+            delta{d+a}(i,1) = ((SpontaneousBox{1,d+1}(i,1)/(SpontaneousBox{1,d+a}(i,1)))-1)*100;
+            if delta{d+a}(i,1) > 1
+                plot((a-1),[delta{d+a}(i,1)-1],'-o', 'color', [0,0,1]);
+            elseif delta{d+a}(i,1) < 1
+                plot((a-1),[delta{d+a}(i,1)-1],'-o', 'color', [1,0,0]);
             else
-                plot((a-1),[delta{a}(i,1)-1],'-o', 'color', [0,0,0]);
+                plot((a-1),[delta{d+a}(i,1)-1],'-o', 'color', [0,0,0]);
             end
             
         end
-       
+        
         title(['Normalised Spontaneous Rates: Shank ', num2str(shankNo)]);
         ylabel('% FR Change');
         ax = gca;
         ax.FontSize = 20;
-        %fix this somehow
-        ax.XTick = [1, 2];
-        %xticklabels(SLabels);
+        SLabels{a} = consCondNames{1,a};
+        xticklabels(SLabels);
     end
     d = d + length(consCondNames);
 end
-
-%RAM changed this
-%clear delta
-
-
-
+s
 %% making a histogram of delta values for 2?? conditions (check which ones these are)
 figure
 nBins=200;
@@ -454,146 +448,125 @@ grid on
 
 %% Plotting evoked activity rates
 
-% add another mech control for 10 Hz
-
-rW = responseWindow(2)-responseWindow(1);
+% rW = responseWindow(2)-responseWindow(1);
 c = 1;
 d = 0;
-figure('Name', 'Evoked_Rates', 'Color', 'white');
 for shankNo = 1:nShanks
     
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+    index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
     
     for a = 1: length(consCondNames)
-
-        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
-        EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
-        ELabels = {consCondNames{1,1}, consCondNames{1,2}};
+        Spont = [consCondNames{1,a}, '_Counts_Evoked'];
+        EvokedBox{d+a} = clInfo.(Spont)(index)/rW;
+        Evoked_Med(1,(d+a)) = median(EvokedBox{d+a});
+        ELabels = {consCondNames{1,1}, consCondNames{1,a}};
     end
-    subplot(1, nShanks, shankNo);
-    boxplot(EvokedBox);
-    if a ~= 1
-                hold on
-                for i = 1:length(EvokedBox)
-                    plot([1, 2],[EvokedBox(i,(a-1)) EvokedBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
-                end
+    
+    for a = 2:length(consCondNames)
+        figure('Name', ['Evoked_Rates_Shank_', num2str(shankNo)], 'Color', 'white');
+        boxplot([EvokedBox{1,d+1}, EvokedBox{1,d+a}]);
+        hold on
+        for i = 1:length(EvokedBox{1,d+1})
+            plot([1, 2],[EvokedBox{1,d+1}(i,1) EvokedBox{1,d+a}(i,1)],'-o', 'color', [0.9,0.9,0.9]);
+        end
+        ELabels = {consCondNames{1,1}, consCondNames{1,a}};
+        title(['Shank ', num2str(shankNo)]);
+        ylabel('Firing Rate (Hz)');
+        xticklabels(ELabels)
+        
+        ax = gca;
+        ax.FontSize = 14;
+        ax = gca;
+        ax.FontSize = 14;
     end
-    if shankNo == 1
-                title(['Shank ', num2str(shankNo)]);
-                ylabel('Firing Rate (Hz)');
-                xticklabels(ELabels)
-            else
-                title([num2str(shankNo)]);
-                xticklabels({[], []});
-    end
-    ylim([0 20]);
-    ax = gca; 
-    ax.FontSize = 12;
-    % configureFigureToPDF(EvokedBox);
-
-
+    
+    % configureFigureToPDF(SpontaneousBox);
+    
+    
+    
     % Getting Wilcoxon rank sums for box plots
-    % RAM: sign rank instead (paired!)
+    
     for a = 1: length(consCondNames) - 1
-        for b = (a + 1): length(consCondNames)        
-            EvRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-            EvRS(c).RankSum = ranksum(EvokedBox(:,a), EvokedBox(:,b));
-            if EvRS(c).RankSum <= 0.05
-                EvRS(c).Signifcant = true;
+        for b = (a + 1): length(consCondNames)
+            EvokedRS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+            EvokedRS(c).SignRank = signrank(EvokedBox{d+a}, EvokedBox{d+b});
+            if EvokedRS(c).SignRank <= 0.05
+                EvokedRS(c).Signifcant = true;
             end
-
+            
             c = c + 1;
         end
-    end 
+    end
     d = d + length(consCondNames);
-    clear EvokedBox
 end
+clear ELabels
 
 %% Plotting normalised evoked activity rates
-rW = responseWindow(2)-responseWindow(1);
-c = 1;
+% rW = responseWindow(2)-responseWindow(1);
 d = 0;
 
 for shankNo = 1:nShanks
-figure('Name', ['Normalised_Evoked_Rates_shank ', num2str(shankNo)], 'Color', 'white');   
-index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-     
-    for a = 1: length(consCondNames)
-
-        Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-        EvokedBox(:,a) = clInfo.(Evoked)(index)/rW;
-        EvokedMed(1,(d+a)) = median(EvokedBox(:,a))/rW;
-        ELabels = {consCondNames{1,1}, consCondNames{1,2}};
-        if a ~= 1
-                subplot(1, (length(consCondNames) - 1), (a-1));
-                hold on
-                plot([1:1:2], [0, 0], 'color', [0,0,0]);
-                for i = 1:length(EvokedBox)
-                    delta(i,(a-1)) = ((EvokedBox(i,a)/(EvokedBox(i,1)))-1)*100;
-                    if delta(i,(a-1)) > 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,1]);
-                    elseif delta(i,(a-1)) < 1
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [1,0,0]);
-                    else
-                        plot([1, 2],[0, delta(i,(a-1))-1],'-o', 'color', [0,0,0]);
-                    end
-                end
-                ind = find(delta(:,1)~= false & delta(:,1)~= inf);
-            mn = min(delta(ind,(a-1)));
-            mx = max(delta(ind,(a-1)));
-            md = median(delta(ind,(a-1)));
-            lim = iqr(delta(ind,(a-1)));
-            ylim([mn, lim]);
-            title(['Normalised Evoked Rates: Shank ', num2str(shankNo)]);
-            ylabel('% FR Change');
-            ax = gca; 
-            ax.FontSize = 20;
-            ax.XTick = [1, 2];
-            xticklabels(SLabels);
+    figure('Name', ['Normalised_Evoked_Rates_Shank_', num2str(shankNo)], 'Color', 'white');
+    for a = 2: length(consCondNames)
+        hold on
+        plot([0, length(consCondNames)], [0, 0], 'color', [0,0,0]);
+        for i = 1:length(EvokedBox{1,d+1})
+            delta{d+a}(i,1) = ((EvokedBox{1,d+1}(i,1)/(EvokedBox{1,d+a}(i,1)))-1)*100;
+            if delta{d+a}(i,1) > 1
+                plot((a-1),[delta{d+a}(i,1)-1],'-o', 'color', [0,0,1]);
+            elseif delta{d+a}(i,1) < 1
+                plot((a-1),[delta{d+a}(i,1)-1],'-o', 'color', [1,0,0]);
+            else
+                plot((a-1),[delta{d+a}(i,1)-1],'-o', 'color', [0,0,0]);
+            end
+            
         end
+        
+        title(['Normalised Evoked Rates: Shank ', num2str(shankNo)]);
+        ylabel('% FR Change');
+        ax = gca;
+        ax.FontSize = 20;
+        ELabels{a} = consCondNames{1,a};
+        xticklabels(ELabels);
     end
-hold off
-clear EvokedBox
-clear delta  
+    d = d + length(consCondNames);
 end
-
 %% Population MRs for each condition.
 
 % Filter for only mechanically responsive clusters?
 ansFilt = questdlg('Would you like to filter for significance?','Filter',...
     'Yes','No','Yes');
 if strcmp(ansFilt,'Yes')
-    rW = responseWindow(2)-responseWindow(1);
+    % rW = responseWindow(2)-responseWindow(1);
     c = 0;
     d = 0;
-   for shankNo = 1:nShanks
-    figure('Name', ['Filtered_Mechanical_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
-    
-
-         for a = 1: length(consCondNames)
+    for shankNo = 1:nShanks
+        figure('Name', ['Filtered_Mechanical_Responses_Shank_', num2str(shankNo)], 'Color', 'white');
+        
+        
+        for a = 1: length(consCondNames)
             Sig = [consCondNames{1,a}, '_MR'];
             index = find(clInfo.(Sig) & clInfo.shank == shankNo);
             Spont = [consCondNames{1,a}, '_Counts_Spont'];
             Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-            SpBox{a} = clInfo.(Spont)(index)/rW; 
-            EvBox{a} = clInfo.(Evoked)(index)/rW;
-            SpMed(1,(d+a)) = median(SpBox{a});
-            EvMed(1,(d+a)) = median(EvBox{a});
+            SpBox{d+a} = clInfo.(Spont)(index)/rW;
+            EvBox{d+a} = clInfo.(Evoked)(index)/rW;
+            SpMed(1,(d+a)) = median(SpBox{d+a});
+            EvMed(1,(d+a)) = median(EvBox{d+a});
             MLabels{a,1} = consCondNames{1,a};
             subplot(2,length(consCondNames), a);
-            boxplot([SpBox{a}, EvBox{a}]);
+            boxplot([SpBox{d+a}, EvBox{d+a}]);
             hold on
-            for i = 1:numel(EvBox{a})
-                plot([1, 2],[SpBox{a}(i) EvBox{a}(i)],'-o', 'color', [0.9,0.9,0.9]) ;
+            for i = 1:numel(EvBox{d+a})
+                plot([1, 2],[SpBox{1,d+a}(i,1) EvBox{1,d+a}(i,1)],'-o', 'color', [0.9,0.9,0.9]) ;
             end
-             title(consCondNames{a});
-             if a == 1
+            title(consCondNames{a});
+            if a == 1
                 ylabel('Firing Rate (Hz)');
             end
             xticklabels({'Spont', 'Evoked'});
             ylim([0 25]);
-            ax = gca; 
+            ax = gca;
             ax.FontSize = 20;
             subplot(2,length(consCondNames), a + length(consCondNames));
             pie([(sum(clInfo.ActiveUnit & clInfo.shank == shankNo) - length(index)), length(index)]);
@@ -601,41 +574,41 @@ if strcmp(ansFilt,'Yes')
             legend(labels,'Location','southoutside','Orientation','vertical')
             ax = gca;
             ax.FontSize = 15;
-         
-            if sum(SpBox{a}) ~= false && sum(EvBox{a} ~= false)
+            
+            if sum(SpBox{d+a}) ~= false && sum(EvBox{d+a} ~= false)
                 c = c + 1;
                 MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
-                MechRS(c).RankSum = ranksum(clInfo.(Spont)(index)/rW, clInfo.(Evoked)(index)/rW);
-                if MechRS(c).RankSum <= 0.05
-                        MechRS(c).Signifcant = true;
+                MechRS(c).SignRank = signrank(SpBox{d+a}, EvBox{d+a});
+                if MechRS(c).SignRank <= 0.05
+                    MechRS(c).Signifcant = true;
                 end
-            
-           
+                
+                
             end
-        
-         end
+            
+        end
         d = d + length(consCondNames);
-   end
-   
+    end
+    
 else
-rW = responseWindow(2) - responseWindow(1);
-c = 0;
-for a = 1:length(consCondNames)
-    figure('Name',['Unfiltered MechResponse_', consCondNames{1,a}], 'Color', 'white') 
-      
-
+    % rW = responseWindow(2) - responseWindow(1);
+    c = 1;
+    d = 0;
+    for a = 1:length(consCondNames)
+        figure('Name',['Unfiltered MechResponse_', consCondNames{1,a}], 'Color', 'white')
+        
+        
         for shankNo = 1:nShanks
             index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-            c = c + 1;
             Spont = [consCondNames{1,a}, '_Counts_Spont'];
-            SpBox = (clInfo.(Spont)(index))/rW;
+            SpBox{d+a} = (clInfo.(Spont)(index))/rW;
             Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-            EvBox = (clInfo.(Evoked)(index))/rW;
+            EvBox{d+a} = (clInfo.(Evoked)(index))/rW;
             subplot(1,nShanks, shankNo);
-            boxplot([SpBox, EvBox]);
+            boxplot([SpBox{d+a}, EvBox{d+a}]);
             hold on
-            for i = 1:numel(EvBox)
-                plot([1 2],[SpBox(i) EvBox(i)],'-o', 'color', [0.9,0.9,0.9]) ;
+            for i = 1:numel(EvBox{d+a})
+                plot([1 2],[SpBox{d+a}(i,1) EvBox{d+a}(i,1)],'-o', 'color', [0.9,0.9,0.9]) ;
             end
             
             if shankNo == 1
@@ -647,17 +620,16 @@ for a = 1:length(consCondNames)
                 xticklabels({[], []});
             end
             ylim([0 20]);
-            ax = gca; 
+            ax = gca;
             ax.FontSize = 13;
             MechRS(c).name = [consCondNames{1,a}, '_Spont_vs_Evoked_Shank_', num2str(shankNo)];
-            MechRS(c).RankSum = ranksum(SpBox, EvBox);
-            if MechRS(c).RankSum <= 0.05
-                    MechRS(c).Signifcant = true;
+            MechRS(c).SignRank = signrank(SpBox{d+a}, EvBox{d+a});
+            if MechRS(c).SignRank <= 0.05
+                MechRS(c).Signifcant = true;
             end
-
-            clear SpBox; clear EvBox;
+            c = c + 1;
         end
-end
+    end
 end
 
 %% Relative Responses
@@ -666,108 +638,96 @@ end
 ansFilt = questdlg('Would you like to filter for significance?','Filter',...
     'Yes','No','Yes');
 if strcmp(ansFilt,'Yes')
-    rW = responseWindow(2)-responseWindow(1);
+   % rW = responseWindow(2)-responseWindow(1);
     c = 1;
     d = 0;
     for shankNo = 1:nShanks
-    figure('Name', ['Filtered_Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
-    
-
+        figure('Name', ['Filtered_Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');
+        
+        
         for a = 1: length(consCondNames)
             Sig = [consCondNames{1,a}, '_MR'];
             index = find(clInfo.(Sig) & clInfo.shank == shankNo);
             Spont = [consCondNames{1,a}, '_Counts_Spont'];
             Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-            RRBox{a} = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index))/rW; 
-            RRMed(1,(d+a)) = median(RRBox{a});
+            RRBox{d+a} = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index))/rW;
+            RRMed(1,(d+a)) = median(RRBox{d+a});
             RLabels{a,1} = consCondNames{1,a};
             subplot(1,length(consCondNames), a);
-            boxplot(RRBox{a});
-%             if a ~= 1
-%                 hold on
-%                 for i = 1:numel(RRBox{a})
-%                     plot([1 2],[RRBox{a-1}(i) RRBox{a}(i)],'-o', 'color', [0.9,0.9,0.9]) ;
-%                 end
-%             end
-            if a == 1
+            boxplot(RRBox{d+a});
+           if a == 1
                 title(['Shank ', num2str(shankNo)]);
                 ylabel('Relative Responses (Hz)');
             end
             xticklabels(RLabels{a,1})
-            ylim([0 5]);
-            ax = gca; 
+            ylim([-10 10]);
+            ax = gca;
             ax.FontSize = 20;
         end
-       
-
-
+        
+        
+        
         % Getting Wilcoxon rank sums for box plots
-
+        
         for a = 1: length(consCondNames) - 1
-            for b = (a + 1): length(consCondNames)        
-                if sum(RRBox{a}) ~= false && sum(RRBox{b} ~= false)
+            for b = (a + 1): length(consCondNames)
+                if sum(RRBox{d+a}) ~= false && sum(RRBox{d+b} ~= false)
                     RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-                    RR_RS(c).RankSum = ranksum(RRBox{a}, RRBox{b});
-                    if RR_RS(c).RankSum <= 0.05
+                    RR_RS(c).SignRank = signrank(RRBox{d+a}, RRBox{d+b});
+                    if RR_RS(c).SignRank <= 0.05
                         RR_RS(c).Signifcant = true;
                     end
                 end
-
+                
                 c = c + 1;
             end
-        end 
+        end
         d = d + length(consCondNames);
         
     end
 else
     
-    rW = responseWindow(2)-responseWindow(1);
-    c = 1;
+    
+    % rW = responseWindow(2) - responseWindow(1);
+    c = 0;
     d = 0;
-
     for shankNo = 1:nShanks
-    figure('Name', ['Unfiltered_Relative_Responses_Shank_', num2str(shankNo)], 'Color', 'white');   
-    index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
-
-        for a = 1: length(consCondNames)
+        index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
+        
+        for a = 1:length(consCondNames)
             Spont = [consCondNames{1,a}, '_Counts_Spont'];
             Evoked = [consCondNames{1,a}, '_Counts_Evoked'];
-            RrBox(:,a) = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index))/rW;
-            RrMed(1,(d+a)) = median(RrBox(:,a));
-            RLabels{a,1} = consCondNames{1,a};
+            RRBox{d+a} = (clInfo.(Evoked)(index))- (clInfo.(Spont)(index))/rW;
         end
-
-        boxplot(RrBox);
-        if a ~= 1
-                hold on
-                for i = 1:length(RrBox)
-                    plot([1 2],[RrBox(i,(a-1)), RrBox(i,a)],'-o', 'color', [0.9,0.9,0.9]) ;
-                end
+        for a = 2: length(consCondNames)
+            figure('Name',['Unfiltered_Relative_Responses_Shank_', num2str(shankNo),' ', num2str(consCondNames{1,a})], 'Color', 'white')
+            boxplot([RRBox{1,d+1}, RRBox{1,d+a}])
+            hold on
+            for i = 1:numel(RRBox{1,d+1})
+                plot([1 2],[RRBox{1,d+1}(i,1) RRBox{1,d+a}(i,1)],'-o', 'color', [0.9,0.9,0.9]) ;
+            end
+            title(['Shank ', num2str(shankNo)]);
+            ylabel('Firing Rate (Hz)');
+            RLabels = {consCondNames{1,1}, consCondNames{1,a}};
+            xticklabels(RLabels);
+            ylim([-5 20]);
+            ax = gca;
+            ax.FontSize = 13;
         end
-        title(['Shank ', num2str(shankNo)]);
-        ylabel('Relative Responses (Hz)');
-        xticklabels(RLabels)
-        ylim([0 5]);
-        ax = gca; 
-        ax.FontSize = 20;
-        % configureFigureToPDF(EvokedBox);
-
-
-        % Getting Wilcoxon rank sums for box plots
-
         for a = 1: length(consCondNames) - 1
-            for b = (a + 1): length(consCondNames)        
-                RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-                RR_RS(c).RankSum = ranksum(RrBox(:,a), RrBox(:,b));
-                if RR_RS(c).RankSum <= 0.05
-                    RR_RS(c).Signifcant = true;
+            for b = (a + 1): length(consCondNames)
+                if sum(RRBox{d+a}) ~= false && sum(RRBox{d+b} ~= false)
+                    RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
+                    RR_RS(c).SignRank = signrank(RRBox{d+a}, RRBox{d+b});
+                    if RR_RS(c).SignRank <= 0.05
+                        RR_RS(c).Signifcant = true;
+                    end
                 end
-
+                
                 c = c + 1;
             end
-        end 
+        end
         d = d + length(consCondNames);
-        clear RrBox
     end
 end
 
@@ -841,8 +801,8 @@ for ccond = 1:size(delayFlags,2)
     relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
     relativeSpikeTimes(~filterIdx(2),:) = [];
     condRelativeSpkTms{ccond} = relativeSpikeTimes;
-%     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
-%         'UniformOutput',false);
+    %     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
+    %         'UniformOutput',false);
     clSpkTms = cell(size(relativeSpikeTimes,1),1);
     if exist(csvFileName, 'file') && ccond == 1
         existFlag = true;
@@ -884,7 +844,7 @@ for ccond = 1:size(delayFlags,2)
     for ccl = 1:Nwru
         frstSpikeFlag = ~cellfun(@isempty,spikeTimesINRespWin(ccl,:));
         firstSpike(ccl,ccond) = std(...
-            cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));    
+            cell2mat(spikeTimesINRespWin(ccl,frstSpikeFlag)));
     end
     %}
 end
@@ -937,11 +897,11 @@ for ccond = 1:Nccond
         end
     end
     figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
-        [{Conditions(consideredConditions(ccond)).name};... 
+        [{Conditions(consideredConditions(ccond)).name};...
         pclID(ordSubs)],...
         strrep(expName,'_','\_'),...
         stims, csNames);
-    configureFigureToPDF(figs); 
+    configureFigureToPDF(figs);
     figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
     if ~exist([figFileName,'.pdf'], 'file') || ~exist([figFileName,'.emf'], 'file')
