@@ -914,17 +914,19 @@ end
 
 
 %% rasters for testing
-figure;
-lastlevel=0;
-thisCondition=3;
-trialNo = 1;
-for n=1:length(relativeSpikeTimes)
-    if mod(n,2)==0, col='b';else col='k';end
-    [R lastlevel]=manyRasters(relativeSpikeTimes(n,thisCondition).sp(trialNo),col,.9,ppms,0+lastlevel);
-end
-title(relativeSpikeTimes(1,thisCondition).condition);
-grid on;
 
+lastlevel=0;
+thisCondition=4;
+for trialNo = 1:55
+    figure;
+    for n=1:length(relativeSpikeTimes)
+        if mod(n,2)==0, col='b';else col='k';end
+        [R lastlevel]=manyRasters(relativeSpikeTimes(n,thisCondition).sp(trialNo),col,.9,ppms,0+lastlevel);
+    end
+    lastlevel = 0;
+    title([relativeSpikeTimes(1,thisCondition).condition, ' Trial ', num2str(trialNo)]);
+    grid on;
+end
 %% to-do
 %all files to run Emilio code on SDS for sample file Z:\Ross\Experiments\10mW_CFA_VPL
 % compare rasters created by different triggering methods
