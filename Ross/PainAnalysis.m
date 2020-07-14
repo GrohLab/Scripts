@@ -914,15 +914,16 @@ end
 
 
 %% rasters for testing
-figure
+figure;
 lastlevel=0;
 thisCondition=3;
-for n=40:50 %numel(clusters)
+trialNo = 1;
+for n=1:length(relativeSpikeTimes)
     if mod(n,2)==0, col='b';else col='k';end
-    [R lastlevel]=manyRasters(relativeSpikeTimes(n,thisCondition).sp,col,.9,ppms,0+lastlevel);
+    [R lastlevel]=manyRasters(relativeSpikeTimes(n,thisCondition).sp(trialNo),col,.9,ppms,0+lastlevel);
 end
-title(relativeSpikeTimes(1,thisCondition).condition)
-grid on
+title(relativeSpikeTimes(1,thisCondition).condition);
+grid on;
 
 %% to-do
 %all files to run Emilio code on SDS for sample file Z:\Ross\Experiments\10mW_CFA_VPL
