@@ -391,12 +391,12 @@ for shankNo = 1:nShanks
         ylabel('% FR Change');
         ax = gca;
         ax.FontSize = 20;
+        xticks(0:1:length(consCondNames));
         SLabels{a} = consCondNames{1,a};
         xticklabels(SLabels);
     end
     d = d + length(consCondNames);
 end
-s
 %% making a histogram of delta values for 2?? conditions (check which ones these are)
 figure
 nBins=200;
@@ -526,6 +526,7 @@ for shankNo = 1:nShanks
         ylabel('% FR Change');
         ax = gca;
         ax.FontSize = 20;
+        xticks(0:1:length(consCondNames));
         ELabels{a} = consCondNames{1,a};
         xticklabels(ELabels);
     end
@@ -673,9 +674,9 @@ if strcmp(ansFilt,'Yes')
             for b = (a + 1): length(consCondNames)
                 if sum(RRBox{d+a}) ~= false && sum(RRBox{d+b} ~= false)
                     RR_RS(c).name = [consCondNames{1,a},'_vs_', consCondNames{1,b}, '_Shank_', num2str(shankNo)];
-                    RR_RS(c).SignRank = signrank(RRBox{d+a}, RRBox{d+b});
-                    if RR_RS(c).SignRank <= 0.05
-                        RR_RS(c).Signifcant = true;
+                    RR_RS(c).RankSum = ranksum(RRBox{d+a}, RRBox{d+b});
+                    if RR_RS(c).RankSum <= 0.05
+                        RR_RS(c).RankSum = true;
                     end
                 end
                 
@@ -689,7 +690,7 @@ else
     
     
     % rW = responseWindow(2) - responseWindow(1);
-    c = 0;
+    c = 1;
     d = 0;
     for shankNo = 1:nShanks
         index = find(clInfo.ActiveUnit & clInfo.shank == shankNo);
