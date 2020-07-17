@@ -243,18 +243,18 @@ delta_t = diff(responseWindow);
 indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
 % Plotting statistical tests
-[figs, Results] = scatterSignificance(Results, Counts,...
+[Figs, Results] = scatterSignificance(Results, Counts,...
     consCondNames, delta_t, sortedData(goods,1));
-configureFigureToPDF(figs);
+configureFigureToPDF(Figs);
 stFigBasename = fullfile(figureDir,[expName,' ']);
 stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
     responseWindow(1)*1e3, responseWindow(2)*1e3, spontaneousWindow(1)*1e3,...
     spontaneousWindow(2)*1e3);
 ccn = 1;
 %for cc = indCondSubs
-for cc = 1:numel(figs)
+for cc = 1:numel(Figs)
     if ~ismember(cc, indCondSubs)
-        altCondNames = strsplit(figs(cc).Children(2).Title.String,': ');
+        altCondNames = strsplit(Figs(cc).Children(2).Title.String,': ');
         altCondNames = altCondNames{2};
     else
         altCondNames = consCondNames{ccn};
@@ -262,8 +262,8 @@ for cc = 1:numel(figs)
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
     if ~exist([stFigName,'.*'],'file')
-        print(figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
-        print(figs(cc),[stFigName,'.emf'],'-dmeta')
+        print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
+        print(Figs(cc),[stFigName,'.emf'],'-dmeta')
     end
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
@@ -423,14 +423,20 @@ if strcmp(dans, 'Yes')
 end
 
 %% Plot PSTH
-goodsIdx = ~badsIdx';
+goodsIdx = logical(clInfo.ActiveUnit);
 csNames = fieldnames(Triggers);
+Nbn = diff(timeLapse)/binSz;
+if (Nbn - round(Nbn)) ~= 0
+    Nbn = ceil(Nbn);
+end
+PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
+psthFigs = gobjects(Nccond,1);
 for ccond = 1:Nccond
     figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
         expName, Conditions(consideredConditions(ccond)).name, timeLapse*1e3,...
         binSz*1e3, responseWindow*1e3, spontaneousWindow*1e3, onOffStr,...
         orderedStr, filtStr);
-    [PSTH, trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
+    [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     stims = mean(cst(:,:,delayFlags(:,ccond)),3);
     stims = stims - median(stims,2);
@@ -442,17 +448,22 @@ for ccond = 1:Nccond
             stims(cs,:) = zeros(1,Nt);
         end
     end
-    figs = plotClusterReactivity(PSTH(ordSubs,:),trig,sweeps,timeLapse,binSz,...
+    psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond),trig,sweeps,timeLapse,binSz,...
         [{Conditions(consideredConditions(ccond)).name};... 
         pclID(ordSubs)],...
         strrep(expName,'_','\_'),...
         stims, csNames);
-    configureFigureToPDF(figs); 
-    figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
+    configureFigureToPDF(psthFigs(ccond));
+    psthFigs(ccond).Children(end).YLabel.String =...
+        [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
-    if ~exist([figFileName,'.pdf'], 'file') || ~exist([figFileName,'.emf'], 'file')
-        print(figs,fullfile(figureDir,[figFileName, '.pdf']),'-dpdf','-fillpage')
-        print(figs,fullfile(figureDir,[figFileName, '.emf']),'-dmeta')
+    if ~exist([figFileName,'.pdf'], 'file')
+        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
+            '-dpdf','-fillpage')
+    end
+    if ~exist([figFileName,'.emf'], 'file')
+        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
+            '-dmeta')
     end
 end
 
