@@ -261,7 +261,7 @@ for cc = 1:numel(Figs)
         ccn = ccn + 1;
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
-    if ~exist([stFigName,'.*'],'file')
+    if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
         print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
     end
