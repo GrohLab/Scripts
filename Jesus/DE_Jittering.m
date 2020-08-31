@@ -272,6 +272,9 @@ H = cell2mat(cellfun(@(x) x.Pvalues,...
 
 Htc = sum(H,2);
 CtrlCond = contains(consCondNames,'control','IgnoreCase',true);
+if ~nnz(CtrlCond)
+    CtrlCond = true(size(H,2),1);
+end
 wruIdx = any(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 
