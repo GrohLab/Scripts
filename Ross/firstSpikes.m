@@ -20,11 +20,11 @@ for a = 1: length(relativeSpkTmsStruct)
         spVals(a).sd(b,1) = std(vals);
     end
     figure('Name',[relativeSpkTmsStruct(a).name,' Standard Deviations of First Spikes Post-TTL']);
-    plot(spVals(a).sd, 'Color',[0 0 0],'MarkerSize',10,'Marker','.',...
+    plot(log10(spVals(a).sd*1000), 'Color',[0 0 0],'MarkerSize',10,'Marker','.',...
     'LineStyle','none');
     title(relativeSpkTmsStruct(a).name);
     xlabel('Unit No.');
-    ylabel('Std Dev (s)');
+    ylabel('log10(Std Dev) (ms)');
 end
 end
 
