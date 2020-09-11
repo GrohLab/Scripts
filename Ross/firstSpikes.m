@@ -1,9 +1,10 @@
-function [spVals] = firstSpikes(relativeSpkTmsStruct)
-
+function  firstSpikes(relativeSpkTmsStruct, gclID)
 
 for a = 1: length(relativeSpkTmsStruct)
     spVals(a).means = zeros(length(relativeSpkTmsStruct(a).SpikeTimes(:,1)),1);
     spVals(a).sd = zeros(length(relativeSpkTmsStruct(a).SpikeTimes(:,1)),1);
+    spVals(a).sZcf = zeros(length(relativeSpkTmsStruct(a).SpikeTimes(:,1)),1);
+    cf = length(relativeSpkTmsStruct(a).SpikeTimes(1,:))*ones(length(relativeSpkTmsStruct(a).SpikeTimes(:,1)),1);
     for b = 1: length(relativeSpkTmsStruct(a).SpikeTimes(:,1))
         vals = zeros(1,length(relativeSpkTmsStruct(a).SpikeTimes(1,:)));
         for c = 1: length(relativeSpkTmsStruct(a).SpikeTimes(1,:))
@@ -14,14 +15,17 @@ for a = 1: length(relativeSpkTmsStruct)
             else
             end
         end
+        spVals(a).sZcf(b,1) = sum(vals == 0);
         vals(find(vals == 0)) = [];
-        %spVals(a).Vals(b,1) = vals;
         spVals(a).means(b,1) = mean(vals);
         spVals(a).sd(b,1) = std(vals);
+        cf(b) = cf(b) - spVals(a).sZcf(b,1);
     end
+    x = [1:length(relativeSpkTmsStruct(a).SpikeTimes(:,1))];
+    y = log10(spVals(a).sd*1000);
     figure('Name',[relativeSpkTmsStruct(a).name,' Standard Deviations of First Spikes Post-TTL']);
-    plot(log10(spVals(a).sd*1000), 'Color',[0 0 0],'MarkerSize',10,'Marker','.',...
-    'LineStyle','none');
+    scatter(x,y,(cf+1)*2.5,[0,0,0])
+    t = text(x,y,gclID,'FontSize', 6);
     title(relativeSpkTmsStruct(a).name);
     xlabel('Unit No.');
     ylabel('log10(Std Dev) (ms)');
