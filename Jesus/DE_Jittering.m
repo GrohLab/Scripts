@@ -517,7 +517,7 @@ if strcmpi(rasAns,'Yes')
     [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
     clSub = clSub(rasOrd(rasIdx));
     clSel = clSel(rasOrd(rasOrd ~= 0));
-    Nma = min(Na);
+    Nma = min(Na(rasCondSel));
     rasFig = figure;
     Nrcond = length(rasCond);
     ax = gobjects(Nrcond*Nrcl,1);
@@ -545,7 +545,7 @@ if strcmpi(rasAns,'Yes')
                 'UniformOutput', 0);
             xlabel(ax(lidx), 'Time [ms]')
             initSub = 0;
-            optsRect = {'EdgeColor','none','FaceColor',rectColor};
+            optsRect = {'EdgeColor',rectColor,'FaceColor','none'};
             for ctr = 1:numel(trigChange)
                 rectangle('Position',[0, initSub,...
                     timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
