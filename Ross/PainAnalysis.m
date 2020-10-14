@@ -20,7 +20,7 @@ end
 
 %% Constructing the helper 'global' variables
 % Number of total samples
-Ns = min(structfun(@numel,Triggers));
+Ns = max(structfun(@numel,Triggers));
 % Total duration of the recording
 Nt = Ns/fs;
 % Useless clusters (labeled as noise or they have very low firing rate)
@@ -69,7 +69,7 @@ end
 % Time lapse, bin size, and spontaneous and response windows
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
     'Bin size [s]:'};
-defInputs = {'0.1, 0.1', '0.002, 0.05', '0.001'};
+defInputs = {'3, 6', '0.1, 1', '0.01'};
 answ = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
 if isempty(answ)
     fprintf(1,'Cancelling...\n')
@@ -234,36 +234,46 @@ ccn = 1;
 for cc = indCondSubs
     stFigName = [stFigBasename, consCondNames{ccn}, stFigSubfix];
     ccn = ccn + 1;
-    if ~exist([stFigName,'.*'],'file')
+    if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.fig'],'file')
         print(figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
-        print(figs(cc),[stFigName,'.emf'],'-dmeta')
+        savefig(figs(cc),[stFigName,'.fig'])
     end
 end
+H = cell2mat(cellfun(@(x) x.Pvalues,...
+    arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
+    'UniformOutput', 0)) < 0.05;
 
+Htc = sum(H,2);
+CtrlCond = contains(consCondNames,'control','IgnoreCase',true);
+wruIdx = any(H(:,CtrlCond),2);
+Nwru = nnz(wruIdx);
+
+fprintf('%d whisker responding clusters:\n', Nwru);
+fprintf('- %s\n',gclID{wruIdx})
 
 
 
 %% Saving variables
-save(fullfile(dataDir,[expName,'_Variables.mat']),'consCondNames','Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
+save(fullfile(dataDir,[expName,'_MechVariables.mat']),'consCondNames','Counts', 'Results', 'responseWindow','Triggers', '-v7.3');
 
 %RAM: shove all of this previous stuff into functions and then replace
 %with one or more function calls.
 
 %% Getting cluster info and adding variables to table
-clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
-chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
-chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
-[m,b] = lineariz(chanPos(:,1), 6, 1);
-shank = m*chanPos(:,1) + b;
-shank = round(shank);
-shMap = containers.Map(chanMap, shank);
-setShank = @(x) shMap(x);
-clInfo.shank = arrayfun(setShank, clInfo.channel);
-tb = size(clInfo);
-sz = tb(1);
-ActiveUnit = false(sz,1);
-clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
-clInfo{gclID, 'ActiveUnit'} = true;
+% clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+% chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
+% chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
+% [m,b] = lineariz(chanPos(:,1), 6, 1);
+% shank = m*chanPos(:,1) + b;
+% shank = round(shank);
+% shMap = containers.Map(chanMap, shank);
+% setShank = @(x) shMap(x);
+% clInfo.shank = arrayfun(setShank, clInfo.channel);
+% tb = size(clInfo);
+% sz = tb(1);
+% ActiveUnit = false(sz,1);
+% clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
+% clInfo{gclID, 'ActiveUnit'} = true;
 
 for a = 1: length(consCondNames)
     clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Counts_Spont']} = mean(Counts{a,1}')';
@@ -304,7 +314,7 @@ for a = 1:length(consCondNames) - 1
     d = d - 1;
     f = f + d;
 end
-% writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
+writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 
 %% Determining nShanks
 
@@ -916,8 +926,8 @@ end
 %% rasters for testing
 
 lastlevel=0;
-thisCondition=4;
-for trialNo = 1:55
+thisCondition=2;
+for trialNo = 20% :55
     figure;
     for n=1:length(relativeSpikeTimes)
         if mod(n,2)==0, col='b';else col='k';end
