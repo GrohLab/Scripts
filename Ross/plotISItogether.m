@@ -1,4 +1,4 @@
-function [fig, FRpu] = plotISIALL(spkSubs, fs, ID)
+function [fig, FRpu] = plotISItogether(spkSubs, fs, ID)
 % PLOTISI takes the spikes subscripts and displays the inter-spike
 % intervals in a continuous histogram y-log(x) manner.
 %   Input parameters:
@@ -75,20 +75,20 @@ for cu = 1:Nu
     bns = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
     plot(bns,cts./sum(cts),'LineWidth',1);
     fig = gcf;
-    ax = fig.Children;
-   % ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
-    xlabel(ax,'Time [ms]'); ylabel(ax,'ISI Probability');
-%     if IDflag
-%         title(ax,['Unit #',num2str(cu),' (',ID{cu},')']);
-%     else
-%         title(ax,['Unit #',num2str(cu)]);
-%     end
-    grid(ax,'on')
-    Ncts = cts/sum(cts);
-%     yyaxis('right');plot(bns,cumsum(Ncts),'LineStyle','--')
-%     ylabel('Cumulative fraction');ax = fig.Children;
-%     ax.YAxis(2).Limits = [0, 1];
-%     ax.YAxis(2).Color = [0.1,0.1,0.1];
+    %     if IDflag
+    %         title(ax,['Unit #',num2str(cu),' (',ID{cu},')']);
+    %     else
+    %         title(ax,['Unit #',num2str(cu)]);
+    %     end
+    %     yyaxis('right');plot(bns,cumsum(Ncts),'LineStyle','--')
+    %     ylabel('Cumulative fraction');ax = fig.Children;
+    %     ax.YAxis(2).Limits = [0, 1];
+    %     ax.YAxis(2).Color = [0.1,0.1,0.1];
     fig.Visible = 'on';
 end
+ax = fig.Children;
+grid(ax,'on')
+Ncts = cts/sum(cts);
+ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
+xlabel(ax,'Time [ms]'); ylabel(ax,'ISI Probability');
 end

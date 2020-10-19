@@ -1,5 +1,7 @@
 % PainProtocolGetter
-expt_part = 1;
+
+%%
+expt_part = 4;
 a = expt_part;
 Trig(1).name = head69.title;
 Trig(2).name = head71.title;
@@ -53,3 +55,41 @@ end
 Conditions(1).name = 'MechALL'; Conditions(1).Triggers = Trig(1).AllTriggers;
 Conditions(2).name = 'LaserAll'; Conditions(2).Triggers = Trig(2).AllTriggers;
 save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','Triggers','-v7.3');
+%% Adding New Conditions
+Conditions(3).name = 'Mech_Control_10mW';
+Conditions(4).name = 'Mech_Laser_10mW';
+Conditions(5).name = 'Laser_Control_10mW';
+Conditions(6).name = 'Mech_Control_15mW';
+Conditions(7).name = 'Mech_Laser_15mW';
+Conditions(8).name = 'Laser_Control_15mW';
+Conditions(9).name = 'Mech_Control_5mW';
+Conditions(10).name = 'Mech_Laser_5mW';
+Conditions(11).name = 'Laser_Control_5mW';
+Conditions(3).name = 'Mech_Control_10mW';
+Conditions(4).name = 'Mech_Laser_10mW';
+Conditions(5).name = 'Laser_Control_10mW';
+Conditions(6).name = 'Mech_Control_15mW';
+Conditions(7).name = 'Mech_Laser_15mW';
+Conditions(8).name = 'Laser_Control_15mW';
+Conditions(9).name = 'Mech_Control_5mW';
+Conditions(10).name = 'Mech_Laser_5mW';
+Conditions(11).name = 'Laser_Control_5mW';
+
+Conditions(3).Triggers = Conditions(1).Triggers;
+Conditions(4).name = Conditions(1).Triggers;
+Conditions(5).Triggers = Conditions(2).Triggers;
+Conditions(6).Triggers = Conditions(1).Triggers;
+Conditions(7).Triggers = Conditions(1).Triggers;
+Conditions(8).Triggers = Conditions(2).Triggers;
+Conditions(9).Triggers = Conditions(1).Triggers;
+Conditions(10).Triggers = Conditions(1).Triggers;
+Conditions(11).Triggers = Conditions(2).Triggers;
+Conditions(3).Triggers = Conditions(1).Triggers;
+Conditions(4).Triggers = Conditions(1).Triggers;
+Conditions(5).Triggers = Conditions(2).Triggers;
+Conditions(6).Triggers = Conditions(1).Triggers;
+Conditions(7).Triggers = Conditions(1).Triggers;
+Conditions(8).Triggers = Conditions(2).Triggers;
+Conditions(9).Triggers = Conditions(1).Triggers;
+Conditions(10).Triggers = Conditions(1).Triggers;
+Conditions(11).Triggers = Conditions(2).Triggers;
