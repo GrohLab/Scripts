@@ -19,5 +19,5 @@ modInc = sum(clInfo.(MRind) & clInfo.(deltaMRind) & clInfo.(LRind) == false & cl
 modDec = sum(clInfo.(MRind) & clInfo.(deltaMRind) & clInfo.(LRind) == false & clInfo.(LEvCounts) < clInfo.(CEvCounts));
 drvInc = sum(clInfo.(MRind) & clInfo.(deltaMRind) & clInfo.(LRind) & clInfo.(LEvCounts) > clInfo.(CEvCounts));
 drvDec = sum(clInfo.(MRind) & clInfo.(deltaMRind) & clInfo.(LRind) & clInfo.(LEvCounts) < clInfo.(CEvCounts));
-vennX([modInc, drvInc, LR, drvDec, modDec, 0, 0], 0.005);
+vennX([modInc, drvInc, LR, drvDec, modDec, 0, 0], 0.01);
 end

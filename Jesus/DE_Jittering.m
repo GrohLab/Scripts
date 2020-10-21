@@ -83,7 +83,7 @@ if ~exist(isiFile,'file')
     Nnzv = sum(NnzvPcl);
     rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl,...
         'UniformOutput', 0));
-    cols = cell2mat(spkSubs2);
+    cols = cell2mat(spkSubspis2);
     vals = cell2mat(ISIVals);
     ISIspar = sparse(rows, cols, vals);
 else
@@ -261,10 +261,11 @@ for cc = 1:numel(Figs)
         ccn = ccn + 1;
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
-    if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
-        print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
-        print(Figs(cc),[stFigName,'.emf'],'-dmeta')
-    end
+    %     if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
+    %         print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
+    %         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
+    %     end
+    savefig(Figs(cc),fullfile(figureDir, [altCondNames, '.fig']));
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
@@ -468,8 +469,11 @@ for ccond = 1:Nccond
         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
             '-dmeta')
     end
+    
 end
-
+for a = 1:8
+    savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH.fig']));
+end
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
 if strcmpi(rasAns,'Yes')

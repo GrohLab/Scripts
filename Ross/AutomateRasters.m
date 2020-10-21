@@ -5,7 +5,7 @@ rasterDir = fullfile(figureDir,'Rasters\');
 if ~mkdir(rasterDir)
     fprintf(1,'There was an issue with the figure folder...\n');
 end
-for pwr = [2, 5, 10, 15]
+for pwr = [5, 10, 15]
 MchTblInd = ['Mech_Control_', num2str(pwr), 'mW_MR'];
 LasTblInd = ['Laser_Control_', num2str(pwr), 'mW_LR'];
 MchCondControl = ['Mech_Control_', num2str(pwr), 'mW'];

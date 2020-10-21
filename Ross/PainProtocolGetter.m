@@ -1,7 +1,7 @@
 % PainProtocolGetter
 
 %%
-expt_part = 4;
+expt_part = 2;
 a = expt_part;
 Trig(1).name = head69.title;
 Trig(2).name = head71.title;

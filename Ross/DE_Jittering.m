@@ -83,7 +83,7 @@ if ~exist(isiFile,'file')
     Nnzv = sum(NnzvPcl);
     rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl,...
         'UniformOutput', 0));
-    cols = cell2mat(spkSubspis2);
+    cols = cell2mat(spkSubs2);
     vals = cell2mat(ISIVals);
     ISIspar = sparse(rows, cols, vals);
 else
@@ -169,16 +169,22 @@ end
 [discStack, cst] = getStacks(spkLog,Conditions(chCond).Triggers,onOffStr,...
     timeLapse,fs,fs,spkSubs,continuousSignals);
 % ISI stack
-[~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
-    timeLapse,fs,fs,[],ISIspar);
-% [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
-%     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
-%     continuousSignals);
-if ~exist(isiFile,'file')
-    fprintf(1,'Saving the inter-spike intervals for each cluster... ');
-    save(isiFile,'ISIspar','isiStack','-v7.3')
-    fprintf(1,'Done!\n')
+try
+    [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
+        timeLapse,fs,fs,[],ISIspar);
+catch
+    fprintf(1, 'Perhaps there''s not enough memory to cope with this ISIs\n');
+    % General ISI
+    
 end
+%[dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
+%    'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
+%    continuousSignals);
+% if ~exist(isiFile,'file')
+%     fprintf(1,'Saving the inter-spike intervals for each cluster... ');
+%     save(isiFile,'ISIspar','isiStack','-v7.3')
+%     fprintf(1,'Done!\n')
+% end
 % Number of clusters + the piezo as the first event + the laser as the last
 % event, number of time samples in between the time window, and number of
 % total triggers.
@@ -471,7 +477,7 @@ for ccond = 1:Nccond
     end
     
 end
-for a = 1:8
+for a = 1:length(consideredConditions)
     savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH.fig']));
 end
 %% Rasters from interesting clusters
