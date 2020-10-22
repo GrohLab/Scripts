@@ -32,10 +32,10 @@ silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
 badsIdx = badsIdx | silentUnits;
-if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
-    clInfo = addvars(clInfo,~badsIdx,'After','id',...
-        'NewVariableNames','ActiveUnit');
-end
+    if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
+        clInfo = addvars(clInfo,~badsIdx,'After','id',...
+            'NewVariableNames','ActiveUnit');
+    end
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 % Logical spike trace for the first good cluster
@@ -169,14 +169,18 @@ end
 [discStack, cst] = getStacks(spkLog,Conditions(chCond).Triggers,onOffStr,...
     timeLapse,fs,fs,spkSubs,continuousSignals);
 % ISI stack
-[~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
-    timeLapse,fs,fs,[],ISIspar);
+try
+    [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
+        timeLapse,fs,fs,[],ISIspar);
+catch
+    fprintf(1,'Not able to do the ISI stack\n')
+end
 % [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
 %     continuousSignals);
 if ~exist(isiFile,'file')
     fprintf(1,'Saving the inter-spike intervals for each cluster... ');
-    save(isiFile,'ISIspar','isiStack','-v7.3')
+    save(isiFile,'ISIspar','ISIVals','-v7.3')
     fprintf(1,'Done!\n')
 end
 % Number of clusters + the piezo as the first event + the laser as the last
@@ -261,11 +265,18 @@ for cc = 1:numel(Figs)
         ccn = ccn + 1;
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
+<<<<<<< Updated upstream
     %     if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
     %         print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
     %         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
     %     end
     savefig(Figs(cc),fullfile(figureDir, [altCondNames, '.fig']));
+=======
+%     if ~exist([stFigName,'.fig'],'file') || ~exist([stFigName,'.emf'],'file')
+%         print(Figs(cc),[stFigName,'.fig'],'-dfig','-fillpage')
+%         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
+%     end
+>>>>>>> Stashed changes
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
@@ -400,6 +411,8 @@ for ccond = 1:size(delayFlags,2)
 end
 save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
+%% Standard Deviations of First Spikes After Each Trigger per Unit
+firstSpikes(relativeSpkTmsStruct, gclID, dataDir);
 %% Ordering PSTH
 
 orderedStr = 'ID ordered';
@@ -462,8 +475,8 @@ for ccond = 1:Nccond
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
     if ~exist([figFileName,'.pdf'], 'file')
-        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
-            '-dpdf','-fillpage')
+        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']),...
+            '-dfig','-fisllpage')
     end
     if ~exist([figFileName,'.emf'], 'file')
         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
@@ -521,7 +534,11 @@ if strcmpi(rasAns,'Yes')
     [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
     clSub = clSub(rasOrd(rasIdx));
     clSel = clSel(rasOrd(rasOrd ~= 0));
+<<<<<<< Updated upstream
     Nma = min(Na(rasCondSel));
+=======
+    Nma = 29;
+>>>>>>> Stashed changes
     rasFig = figure;
     Nrcond = length(rasCond);
     ax = gobjects(Nrcond*Nrcl,1);
@@ -549,7 +566,11 @@ if strcmpi(rasAns,'Yes')
                 'UniformOutput', 0);
             xlabel(ax(lidx), 'Time [ms]')
             initSub = 0;
+<<<<<<< Updated upstream
             optsRect = {'EdgeColor',rectColor,'FaceColor','none'};
+=======
+            optsRect = {'EdgeColor','none','FaceColor','none'};
+>>>>>>> Stashed changes
             for ctr = 1:numel(trigChange)
                 rectangle('Position',[0, initSub,...
                     timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
@@ -564,8 +585,8 @@ if strcmpi(rasAns,'Yes')
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
     configureFigureToPDF (rasFig);
-    if ~exist([rasFigName,'.pdf'], 'file') || ~exist([rasFigName,'.emf'], 'file')
-        print(rasFig,fullfile(figureDir,[rasFigName, '.pdf']),'-dpdf','-fillpage')
-        print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
-    end
+%     if ~exist([rasFigName,'.fig'], 'file') || ~exist([rasFigName,'.emf'], 'file')
+%         save(rasFig,fullfile(figureDir,[rasFigName, '.fig']),'-dfig','-fillpage')
+%         print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
+%     end
 end
