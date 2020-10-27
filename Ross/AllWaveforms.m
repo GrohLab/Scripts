@@ -10,7 +10,7 @@ ax = fig(1).Children;
 ind = size(clWaveforms{1,2}(:,1));
 ind = ind(1);
 ax.XTickLabel = [1:ind]/fs*1000;
-title('All Waveforms')
+title('Increased')
 xlabel(ax,'Time [ms]')
 ax.FontSize = 20;
 end

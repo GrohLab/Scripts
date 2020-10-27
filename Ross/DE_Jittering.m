@@ -180,11 +180,11 @@ end
 %[dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %    'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
 %    continuousSignals);
-% if ~exist(isiFile,'file')
-%     fprintf(1,'Saving the inter-spike intervals for each cluster... ');
-%     save(isiFile,'ISIspar','isiStack','-v7.3')
-%     fprintf(1,'Done!\n')
-% end
+if ~exist(isiFile,'file')
+    fprintf(1,'Saving the inter-spike intervals for each cluster... ');
+    save(isiFile,'ISIspar','isiStack','-v7.3')
+    fprintf(1,'Done!\n')
+end
 % Number of clusters + the piezo as the first event + the laser as the last
 % event, number of time samples in between the time window, and number of
 % total triggers.

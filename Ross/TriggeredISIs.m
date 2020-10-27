@@ -1,5 +1,5 @@
 % function ISIbox = TriggeredISIs(clInfo,sortedData,Conditions,responseWindow,fs,ISIspar,onOffStr)
-spontaneousWindow = -flip(responseWindow);
+% spontaneousWindow = -flip(responseWindow);
 ConsConds = Conditions(8:end);
 nCond = length(ConsConds);
 for ChCond = 1:nCond
@@ -52,9 +52,9 @@ for ChCond = 1:nCond
         ISIbox(ChCond).Vals(wIndex).bns{1} = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
         for a = 2:length(ID)
             
-            [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
+            [~, isiStack] = getStacks(spkLog,Conditions(ChCond).Triggers, onOffStr,...
                 Window,fs,fs,[],ISIspar(a,:));
-            
+            figure('Visible','off');
             hisi = histogram(log(isiStack), 'BinEdges', log(1/fs):0.01:log(100));
             ISIbox(ChCond).Vals(wIndex).cts{a} = hisi.BinCounts;
             ISIbox(ChCond).Vals(wIndex).bns{a} = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;

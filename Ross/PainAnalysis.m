@@ -360,7 +360,7 @@ for shankNo = 1:nShanks
     
     
     
-    % Getting Wilcoxon rank sums for box plots
+    % Getting Wilcoxon sign ranks for box plots
     
     for a = 1: length(consCondNames) - 1
         for b = (a + 1): length(consCondNames)
