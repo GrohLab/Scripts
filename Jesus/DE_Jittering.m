@@ -20,7 +20,8 @@ end
 
 %% Constructing the helper 'global' variables
 % Number of total samples
-Ns = min(structfun(@numel,Triggers));
+Ns = structfun(@numel,Triggers);
+Ns = min(Ns(Ns>1));
 % Total duration of the recording
 Nt = Ns/fs;
 % Useless clusters (labeled as noise or they have very low firing rate)
