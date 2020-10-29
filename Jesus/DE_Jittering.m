@@ -266,18 +266,11 @@ for cc = 1:numel(Figs)
         ccn = ccn + 1;
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
-<<<<<<< Updated upstream
-    %     if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
-    %         print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
-    %         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
-    %     end
-    savefig(Figs(cc),fullfile(figureDir, [altCondNames, '.fig']));
-=======
-%     if ~exist([stFigName,'.fig'],'file') || ~exist([stFigName,'.emf'],'file')
-%         print(Figs(cc),[stFigName,'.fig'],'-dfig','-fillpage')
-%         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
-%     end
->>>>>>> Stashed changes
+    if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
+        print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
+        print(Figs(cc),[stFigName,'.emf'],'-dmeta')
+        savefig(Figs(cc),fullfile(figureDir, [stFigName, '.fig']));
+    end
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
@@ -535,11 +528,7 @@ if strcmpi(rasAns,'Yes')
     [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
     clSub = clSub(rasOrd(rasIdx));
     clSel = clSel(rasOrd(rasOrd ~= 0));
-<<<<<<< Updated upstream
     Nma = min(Na(rasCondSel));
-=======
-    Nma = 29;
->>>>>>> Stashed changes
     rasFig = figure;
     Nrcond = length(rasCond);
     ax = gobjects(Nrcond*Nrcl,1);
@@ -567,11 +556,7 @@ if strcmpi(rasAns,'Yes')
                 'UniformOutput', 0);
             xlabel(ax(lidx), 'Time [ms]')
             initSub = 0;
-<<<<<<< Updated upstream
             optsRect = {'EdgeColor',rectColor,'FaceColor','none'};
-=======
-            optsRect = {'EdgeColor','none','FaceColor','none'};
->>>>>>> Stashed changes
             for ctr = 1:numel(trigChange)
                 rectangle('Position',[0, initSub,...
                     timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
