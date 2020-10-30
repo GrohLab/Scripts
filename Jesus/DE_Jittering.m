@@ -33,10 +33,10 @@ silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
 badsIdx = badsIdx | silentUnits;
-    if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
-        clInfo = addvars(clInfo,~badsIdx,'After','id',...
-            'NewVariableNames','ActiveUnit');
-    end
+if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
+    clInfo = addvars(clInfo,~badsIdx,'After','id',...
+        'NewVariableNames','ActiveUnit');
+end
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 % Logical spike trace for the first good cluster
@@ -84,7 +84,7 @@ if ~exist(isiFile,'file')
     Nnzv = sum(NnzvPcl);
     rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl,...
         'UniformOutput', 0));
-    cols = cell2mat(spkSubspis2);
+    cols = cell2mat(spkSubs2);
     vals = cell2mat(ISIVals);
     ISIspar = sparse(rows, cols, vals);
 else
@@ -269,7 +269,7 @@ for cc = 1:numel(Figs)
     if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
         print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
-        savefig(Figs(cc),fullfile(figureDir, [stFigName, '.fig']));
+        savefig(Figs(cc),[stFigName, '.fig']);
     end
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
@@ -385,7 +385,8 @@ for ccond = 1:size(delayFlags,2)
     end
     relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
     relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
-    %{
+    %{ 
+    % First spike in the trial
     spikeTimesINRespWin = cellfun(cellLogicalIndexing,...
         relativeSpikeTimes, respIdx, 'UniformOutput',false);
     allSpikeTimes = cell2mat(spikeTimesINRespWin(:)');
@@ -406,7 +407,7 @@ end
 save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
 %% Standard Deviations of First Spikes After Each Trigger per Unit
-firstSpikes(relativeSpkTmsStruct, gclID, dataDir);
+% firstSpikes(relativeSpkTmsStruct, gclID, dataDir);
 %% Ordering PSTH
 
 orderedStr = 'ID ordered';
@@ -470,16 +471,15 @@ for ccond = 1:Nccond
         sprintf('^{%s}',orderedStr)];
     if ~exist([figFileName,'.pdf'], 'file')
         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']),...
-            '-dfig','-fisllpage')
+            '-dpdf','-fillpage')
     end
     if ~exist([figFileName,'.emf'], 'file')
         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
             '-dmeta')
     end
-    
-end
-for a = 1:8
-    savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH.fig']));
+    if ~exist([figFileName,'.fig'], 'file')
+        savefig(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']))
+    end
 end
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
@@ -571,8 +571,11 @@ if strcmpi(rasAns,'Yes')
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
     configureFigureToPDF (rasFig);
-%     if ~exist([rasFigName,'.fig'], 'file') || ~exist([rasFigName,'.emf'], 'file')
-%         save(rasFig,fullfile(figureDir,[rasFigName, '.fig']),'-dfig','-fillpage')
-%         print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
-%     end
+    if ~exist([rasFigName,'.pdf'], 'file') ||...
+            ~exist([rasFigName,'.emf'], 'file') ||...
+            ~exist([rasFigName,'.fig'], 'file')
+        print(rasFig,fullfile(figureDir,[rasFigName, '.pdf']),'-dpdf','-fillpage')
+        print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
+        savefig(rasFig,fullfile(figureDir,[rasFigName, '.fig']))
+    end
 end
