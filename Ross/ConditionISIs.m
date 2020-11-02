@@ -1,11 +1,16 @@
+%% 
+
+
+
+
 %% ISIs
 ind = 1;
 for model = 1:2
     if model == 1
-        Histy = SalIsi;
+        Histy = SalIIShist;
         modName = 'Saline';
     else
-        Histy = CFAisi;
+        Histy = CfaISIhist;
         modName = 'CFA';
     end
     for wIndex = 1:2
@@ -71,7 +76,7 @@ end
 for a = 1:36
 fprintf(1, [Results(a).name,' Kolgorov-Smirnov Test = ', num2str(Results(a).kstest), ' \n \n'])
 end
-save(fullfile('Z:\Ross\Experiments\VPL', 'Laser_Results'), 'ISIvals', 'Results', '-v7.3');
+save(fullfile('Z:\Ross\Experiments\VPL', 'Laser_Results'), 'Results', '-v7.3');
 %% Cumulative Fraction
 for model = 1:2
     if model == 1
