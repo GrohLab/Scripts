@@ -1,13 +1,12 @@
-function fig = PeakTrough(clWaveforms, ID, fs)
-ind = find(ismember(clWaveforms(:,1), ID));
+%function [PT, fig] = PeakTrough(clWaveforms, ID, fs)
 PT = zeros(length(ID),1);
 r = 1;
-for a = ind'
-    avWv{r} = mean(clWaveforms{a,2}')';
-    
+for a = 1:length(ID)
+    ind = find(ismember(clWaveforms(:,1), ID(a)));
+    avWv{r} = mean(clWaveforms{ind,2}')';
     minVal = min(avWv{r});
     minInd = find((avWv{r} == minVal));
-    maxVal = max(avWv{r});
+    maxVal = max(avWv{r}(minInd:end,1));
     maxInd = find((avWv{r} == maxVal));
     SampleDif = maxInd - minInd;
     msecDif = SampleDif/fs*1000;
@@ -23,4 +22,4 @@ xlabel('Time (msec)');
 fig = gcf;
 ax = fig(1).Children;
 ax.FontSize = 20;
-end
+%end

@@ -1,9 +1,9 @@
 function fig = AllWaveforms(clWaveforms, ID, fs)
-ind = find(ismember(clWaveforms(:,1), ID));
 fig = figure('color', 'white'); plot(mean(clWaveforms{ind(1),2}'));
 hold on
-for a = ind'
-plot(mean(clWaveforms{a,2}'));
+for a = length(ID)
+    ind = find(ismember(clWaveforms(:,1), id(a)));
+    plot(mean(clWaveforms{ind,2}'));
 end
 fig = gcf;
 ax = fig(1).Children;
