@@ -1,6 +1,6 @@
 % function ISIbox = TriggeredISIs(clInfo,sortedData,Conditions,responseWindow,fs,ISIspar,onOffStr)
 % spontaneousWindow = -flip(responseWindow);
-ConsConds = Conditions(3:end);
+ConsConds = Conditions(3:11);
 nCond = length(ConsConds);
 % sortedData = sortedData(:,1);
 for ChCond = 1:nCond
@@ -13,7 +13,7 @@ for ChCond = 1:nCond
     name = [ConsConds(ChCond).name, '_MR'];
     
     if contains(ConsConds(ChCond).name, 'Laser_Con', 'IgnoreCase', true)
-        name = [ConsConds(ChCond).name, '_LR'];
+        name = [ConsConds(ChCond-2).name, '_MR'];
     elseif contains(ConsConds(ChCond).name, ['ch_Laser'], 'IgnoreCase', true)
        name = [ConsConds(ChCond-1).name, '_MR']; % make this more robust to match laser intensity
     end
@@ -41,16 +41,17 @@ for ChCond = 1:nCond
             hisi = histogram(log(isiStack(histInd,:,:)), 'BinEdges', log(1/fs):0.01:log(100));
             ISIhist(ChCond).Vals(wIndex).cts{histInd} = hisi.BinCounts;
             ISIhist(ChCond).Vals(wIndex).bns{histInd} = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
+            close gcf;
         end
     end
 end
 %% ISIs and CumISIs
-for b = 1:length(ChCond)
-    for a = 1:ISIhist(ChCond).Vals(wIndex).cts
-        ISIhist(ChCond).Vals(1).ISI{a} = ISIhist(ChCond).Vals(1).cts{a}/sum(ISIhist(ChCond).Vals(1).cts{a});
-        ISIhist(ChCond).Vals(2).ISI{a} = ISIhist(ChCond).Vals(2).cts{a}/sum(ISIhist(ChCond).Vals(2).cts{a});
-        ISIhist(ChCond).Vals(1).CumISI{a} = ISIhist(ChCond).Vals(1).cts{a}/sum(ISIhist(ChCond).Vals(1).cts{a});
-        ISIhist(ChCond).Vals(2).CumISI{a} = ISIhist(ChCond).Vals(2).cts{a}/sum(ISIhist(ChCond).Vals(2).cts{a});
+for ChCond = 1:nCond
+    for a = 1:length(ISIhist(ChCond).Vals(wIndex).cts)
+        ISIhist(ChCond).Vals(1).ISI{a} = ISIhist(ChCond).Vals(1).cts{a}./sum(ISIhist(ChCond).Vals(1).cts{a});
+        ISIhist(ChCond).Vals(2).ISI{a} = ISIhist(ChCond).Vals(2).cts{a}./sum(ISIhist(ChCond).Vals(2).cts{a});
+        ISIhist(ChCond).Vals(1).CumISI{a} = cumsum(ISIhist(ChCond).Vals(1).ISI{a});
+        ISIhist(ChCond).Vals(2).CumISI{a} = cumsum(ISIhist(ChCond).Vals(2).ISI{a});
     end
 end
 %% Saving ISIhist

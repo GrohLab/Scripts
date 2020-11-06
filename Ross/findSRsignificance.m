@@ -1,8 +1,8 @@
-function [txt ,star] = findKSsignificance(Group1,Group2)
+function [txt ,star] = findSRsignificance(Group1,Group2)
 p = [];
-    p(1) = kstest2(Group1, Group2, 'Alpha', 0.05);
-    for P = 2:100
-        p((P)) = kstest2(Group1, Group2, 'Alpha', 10^(-P));
+   [val, p(1)] = signrank(Group1, Group2, 'Alpha', 0.05);
+    for P = 2:40
+      [val, p((P))] = signrank(Group1, Group2, 'Alpha', 10^(-P));
     end
     pInd = find(p == false);
     if pInd(1) == 1
