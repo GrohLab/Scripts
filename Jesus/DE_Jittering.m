@@ -444,7 +444,8 @@ end
 PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
 psthFigs = gobjects(Nccond,1);
 for ccond = 1:Nccond
-    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
+    figFileName =...
+        sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
         expName, Conditions(consideredConditions(ccond)).name, timeLapse*1e3,...
         binSz*1e3, responseWindow*1e3, spontaneousWindow*1e3, onOffStr,...
         orderedStr, filtStr);
@@ -460,17 +461,16 @@ for ccond = 1:Nccond
             stims(cs,:) = zeros(1,Nt);
         end
     end
-    psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond),trig,sweeps,timeLapse,binSz,...
+    psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
+        sweeps, timeLapse, binSz,...
         [{Conditions(consideredConditions(ccond)).name};... 
-        pclID(ordSubs)],...
-        strrep(expName,'_','\_'),...
-        stims, csNames);
+        pclID(ordSubs)], strrep(expName,'_','\_'), stims, csNames);
     configureFigureToPDF(psthFigs(ccond));
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
     if ~exist([figFileName,'.pdf'], 'file')
-        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']),...
+        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
             '-dpdf','-fillpage')
     end
     if ~exist([figFileName,'.emf'], 'file')
@@ -481,6 +481,28 @@ for ccond = 1:Nccond
         savefig(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']))
     end
 end
+%% Response characterization
+btx = (0:Nbn-1)*binSz + timeLapse(1);
+% Window defined by the response in the population PSTH
+twIdx = btx >= 2e-3 & btx <= 30e-3;
+% PSTH in control
+incsPSTH = 1-cumsum(PSTH(:,twIdx,1)./sum(PSTH(:,twIdx,1),2),2);
+% Exponential fit to the cumsum and getting the time value at 63% of the
+% response
+Ngcl = nnz(filterIdx)-1;
+mdls = zeros(Ngcl,2); r2 = zeros(Ngcl,1);
+figure;
+for ccl = 1:Ngcl
+    auxSignal = incsPSTH(ccl,:); auxSignal(auxSignal <= 0) = eps;
+    subplot(6,7,ccl); plot(btx(twIdx), auxSignal)
+    [fObj, gof] = fit(btx(twIdx)', auxSignal', 'exp1');
+    mdls(ccl,:) = coeffvalues( fObj); r2(ccl) = gof.rsquare;
+    hold on; plot(fObj); legend off; xlabel('Time [s]'); 
+    ylabel('Response magnitude'); 
+    title(sprintf('$$%.2f \\exp^{%.2f x}$$ (%.2f)', mdls(ccl,:), r2(ccl)),...
+        'Interpreter', 'latex')
+end
+
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
 if strcmpi(rasAns,'Yes')
@@ -578,4 +600,17 @@ if strcmpi(rasAns,'Yes')
         print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
         savefig(rasFig,fullfile(figureDir,[rasFigName, '.fig']))
     end
+end
+%% Cross-correlations
+ccrAns = questdlg('Compute cross-correlograms? (Might take a while!)',...
+    'Cross-correlations','Yes','No','Yes');
+if strcmpi(ccrAns,'Yes')
+    consTime = [];
+    while isempty(consTime)
+        consTime = inputdlg('Cross-correlation time around the spikes in ms:');
+        consTime = str2num(consTime)*1e-3;
+    end
+    spkSubs = cat(1, {round(sortedData{goods(1),2}*fs)},spkSubs);
+    corrs = neuroCorr(spkSubs, consTime, 1, fs);
+    
 end
