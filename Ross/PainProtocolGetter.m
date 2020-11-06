@@ -1,8 +1,5 @@
-% PainProtocolGetter
-
 %%
-expt_part = 1;
-a = expt_part;
+a  = 1;
 Trig(1).name = head69.title;
 Trig(2).name = head71.title;
 Trig(3).name = head66.title;
@@ -22,7 +19,7 @@ Trig(5).offset(a) = length(chan68);
 Trig(6).info{a} = chan70;
 Trig(6).offset(a) = length(chan70);
 %% Getting Trigger data
-for b = 1:2
+for b = 1%:2
     for a  = 1:length(Trig(b).info)
         Obj = StepWaveform(Trig(b).info{a}, fs);
         Trig(b).triggers{a} = Obj.subTriggers;
