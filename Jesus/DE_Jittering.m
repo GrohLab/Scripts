@@ -481,27 +481,34 @@ for ccond = 1:Nccond
         savefig(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']))
     end
 end
-%% Response characterization
-btx = (0:Nbn-1)*binSz + timeLapse(1);
-% Window defined by the response in the population PSTH
-twIdx = btx >= 2e-3 & btx <= 30e-3;
+
+
 % PSTH in control
-incsPSTH = 1-cumsum(PSTH(:,twIdx,1)./sum(PSTH(:,twIdx,1),2),2);
+% incsPSTH = 1-cumsum(PSTH(:,twIdx,1)./sum(PSTH(:,twIdx,1),2),2);
 % Exponential fit to the cumsum and getting the time value at 63% of the
 % response
-Ngcl = nnz(filterIdx)-1;
-mdls = zeros(Ngcl,2); r2 = zeros(Ngcl,1);
-figure;
-for ccl = 1:Ngcl
-    auxSignal = incsPSTH(ccl,:); auxSignal(auxSignal <= 0) = eps;
-    subplot(6,7,ccl); plot(btx(twIdx), auxSignal)
-    [fObj, gof] = fit(btx(twIdx)', auxSignal', 'exp1');
-    mdls(ccl,:) = coeffvalues( fObj); r2(ccl) = gof.rsquare;
-    hold on; plot(fObj); legend off; xlabel('Time [s]'); 
-    ylabel('Response magnitude'); 
-    title(sprintf('$$%.2f \\exp^{%.2f x}$$ (%.2f)', mdls(ccl,:), r2(ccl)),...
-        'Interpreter', 'latex')
-end
+% Ngcl = nnz(filterIdx)-1;
+% mdls = zeros(Ngcl,2); r2 = zeros(Ngcl,1);
+%figure; % Review of the 1 - cumulative response
+% shtx = btx(twIdx);
+% quartCut = exp(-log([4/3, 2, exp(1), 4]))'; qVals = zeros(Ngcl,4);
+% for ccl = 1:Ngcl
+%     auxSignal = incsPSTH(ccl,:); auxSignal(auxSignal <= 0) = eps;
+%     %subplot(6,7,ccl); plot(btx(twIdx), auxSignal)
+%     [fitObj, gof] = fit(shtx', auxSignal', 'exp1');
+%     mdls(ccl,:) = coeffvalues(fitObj); r2(ccl) = gof.rsquare;
+%     %hold on; plot(fObj); legend off; xlabel('Time [s]'); 
+%     %ylabel('Response magnitude'); 
+%     %title(sprintf('$$%.2f \\exp^{%.2f x}$$ (%.2f)', mdls(ccl,:), r2(ccl)),...
+%     %    'Interpreter', 'latex')
+%     % Quartiles cut for exponential distribution (25, 50, 63.21, 75)
+%     quartFlags = auxSignal >= quartCut;
+%     [qSubs, ~] = find(diff(quartFlags'));
+%     il = arrayfun(@(x) fit_poly(shtx(x:x+1), auxSignal(x:x+1), 1), qSubs,...
+%         'UniformOutput', 0);il = cat(2,il{:});
+%     qVals(ccl,:) = (quartCut' - il(2,:))./il(1,:);
+% end
+% qDiff = diff(qVals(:,[1,4]),1,2);
 
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
@@ -601,16 +608,65 @@ if strcmpi(rasAns,'Yes')
         savefig(rasFig,fullfile(figureDir,[rasFigName, '.fig']))
     end
 end
+%% Response speed characterization
+btx = (0:Nbn-1)*binSz + timeLapse(1);
+% Window defined by the response in the population PSTH
+% twIdx = btx >= 2e-3 & btx <= 30e-3;
+respTmWin = [2, 30]*1e-3;
+[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, respTmWin);
+mdls(mdls(:,2) == 0, 2) = 1;
 %% Cross-correlations
-ccrAns = questdlg('Compute cross-correlograms? (Might take a while!)',...
-    'Cross-correlations','Yes','No','Yes');
+ccrAns = questdlg(['Get cross-correlograms?',...
+    '(Might take a while to compute if no file exists!)'],...
+    'Cross-correlations', 'Yes', 'No', 'Yes');
 if strcmpi(ccrAns,'Yes')
-    consTime = [];
-    while isempty(consTime)
-        consTime = inputdlg('Cross-correlation time around the spikes in ms:');
-        consTime = str2num(consTime)*1e-3;
+    consTime = inputdlg('Cross-correlation lag (ms):',...
+        'Correlation time', [1,30], {'50'});
+    try
+        consTime = str2num(consTime{1})*1e-3;
+    catch
+        fprintf(1, 'Cancelling...\n');
+        return
     end
-    spkSubs = cat(1, {round(sortedData{goods(1),2}*fs)},spkSubs);
-    corrs = neuroCorr(spkSubs, consTime, 1, fs);
-    
+    corrsFile = fullfile(dataDir,sprintf('%s_%.2f ms_ccorr.mat', expName,...
+        consTime*1e3));
+    if ~exist(corrsFile,'file')
+        spkSubs = cat(1, {round(sortedData{goods(1),2}*fs)},spkSubs);
+        corrs = neuroCorr(spkSubs, consTime, 1, fs);
+        save(corrsFile,'corrs','consTime','fs');
+    else
+        load(corrsFile, 'corrs')
+    end
 end
+%% Auto-correlation measurement
+% Arranging the auto-correlograms out of the cross-correlograms into a
+% single matrix
+acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
+acorrs = single(cat(1, acorrs{:})); Ncrs = size(acorrs, 2);
+% Computing the lag axis for the auto-correlograms
+b = -ceil(Ncrs/2)/fs; corrTx = (1:Ncrs)'/fs + b;
+corrTmWin = [1, 25]*1e-3;
+% Interesting region in the auto-correlogram
+[cmdls, cr2, cqVals, cqDiff] =...
+    exponentialSpread(acorrs, corrTx, corrTmWin);
+% lwIdx = corrTx >= (1e-3 - 1/fs) & corrTx <= 25e-3;
+% lTx = corrTx(lwIdx);
+% icsAc = double(1 - cumsum(acorrs(:,lwIdx)./sum(acorrs(:,lwIdx),2),2));
+% % Quartile cuts
+% quartCut = exp(-log([4/3, 2, exp(1), 4]))';
+% % Exponential analysis for the auto-correlograms
+% cmdls = zeros(Ncl,2); cr2 = zeros(Ncl,1); cqVals = zeros(Ncl,4);
+% for ccl = 1:Ncl
+%     % Exponential fit for the inverted cumsum
+%     [fitObj, gof] = fit(lTx, icsAc(ccl,:)', 'exp1','Display','off');
+%     cmdls(ccl,:) = coeffvalues(fitObj); cr2(ccl) = gof.rsquare;
+%     % Quartiles cut for exponential distribution (25, 50, 63.21, 75)
+%     quartFlags = icsAc(ccl,:) >= quartCut;
+%     [qSubs, ~] = find(diff(quartFlags'));
+%     il = arrayfun(@(x) fit_poly(lTx(x:x+1), icsAc(ccl,x:x+1), 1), qSubs,...
+%         'UniformOutput', 0);il = cat(2,il{:});
+%     cqVals(ccl,:) = (quartCut' - il(2,:))./il(1,:);
+% end
+% cqDiff = diff(cqVals(:,[1,4]),1,2);
+
+
