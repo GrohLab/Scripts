@@ -1,10 +1,7 @@
 %% TRN clustering for response
+Ngcl = sum(wruIdx);
 chMap = readNPY(fullfile(dataDir,'channel_map.npy'));
 chPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
-probeFig = figure('Name','Probe','Color',[1,1,1]); 
-probAx = axes('Parent', probeFig);
-plot(chPos(:,1), chPos(:,2),'LineStyle', 'none', 'Marker', 'o',...
-    'MarkerEdgeColor', ones(1,3)*0.8)
 orthMat = [0,1;-1,0];
 ptsPer = 0.2;
 if sum(wruIdx) < 10
@@ -22,14 +19,21 @@ an = getHesseLineForm(amdl);
 aI = featMat(:,[3,4]) * orthMat * an;
 
 trnMat = [rI, aI]; [trnMat_w, whMat, trnMu] = whitenPoints(trnMat);
-gm = fitgmdist(trnMat_w, 2);
-trnFlag = gm.cluster(trnMat_w);
+try
+    gm = fitgmdist(trnMat_w, 2);
+    trnFlag = gm.cluster(trnMat_w);
+catch
+    fprintf(1,'Time to classify with your eyes\n')
+    figure; scatter(trnMat(:,1), trnMat(:,2), '.');
+    text(trnMat(:,1), trnMat(:,2), pclID)
+    return
+end
 
 trnSubs = find(ismember(gclID, pclID(trnFlag))); sqrSb = sqrt(length(trnSubs));
 trnSubs_psth = find(trnFlag);
 apeFig = figure('Name', 'Auto-correlation & PSTH', 'Color',[1,1,1]);
 for csp = 1:size(trnSubs,1)
-    subplot(floor(sqrSb),ceil(sqrSb),csp);
+    subplot(ceil(sqrSb),ceil(sqrSb),csp);
     plot(corrTx, acorrs(trnSubs(csp),:))
     yyaxis right; plot(btx, PSTH(trnSubs_psth(csp),:,1))
     title(sprintf('Cluster %s', pclID{trnSubs_psth(csp)}))
@@ -39,7 +43,12 @@ legend({'Auto-correlogram','Cluster PSTH'})
 clInfo = addvars(clInfo, false(size(clInfo,1),1), 'NewVariableNames', 'TRN');
 clInfo{gclID(trnSubs),'TRN'} = true;
 writeClusterInfo(clInfo,fullfile(dataDir,'cluster_info.tsv'));
+%% Plotting the 
 % Placing the TRN channels on the probe
+probeFig = figure('Name','Probe','Color',[1,1,1]); 
+probAx = axes('Parent', probeFig);
+plot(chPos(:,1), chPos(:,2),'LineStyle', 'none', 'Marker', 'o',...
+    'MarkerEdgeColor', ones(1,3)*0.8)
 [~,trnChanSub] = find(chMap' == clInfo{clInfo.TRN==1,'ch'});
 set(probAx,'Box','off'); set(get(probAx,'XAxis'),'Color','none');
 probAx.YAxis.Color = 'none';
