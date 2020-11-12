@@ -641,7 +641,11 @@ end
 %% Auto-correlation measurement
 % Arranging the auto-correlograms out of the cross-correlograms into a
 % single matrix
-acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
+try
+    acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
+catch
+    fprintf(1, 'No correlograms in the workspace!\n')
+end
 acorrs = single(cat(1, acorrs{:})); Ncrs = size(acorrs, 2);
 % Computing the lag axis for the auto-correlograms
 b = -ceil(Ncrs/2)/fs; corrTx = (1:Ncrs)'/fs + b;
@@ -649,6 +653,7 @@ corrTmWin = [1, 25]*1e-3;
 % Interesting region in the auto-correlogram
 [cmdls, cr2, cqVals, cqDiff] =...
     exponentialSpread(acorrs, corrTx, corrTmWin);
+
 % lwIdx = corrTx >= (1e-3 - 1/fs) & corrTx <= 25e-3;
 % lTx = corrTx(lwIdx);
 % icsAc = double(1 - cumsum(acorrs(:,lwIdx)./sum(acorrs(:,lwIdx),2),2));
