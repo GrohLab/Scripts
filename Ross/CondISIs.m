@@ -69,13 +69,14 @@ for model = 1:2
             % Results(c).name = kstest2(CumISI(chCond(1)).Condition(wIndex).Vals;
             ylabel('Cumulative Fraction');
             xlabel('ISI (msecs)');
-            xlim([log(0.001), 4.5]);
+            xlim([-3, 2]);
+            xticks([-3:2])
             ylim([0, 1]);
             legend(Histy(chCond(1)).name, Histy(chCond(2)).name, Histy(chCond(3)).name);
             fig = gcf;
             ax = gca;
             ax.FontSize = 20;
-            ax.XTickLabels = round(exp(-6:4)* 1e3);
+            ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
 
         end
         c = 0;

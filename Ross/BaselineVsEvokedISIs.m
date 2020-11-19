@@ -94,18 +94,20 @@ for model = 1:2
     plot(Hist(1).Vals(2).bns{1}, evoked);
     ylabel('Cumulative Fraction');
     xlabel('ISI (msecs)');
-    xlim([log(0.001), 4.5]);
+    xlim([-3, 2]);
+    xticks([-3:2]);
     ylim([0, 1]);
     legend('Spontaneous', 'Evoked');
     fig = gcf;
     ax = gca;
     ax.FontSize = 20;
+    ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
+    % ax.XTickLabelRotation = -45;
     if model == 1
         title('Saline');
     else
         title('CFA');
     end
-    ax.XTickLabels = round(exp(-6:4)* 1e3);
     %% More Stats
     [txt, star] = findKSsignificance(SpontISI, EvokedISI);
     annotation(figure(gcf),'textbox',...

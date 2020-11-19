@@ -45,7 +45,7 @@ for ChCond = 1:nCond
         
         
         figure('Visible', 'off', 'Color',[1,1,1]);
-        hisi = histogram(log(isiStack), 'BinEdges', log(1/fs):0.01:log(100));
+        hisi = histogram(log10(isiStack), 'BinEdges', log10(1/fs):0.01:log10(100));
         cts = cell(size(goods));
         bns = cell(size(goods));
         ISIbox(ChCond).Vals(wIndex).cts{1} = hisi.BinCounts;
@@ -61,48 +61,4 @@ for ChCond = 1:nCond
         end
     end
 end
- save(fullfile(dataDir,[expName,'_ISIbox.mat']), 'ISIbox', 'ConsConds', '-v7.3');
-        %%
-        figure('Color',[1,1,1]);
-        mintd = 1/fs;
-       % hisi = histogram(log(isiStack),linspace(log10(mintd),3,100), 'DisplayStyle', 'stairs');
-        plot(bns{1},cts{1}./sum(cts{1}),'LineWidth',1);
-        Ncts = cts{1}/sum(cts{1});
-        % yyaxis('right');plot(bns{1},cumsum(Ncts),'LineStyle','-')
-        hold on
-        for a = 2:length(ID)
-            plot(bns{a},cts{a}./sum(cts{a}),'LineWidth',1);
-            Ncts = cts{a}/sum(cts{a});
-            % yyaxis('right');plot(bns{a},cumsum(Ncts),'LineStyle','-')
-        end
-        fig = gcf;
-        ax = fig.Children;
-        ax.XTickLabel = round(exp(cellfun(@str2double,ax.XTickLabel)) * 1e3);
-        xlabel(ax,'Time [ms]'); ylabel(ax,'ISI Probability');
-        grid(ax,'on')
-%         
-%         
-%         
-        
-        
-        
-        % % figure; histogram(log(isiStack(1,:)), 'BinEdges', log(1/fs):0.01:log(100), 'Normalization', 'cumcount')
-        %
-        %
-        %
-        %
-        % hold on
-        % for a = 2:length(goods)
-        %     spkLog = StepWaveform.subs2idx(spkSubs{a,:},Ns);
-        %
-        %     [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
-        %         timeLapse,fs,fs,[],ISIspar(a,:));
-        %     histogram(log(isiStack), 'BinEdges', log(1/fs):0.01:log(100))
-        % end
-        %
-        %
-        %
-        %
-        %
-        
-        
+ % save(fullfile(dataDir,[expName,'_ISIbox.mat']), 'ISIbox', 'ConsConds', '-v7.3');

@@ -1,4 +1,4 @@
-function [fig, FRpu] = plotISItogether(spkSubs, fs, ID)
+function [fig, Hist, FRpu] = plotISItogether(spkSubs, fs, ID)
 % PLOTISI takes the spikes subscripts and displays the inter-spike
 % intervals in a continuous histogram y-log(x) manner.
 %   Input parameters:
@@ -70,7 +70,7 @@ for cu = 1:Nu
         1/(10^median(lisi,'omitnan')),...
         1/(10^mode(lisi))];
     % figure('Visible','off','Color',[1,1,1]);
-    hisi = histogram(lisi,linspace(log10(mintd),3,100));
+    hisi = histogram(lisi,'BinEdges', log10(0.001):0.01:log10(100), 'Normalization', 'probability');
     cts = hisi.BinCounts;
     bns = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
     plot(bns,cts./sum(cts),'LineWidth',1);
@@ -84,11 +84,16 @@ for cu = 1:Nu
     %     ylabel('Cumulative fraction');ax = fig.Children;
     %     ax.YAxis(2).Limits = [0, 1];
     %     ax.YAxis(2).Color = [0.1,0.1,0.1];
+    Ncts = cts/sum(cts);
+    Hist(cu).cts = hisi.BinCounts;
+    Hist(cu).bns = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
+    Hist(cu).ISIs = cts./sum(cts);
+    Hist(cu).cumsum = cumsum(cts./sum(cts));
     fig.Visible = 'on';
 end
 ax = fig.Children;
 grid(ax,'on')
-Ncts = cts/sum(cts);
+
 ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
 xlabel(ax,'Time [ms]'); ylabel(ax,'ISI Probability');
 end

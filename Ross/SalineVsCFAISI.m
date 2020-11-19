@@ -1,4 +1,4 @@
-function fig = SalineVsCFAISI(SalISIhist, CfaISIhist)
+function [fig, sumSalIsi, sumCfaIsi] = SalineVsCFAISI(SalISIhist, CfaISIhist)
 %% Saline vs CFA Spontaneous
 for model = 1:2
     if model == 1
@@ -55,15 +55,16 @@ hold on
 plot(CfaISIhist(1).Vals(1).bns{1}, cumCFAspont);
 ylabel('Cumulative Fraction');
 xlabel('ISI (msecs)');
-xlim([log(0.001), 4.5]);
+xlim([-3, 2]);
+xticks([-3:2]);
 ylim([0, 1]);
 legend('Saline', 'CFA');
 title('Spontaneous Activity Cumulative Fractions');
 fig = gcf;
 ax = gca;
 ax.FontSize = 20;
-
-ax.XTickLabels = round(exp(-6:4)* 1e3);
+ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
+ax.XTickLabelRotation = 45;
 %% Stats Test and p-Values on Figure
 [txt, star] = findKSsignificance(sumSalIsi, sumCfaIsi);
 

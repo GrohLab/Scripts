@@ -33,14 +33,16 @@ for ChCond = 1:nCond
         end
         [~, isiStack] = getStacks(false,ConsConds(ChCond).Triggers, onOffStr,...
             Window,fs,fs,[],ISIspar(id,:));
+        lInda = isiStack > 0; 
         % timelapse becomes spontaneousWindow for pre-trigger, and responseWindow
         % for post
         for histInd = 1: length(id)
             
             figure('Visible','off');
-            hisi = histogram(log(isiStack(histInd,:,:)), 'BinEdges', log(1/fs):0.01:log(100));
+            hisi = histogram(log10(isiStack(histInd,:,:)), 'BinEdges', log10(0.001):0.01:log10(10));
             ISIhist(ChCond).Vals(wIndex).cts{histInd} = hisi.BinCounts;
             ISIhist(ChCond).Vals(wIndex).bns{histInd} = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
+            ISIhist(ChCond).Vals(wIndex).TriggeredIsI = isiStack;
             close gcf;
         end
     end
@@ -55,4 +57,4 @@ for ChCond = 1:nCond
     end
 end
 %% Saving ISIhist
-save(fullfile(dataDir,[expName,'_ISIhist.mat']), 'ISIhist', 'ConsConds', '-v7.3');
+save(fullfile(dataDir,[expName,'_ISIhistBase10.mat']), 'ISIhist', 'ConsConds', '-v7.3');
