@@ -400,8 +400,15 @@ for ccond = 1:size(delayFlags,2)
     end
     %}
 end
-save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
-    'relativeSpkTmsStruct','configStructure')
+
+relSpkFileName =...
+    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms %s exportSpkTms.mat',...
+    expName, responseWindow*1e3, spontaneousWindow*1e3,...
+    Conditions(chCond).name);
+if ~exist(relSpkFileName,'file')
+    save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
+        'configStructure')
+end
 %% Standard Deviations of First Spikes After Each Trigger per Unit
 % firstSpikes(relativeSpkTmsStruct, gclID, dataDir);
 %% Ordering PSTH
