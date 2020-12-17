@@ -468,7 +468,6 @@ for ccond = 1:Nccond
         sweeps, timeLapse, binSz,...
         [{Conditions(consideredConditions(ccond)).name};... 
         pclID(ordSubs)], strrep(expName,'_','\_'), stims, csNames);
-    configureFigureToPDF(psthFigs(ccond));
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
@@ -633,6 +632,7 @@ try
     acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
 catch
     fprintf(1, 'No correlograms in the workspace!\n')
+    return
 end
 acorrs = single(cat(1, acorrs{:})); Ncrs = size(acorrs, 2);
 % Computing the lag axis for the auto-correlograms
