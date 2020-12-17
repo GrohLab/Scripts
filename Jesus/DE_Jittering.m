@@ -266,11 +266,7 @@ for cc = 1:numel(Figs)
         ccn = ccn + 1;
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
-    if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
-        print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
-        print(Figs(cc),[stFigName,'.emf'],'-dmeta')
-        savefig(Figs(cc),[stFigName, '.fig']);
-    end
+    saveFigure(Figs(cc), stFigName)
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
@@ -469,17 +465,8 @@ for ccond = 1:Nccond
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
-    if ~exist([figFileName,'.pdf'], 'file')
-        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
-            '-dpdf','-fillpage')
-    end
-    if ~exist([figFileName,'.emf'], 'file')
-        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
-            '-dmeta')
-    end
-    if ~exist([figFileName,'.fig'], 'file')
-        savefig(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']))
-    end
+    figFilePath = fullfile(figureDir, figFileName);
+    saveFigure(psthFigs(ccond), figFilePath);
 end
 
 
@@ -599,14 +586,8 @@ if strcmpi(rasAns,'Yes')
     rasFigName = sprintf('%s R-%scl_%sVW%.1f-%.1f ms', expName,...
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
-    configureFigureToPDF (rasFig);
-    if ~exist([rasFigName,'.pdf'], 'file') ||...
-            ~exist([rasFigName,'.emf'], 'file') ||...
-            ~exist([rasFigName,'.fig'], 'file')
-        print(rasFig,fullfile(figureDir,[rasFigName, '.pdf']),'-dpdf','-fillpage')
-        print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
-        savefig(rasFig,fullfile(figureDir,[rasFigName, '.fig']))
-    end
+    rasFigPath = fullfile(figureDir, rasFigName);
+    saveFigure(rasFig, rasFigPath);
 end
 %% Response speed characterization
 btx = (0:Nbn-1)*binSz + timeLapse(1);
