@@ -86,7 +86,11 @@ if ~exist(isiFile,'file')
         'UniformOutput', 0));
     cols = cell2mat(spkSubs2);
     vals = cell2mat(ISIVals);
-    ISIspar = sparse(rows, cols, vals);
+    try
+        ISIspar = sparse(rows, cols, vals);
+    catch
+        fprintf(1, 'Not possible to create such a big array')
+    end
 else
     load(isiFile,'ISIspar')
 end
@@ -179,7 +183,7 @@ end
 % [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
 %     continuousSignals);
-if ~exist(isiFile,'file')
+if ~exist(isiFile,'file') && exist('ISIspar','var')
     fprintf(1,'Saving the inter-spike intervals for each cluster... ');
     save(isiFile,'ISIspar','ISIVals','-v7.3')
     fprintf(1,'Done!\n')
@@ -512,6 +516,7 @@ if strcmpi(rasAns,'Yes')
         'PromptString', 'Select clusters',...
         'SelectionMode', 'multiple');
     if ~iOk
+        
         return
     end
     % Color of the rectangle
