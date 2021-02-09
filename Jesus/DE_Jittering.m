@@ -449,6 +449,7 @@ if (Nbn - round(Nbn)) ~= 0
     Nbn = ceil(Nbn);
 end
 PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
+psthTx = (0:Nbn-1) * binSz + timeLapse(1);
 psthFigs = gobjects(Nccond,1);
 for ccond = 1:Nccond
     figFileName =...
@@ -604,9 +605,27 @@ end
 btx = (0:Nbn-1)*binSz + timeLapse(1);
 % Window defined by the response in the population PSTH
 % twIdx = btx >= 2e-3 & btx <= 30e-3;
-respTmWin = [2, 30]*1e-3;
-[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, respTmWin);
+% respTmWin = [2, 30]*1e-3;
+[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, responseWindow);
 mdls(mdls(:,2) == 0, 2) = 1;
+%% Optotag
+% Clusters with 0.63 spikes per stimulus in a 1 ms bin will be considered
+% with consistency, 50% of the response before 6 ms as readily available,
+% and with a small spread less than 2 ms in between 1 and 3 quartile as
+% precise. Considering unfiltered PSTH and the spikes within the response
+% window.
+if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
+    fprintf(1,'Optotagging clusters...\n')
+    PSTHtrial = PSTH ./ Na;
+    [optoCl, ~] = find(PSTHtrial > 0.63); % Consistency
+    optoPSTH = PSTH(optoCl,:,:);
+    [~, modeTm] = max(optoPSTH(:,respIdx,:),2);
+    oqVals = qVals(optoCl,:);
+    availableIdx = oqVals(:,3) < 6e-3; % Availability
+    preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
+    optoTaggedCl = optoCl(availableIdx & preciseIdx);
+    contains(gclID,pclID(optoTaggedCl))
+end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
     '(Might take a while to compute if no file exists!)'],...
