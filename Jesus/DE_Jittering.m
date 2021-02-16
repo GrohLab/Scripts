@@ -619,12 +619,30 @@ if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
     PSTHtrial = PSTH ./ Na;
     [optoCl, ~] = find(PSTHtrial > 0.63); % Consistency
     optoPSTH = PSTH(optoCl,:,:);
-    [~, modeTm] = max(optoPSTH(:,respIdx,:),2);
+    [~, modeTm] = max(optoPSTH(:,respIdx,:),[],2);
     oqVals = qVals(optoCl,:);
     availableIdx = oqVals(:,3) < 6e-3; % Availability
     preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
     optoTaggedCl = optoCl(availableIdx & preciseIdx);
-    contains(gclID,pclID(optoTaggedCl))
+    optoIdx = contains(gclID,pclID(optoTaggedCl));
+    tvNames = clInfo.Properties.VariableNames;
+    if ~contains(tvNames, 'Optotag')
+        try
+            clInfo = addvars(clInfo, false(size(clInfo,1),1),...
+                'NewVariableNames', 'Optotag');
+            clInfo{gclID(optoIdx), 'Optotag'} = true;
+            writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'),...
+                1)
+        catch
+            fprintf(1, 'Adding the optotag falied!\n')
+        end
+    else
+        fprintf(1, 'This experiment has already an optotag')
+        fprintf(1, ', if you wish to overwrite, delete the variable from')
+        fprintf(1, ' the clInfo table\n')
+    end
+    % Matrix for scaling the xlimit for the probe view.
+    scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
 end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
