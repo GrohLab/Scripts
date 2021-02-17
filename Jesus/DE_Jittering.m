@@ -603,6 +603,7 @@ if strcmpi(rasAns,'Yes')
 end
 %% Response speed characterization
 btx = (0:Nbn-1)*binSz + timeLapse(1);
+respIdx = isWithinResponsiveWindow(btx);
 % Window defined by the response in the population PSTH
 % twIdx = btx >= 2e-3 & btx <= 30e-3;
 % respTmWin = [2, 30]*1e-3;
@@ -610,18 +611,18 @@ btx = (0:Nbn-1)*binSz + timeLapse(1);
 mdls(mdls(:,2) == 0, 2) = 1;
 %% Optotag
 % Clusters with 0.63 spikes per stimulus in a 1 ms bin will be considered
-% with consistency, 50% of the response before 6 ms as readily available,
+% with consistency, 50% of the response before 7 ms as readily available,
 % and with a small spread less than 2 ms in between 1 and 3 quartile as
 % precise. Considering unfiltered PSTH and the spikes within the response
-% window.
+% window. Experiments with ChR2
 if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
     fprintf(1,'Optotagging clusters...\n')
-    PSTHtrial = PSTH ./ Na;
+    PSTHtrial = PSTH ./ Na; rangeAll = @(x) [min(x), max(x)];
     [optoCl, ~] = find(PSTHtrial > 0.63); % Consistency
-    optoPSTH = PSTH(optoCl,:,:);
-    [~, modeTm] = max(optoPSTH(:,respIdx,:),[],2);
-    oqVals = qVals(optoCl,:);
-    availableIdx = oqVals(:,3) < 6e-3; % Availability
+    optoCl = unique(optoCl);
+    optoPSTH = PSTH(optoCl,:,:); oqVals = qVals(optoCl,:);
+    [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
+    availableIdx = oqVals(:,3) <= 7e-3; % Availability
     preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
     optoTaggedCl = optoCl(availableIdx & preciseIdx);
     optoIdx = contains(gclID,pclID(optoTaggedCl));
@@ -644,22 +645,31 @@ if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
     % Probe view
     chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
     chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
-    mdX = mean([min(chPos(:,1)), max(chPos(:,1))]);
+    mdX = mean(rangeAll(chPos(:,1)));
     % Matrix for scaling the xlimit for the probe view.
-    optoOpts = {'MarkerEdgeColor',[0.2, 0.8, 1],'MarkerEdgeAlpha',0.3};
-    scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
+    lsrCMap = [0.2, 0.8, 1];
+    optoOpts = {'MarkerEdgeColor',lsrCMap,'MarkerEdgeAlpha',0.3};
+    optoLineOpts = {'Marker','+', 'DisplayName','Optotagged region',...
+        'Color',lsrCMap}; scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
     xview = scaleMatrix * repmat(mdX,2,1);
     probFig = figure('Name', 'Probe', 'Color', [1,1,1]);
     probAx = axes('NextPlot', 'add'); xlim(probAx, xview');
     probPts = scatter(probAx, chPos(:,1), chPos(:,2), '.k'); 
     title(probAx, 'Electrodes position in the probe');
-    probAx.XAxis.Visible = 'off'; text(mdX, 0, 'Tip', 'Parent', probAx,...
-        'HorizontalAlignment', "center")
+    probAx.XAxis.Visible = 'off'; text(mdX, -1, 'Tip', 'Parent', probAx,...
+        'HorizontalAlignment', "center", "VerticalAlignment",  "top")
     tvNames = clInfo.Properties.VariableNames; tvNames = string(tvNames);
     chanStr = ["ch";"channel"]; [~, varSel] = find(tvNames == chanStr);
-    optoCh = clInfo{gclID(optoIdx), varSel}'; coordIdx = chMap == optoCh;
+    optoCh = clInfo{gclID(optoIdx), varSel}'; 
+    [coordSubs, ~] = find(chMap == optoCh);
     optoPts = scatter(probAx, chPos(coordSubs,1), chPos(coordSubs,2),...
-        optoOpts{:});
+        optoOpts{:}); optoRange = rangeAll(chPos(coordSubs,2));
+    optoLine = line(probAx, [mdX;mdX], optoRange', optoLineOpts{:}); 
+    ylabel(probAx, 'Electrode position relative to the probe tip [mm]')
+    fprintf(1, 'Optotagged clusters found between %.1f and %.1f mm',...
+        optoRange); fprintf(1, ' relative to the tip of the probe.\n')
+    legend(probAx, optoLine); saveFigure(probFig, fullfile(figureDir,...
+        'Probe view + position of optotagged clusters'))
 end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
