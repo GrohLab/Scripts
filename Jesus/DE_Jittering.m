@@ -641,8 +641,25 @@ if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
         fprintf(1, ', if you wish to overwrite, delete the variable from')
         fprintf(1, ' the clInfo table\n')
     end
+    % Probe view
+    chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
+    chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
+    mdX = mean([min(chPos(:,1)), max(chPos(:,1))]);
     % Matrix for scaling the xlimit for the probe view.
+    optoOpts = {'MarkerEdgeColor',[0.2, 0.8, 1],'MarkerEdgeAlpha',0.3};
     scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
+    xview = scaleMatrix * repmat(mdX,2,1);
+    probFig = figure('Name', 'Probe', 'Color', [1,1,1]);
+    probAx = axes('NextPlot', 'add'); xlim(probAx, xview');
+    probPts = scatter(probAx, chPos(:,1), chPos(:,2), '.k'); 
+    title(probAx, 'Electrodes position in the probe');
+    probAx.XAxis.Visible = 'off'; text(mdX, 0, 'Tip', 'Parent', probAx,...
+        'HorizontalAlignment', "center")
+    tvNames = clInfo.Properties.VariableNames; tvNames = string(tvNames);
+    chanStr = ["ch";"channel"]; [~, varSel] = find(tvNames == chanStr);
+    optoCh = clInfo{gclID(optoIdx), varSel}'; coordIdx = chMap == optoCh;
+    optoPts = scatter(probAx, chPos(coordSubs,1), chPos(coordSubs,2),...
+        optoOpts{:});
 end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
