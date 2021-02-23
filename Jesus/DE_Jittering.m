@@ -86,7 +86,11 @@ if ~exist(isiFile,'file')
         'UniformOutput', 0));
     cols = cell2mat(spkSubs2);
     vals = cell2mat(ISIVals);
-    ISIspar = sparse(rows, cols, vals);
+    try
+        ISIspar = sparse(rows, cols, vals);
+    catch
+        fprintf(1, 'Not possible to create such a big array')
+    end
 else
     load(isiFile,'ISIspar')
 end
@@ -179,7 +183,7 @@ end
 % [dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 %     'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
 %     continuousSignals);
-if ~exist(isiFile,'file')
+if ~exist(isiFile,'file') && exist('ISIspar','var')
     fprintf(1,'Saving the inter-spike intervals for each cluster... ');
     save(isiFile,'ISIspar','ISIVals','-v7.3')
     fprintf(1,'Done!\n')
@@ -266,11 +270,7 @@ for cc = 1:numel(Figs)
         ccn = ccn + 1;
     end
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
-    if ~exist([stFigName,'.pdf'],'file') || ~exist([stFigName,'.emf'],'file')
-        print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
-        print(Figs(cc),[stFigName,'.emf'],'-dmeta')
-        savefig(Figs(cc),[stFigName, '.fig']);
-    end
+    saveFigure(Figs(cc), stFigName)
 end
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
@@ -404,8 +404,15 @@ for ccond = 1:size(delayFlags,2)
     end
     %}
 end
-save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
-    'relativeSpkTmsStruct','configStructure')
+
+relSpkFileName =...
+    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms %s exportSpkTms.mat',...
+    expName, responseWindow*1e3, spontaneousWindow*1e3,...
+    Conditions(chCond).name);
+if ~exist(relSpkFileName,'file')
+    save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
+        'configStructure')
+end
 %% Standard Deviations of First Spikes After Each Trigger per Unit
 % firstSpikes(relativeSpkTmsStruct, gclID, dataDir);
 %% Ordering PSTH
@@ -442,6 +449,7 @@ if (Nbn - round(Nbn)) ~= 0
     Nbn = ceil(Nbn);
 end
 PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
+psthTx = (0:Nbn-1) * binSz + timeLapse(1);
 psthFigs = gobjects(Nccond,1);
 for ccond = 1:Nccond
     figFileName =...
@@ -465,21 +473,11 @@ for ccond = 1:Nccond
         sweeps, timeLapse, binSz,...
         [{Conditions(consideredConditions(ccond)).name};... 
         pclID(ordSubs)], strrep(expName,'_','\_'), stims, csNames);
-    configureFigureToPDF(psthFigs(ccond));
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
-    if ~exist([figFileName,'.pdf'], 'file')
-        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
-            '-dpdf','-fillpage')
-    end
-    if ~exist([figFileName,'.emf'], 'file')
-        print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
-            '-dmeta')
-    end
-    if ~exist([figFileName,'.fig'], 'file')
-        savefig(psthFigs(ccond), fullfile(figureDir,[figFileName, '.fig']))
-    end
+    figFilePath = fullfile(figureDir, figFileName);
+    saveFigure(psthFigs(ccond), figFilePath);
 end
 
 
@@ -519,6 +517,7 @@ if strcmpi(rasAns,'Yes')
         'PromptString', 'Select clusters',...
         'SelectionMode', 'multiple');
     if ~iOk
+        
         return
     end
     % Color of the rectangle
@@ -599,22 +598,79 @@ if strcmpi(rasAns,'Yes')
     rasFigName = sprintf('%s R-%scl_%sVW%.1f-%.1f ms', expName,...
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
-    configureFigureToPDF (rasFig);
-    if ~exist([rasFigName,'.pdf'], 'file') ||...
-            ~exist([rasFigName,'.emf'], 'file') ||...
-            ~exist([rasFigName,'.fig'], 'file')
-        print(rasFig,fullfile(figureDir,[rasFigName, '.pdf']),'-dpdf','-fillpage')
-        print(rasFig,fullfile(figureDir,[rasFigName, '.emf']),'-dmeta')
-        savefig(rasFig,fullfile(figureDir,[rasFigName, '.fig']))
-    end
+    rasFigPath = fullfile(figureDir, rasFigName);
+    saveFigure(rasFig, rasFigPath);
 end
 %% Response speed characterization
 btx = (0:Nbn-1)*binSz + timeLapse(1);
+respIdx = isWithinResponsiveWindow(btx);
 % Window defined by the response in the population PSTH
 % twIdx = btx >= 2e-3 & btx <= 30e-3;
-respTmWin = [2, 30]*1e-3;
-[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, respTmWin);
+% respTmWin = [2, 30]*1e-3;
+[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, responseWindow);
 mdls(mdls(:,2) == 0, 2) = 1;
+%% Optotag
+% Clusters with 0.63 spikes per stimulus in a 1 ms bin will be considered
+% with consistency, 50% of the response before 7 ms as readily available,
+% and with a small spread less than 2 ms in between 1 and 3 quartile as
+% precise. Considering unfiltered PSTH and the spikes within the response
+% window. Experiments with ChR2
+if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
+    fprintf(1,'Optotagging clusters...\n')
+    PSTHtrial = PSTH ./ Na; rangeAll = @(x) [min(x), max(x)];
+    [optoCl, ~] = find(PSTHtrial > 0.63); % Consistency
+    optoCl = unique(optoCl);
+    optoPSTH = PSTH(optoCl,:,:); oqVals = qVals(optoCl,:);
+    [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
+    availableIdx = oqVals(:,3) <= 7e-3; % Availability
+    preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
+    optoTaggedCl = optoCl(availableIdx & preciseIdx);
+    optoIdx = contains(gclID,pclID(optoTaggedCl));
+    tvNames = clInfo.Properties.VariableNames;
+    if ~contains(tvNames, 'Optotag')
+        try
+            clInfo = addvars(clInfo, false(size(clInfo,1),1),...
+                'NewVariableNames', 'Optotag');
+            clInfo{gclID(optoIdx), 'Optotag'} = true;
+            writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'),...
+                1)
+        catch
+            fprintf(1, 'Adding the optotag falied!\n')
+        end
+    else
+        fprintf(1, 'This experiment has already an optotag')
+        fprintf(1, ', if you wish to overwrite, delete the variable from')
+        fprintf(1, ' the clInfo table\n')
+    end
+    % Probe view
+    chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
+    chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
+    mdX = mean(rangeAll(chPos(:,1)));
+    % Matrix for scaling the xlimit for the probe view.
+    lsrCMap = [0.2, 0.8, 1];
+    optoOpts = {'MarkerEdgeColor',lsrCMap,'MarkerEdgeAlpha',0.3};
+    optoLineOpts = {'Marker','+', 'DisplayName','Optotagged region',...
+        'Color',lsrCMap}; scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
+    xview = scaleMatrix * repmat(mdX,2,1);
+    probFig = figure('Name', 'Probe', 'Color', [1,1,1]);
+    probAx = axes('NextPlot', 'add'); xlim(probAx, xview');
+    probPts = scatter(probAx, chPos(:,1), chPos(:,2), '.k'); 
+    title(probAx, 'Electrodes position in the probe');
+    probAx.XAxis.Visible = 'off'; text(mdX, -1, 'Tip', 'Parent', probAx,...
+        'HorizontalAlignment', "center", "VerticalAlignment",  "top")
+    tvNames = clInfo.Properties.VariableNames; tvNames = string(tvNames);
+    chanStr = ["ch";"channel"]; [~, varSel] = find(tvNames == chanStr);
+    optoCh = clInfo{gclID(optoIdx), varSel}'; 
+    [coordSubs, ~] = find(chMap == optoCh);
+    optoPts = scatter(probAx, chPos(coordSubs,1), chPos(coordSubs,2),...
+        optoOpts{:}); optoRange = rangeAll(chPos(coordSubs,2));
+    optoLine = line(probAx, [mdX;mdX], optoRange', optoLineOpts{:}); 
+    ylabel(probAx, 'Electrode position relative to the probe tip [mm]')
+    fprintf(1, 'Optotagged clusters found between %.1f and %.1f mm',...
+        optoRange); fprintf(1, ' relative to the tip of the probe.\n')
+    legend(probAx, optoLine); saveFigure(probFig, fullfile(figureDir,...
+        'Probe view + position of optotagged clusters'))
+end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
     '(Might take a while to compute if no file exists!)'],...
@@ -645,6 +701,7 @@ try
     acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
 catch
     fprintf(1, 'No correlograms in the workspace!\n')
+    return
 end
 acorrs = single(cat(1, acorrs{:})); Ncrs = size(acorrs, 2);
 % Computing the lag axis for the auto-correlograms
