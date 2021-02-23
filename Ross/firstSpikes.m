@@ -25,7 +25,7 @@ for a = 1: length(relativeSpkTmsStruct)
     y = log10(spVals(a).sd*1000);
     f = figure('Name',[relativeSpkTmsStruct(a).name,' Standard Deviations of First Spikes Post-TTL']);
     scatter(x,y,(cf+1)*2.5,[0,0,0])
-    t = text(x,y,gclID,'FontSize', 6);
+%     t = text(x,y,gclID,'FontSize', 6);
     title(relativeSpkTmsStruct(a).name);
     xlabel('Unit No.');
     ylabel('log10(Std Dev) (ms)');

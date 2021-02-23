@@ -1,4 +1,4 @@
-function [RateMap, expt, rate] = getRate(binSz, nSamples, fs, sortedData, dataDir)
+function RateMap = getRate(binSz, nSamples, fs, spkSubs, dataDir)
 
 
 promptStrings = {'expt name:'};
@@ -6,15 +6,15 @@ defaultInputs = {'Rate',};
 answ = inputdlg(promptStrings,'Inputs', [1, 30],defaultInputs);
 expt = answ{1,1};
 
-%promptStrings = {'Bin size [s]:'};
-%defaultInputs = {'0.05',};
-%answ = inputdlg(promptStrings,'Inputs', [1, 30],defaultInputs);
-%binSz = str2double(answ(1));
+% promptStrings = {'Bin size [s]:'};
+% defaultInputs = {'0.05',};
+% answ = inputdlg(promptStrings,'Inputs', [1, 30],defaultInputs);
+% binSz = str2double(answ(1));
 
-%promptStrings = {'Sampling Frequency (fs)'};
-%defaultInputs = {'3.003003003003003e+04',};
-%answ = inputdlg(promptStrings,'Inputs', [1, 30],defaultInputs);
-%fs = str2double(answ(1));
+% promptStrings = {'Sampling Frequency (fs)'};
+% defaultInputs = {'3.003003003003003e+04',};
+% answ = inputdlg(promptStrings,'Inputs', [1, 30],defaultInputs);
+% fs = str2double(answ(1));
 
 % binSamples is the number of elements in spiketrain per bin.
 binSamples = fs*binSz;
@@ -25,30 +25,49 @@ nBins = round(nSamples/binSamples);
 
 % Need to create an empty matrix that's eagerly awaiting all our cluster
 % counts.
-goodsIdx =cellfun(@(x) x~=3,sortedData(:,3));
-goods = goodsIdx;
-gdCells = sortedData(goods,:);
+% goodsIdx = cellfun(@(x) x~=3,sortedData(:,3));
+% goods = goodsIdx;
+gdCells = spkSubs;
 % Need to know the number of bad clusters that we're not going to bother with.
 szT = length(gdCells);
 counts = zeros(nBins, szT);
 
 for b = 1:szT   % cluster by cluster
-        for a = 1:nBins
-            fsV = fs*gdCells{b,2}'; 
-            logicalfsV = (fsV >(a-1)*binSamples) & (fsV <= a*binSamples);
-            counts(a,b) = sum(logicalfsV);
-        end
-          % rate = counts/binSz;
-        % figure; bar(rate(:,b));
+    for a = 1:nBins
+        fsV = fs*gdCells{b}';
+        logicalfsV = (fsV >(a-1)*binSamples) & (fsV <= a*binSamples);
+        counts(a,b) = sum(logicalfsV);
+    end
+    % rate = counts/binSz;
+    % figure; bar(rate(:,b));
 end
-rate = counts/binSz;
+
+
+ord = sum(counts)';
+sortedOrd = sort(ord, 'descend');
+sortedCounts = NaN(size(counts));
+c = 1;
+for a = 1:szT
+    ind = find(ord == sortedOrd(a));
+    if c > length(ind)
+        c = 1;
+    end
+    if length(ind) > 1
+        sortedCounts(:,a) = counts(:,ind(c));
+        c = c + 1;
+    else
+        sortedCounts(:,a) = counts(:,ind);
+    end
+end
+
+rate = sortedCounts/binSz;
 xaxisSec = [0:nBins]'*binSz;
 yaxisClNo = [1:szT];
 
-RateMap = figure;
+RateMap = figure('Color', 'White');
 imagesc(xaxisSec, yaxisClNo, rate');
 xlabel('Time (s)');
-ylabel('Cluster No.');
+ylabel('Units _{Rate-Sorted}');
 title(expt);
 txt = {['Bin Size = ', num2str(binSz) 's']};
 text(8328,-2.7,1.4e-14, txt);
@@ -57,9 +76,10 @@ colormap(fire);
 colorbar;
 %use caxis command to hardcode colormap so that we can more easily compare
 caxis([0 50]);
-
+ax = gca;
+ax.FontSize = 30;
 configureFigureToPDF(figure(RateMap));
-saveas(figure(RateMap), expt, 'emf');  
+saveas(figure(RateMap), expt, 'emf');
 save(fullfile(dataDir, [expt]), 'rate', 'RateMap', '-v7.3');
 end
 

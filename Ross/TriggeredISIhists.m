@@ -20,7 +20,7 @@ for ChCond = 1:nCond
     
     Ind = find(clInfo.(name));
     ID = clInfo.id(Ind);
-    id = find(ismember(gclID, ID))'; % contains will give multiple units when looking for e.g. cl45
+    id = find(ismember(gclID, ID) == false)'; % contains will give multiple units when looking for e.g. cl45
 %     spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
     % spkSubs replaces round(sortedData{goods(1),2}*fs) for the rest of the
     % clusters
@@ -57,4 +57,4 @@ for ChCond = 1:nCond
     end
 end
 %% Saving ISIhist
-save(fullfile(dataDir,[expName,'_ISIhistBase10.mat']), 'ISIhist', 'ConsConds', '-v7.3');
+save(fullfile(dataDir,[expName,'nonMR_ISIhistBase10.mat']), 'ISIhist', 'ConsConds', '-v7.3');
