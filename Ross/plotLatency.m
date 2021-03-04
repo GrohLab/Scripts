@@ -13,21 +13,21 @@ fig = figure('Name', ['Unit ', figureName, ' Triggered Latency', ], 'Color', 'wh
 boxplot(Latencies{1});
 title(fig.Name, 'Interpreter', 'none');
 ylabel('Trigger Latency_{(ms)}')
-% xlim([0.9, 1.1]);
-% ylim([0,50]);
-% yticks([0:5:50]);
-% x = xlim;
-% y = ylim;
-% xlow = x(1);
-% ylow = y(1);
-% xhigh = x(2);
-% yhigh = y(2);
-% xcoord = xlow + (xhigh - xlow)*0.7;
-% ycoord = ylow + (yhigh - ylow)*0.9;
-% text(xcoord, ycoord, [num2str(round(fidelity)), '% fidelity'],'FontSize', 15);
-% ax = gca;
-% xticks([]);
-% ax = gca;
-% ax.FontSize = 15;
+xlim([0.9, 1.1]);
+ylim([0,50]);
+yticks([0:5:50]);
+x = xlim;
+y = ylim;
+xlow = x(1);
+ylow = y(1);
+xhigh = x(2);
+yhigh = y(2);
+xcoord = xlow + (xhigh - xlow)*0.7;
+ycoord = ylow + (yhigh - ylow)*0.9;
+text(xcoord, ycoord, [num2str(round(fidelity)), '% fidelity'],'FontSize', 15);
+ax = gca;
+xticks([]);
+ax = gca;
+ax.FontSize = 15;
 
 end

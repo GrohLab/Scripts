@@ -32,7 +32,7 @@ for a = 1:length(ID)
     ax.XTick = linspace(1,sz,10);
     ax.XTickLabel = round(ax.XTick./fs*1e3,1);
     ax.XTickLabelRotation = -45;
-    title(['Unit ',clWaveforms{ind,1},' Waveform']);
+    title(['Unit ',clWaveforms{ind,1},' Waveform'], 'Interpreter', 'none');
     xlabel(ax,'Time_{(ms)}');
     ylabel(ax,'Amplitude_{(mV)}');
     ax.FontSize = 20;
