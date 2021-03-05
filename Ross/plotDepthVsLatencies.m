@@ -56,7 +56,7 @@ lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
 
 lgd = legend;
 lgd.String{1} = 'Unit Mean +/- SD';
-lgd.String{2} = ' Laser Pulse';
+lgd.String{2} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 
 % rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
 % 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
