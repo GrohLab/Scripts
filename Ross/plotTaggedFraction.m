@@ -19,14 +19,13 @@ Dpth = -1*Dpth;
 
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
-% depthCutoffs =[];
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
     %
 minDepth = Dpth(min(find(tagged)));
 maxDepth = Dpth(max(find(tagged)));
 fig = figure('Name', name, 'Color', 'White');
-x = [sum(tagged), length(mn)-sum(tagged)];
+x = [sum(tagged), sum(~tagged)];
 explode = [1, 0];
 % labels = {['Tagged Fraction = ',num2str(tg), '%'], ' '};
 pie(x, explode)
@@ -49,6 +48,7 @@ text(1.25,-0.25,'Opto-tagged Units Displayed:', 'FontSize', 15);
 text(1.25,-0.5,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
 lgd.String{2} = ['Untagged '];
 lgd.Location = 'northoutside';
+%lgd.Box = 'off';
 
 
 end
