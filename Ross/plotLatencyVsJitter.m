@@ -41,7 +41,7 @@ ax.FontSize = 20;
 %lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
 
 lgd = legend;
-lgd.String{1} = 'Unit Mean +/- SD';
+lgd.String{1} = ['Total = ', num2str(length(mn)), ' Units'];
 lgd.String{2} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 
 % rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
