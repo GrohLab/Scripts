@@ -1,4 +1,4 @@
-function fig = plotTaggedFraction(latencyCutoffs, sdCutoffs, depthCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
+function fig = plotTaggedFraction(latencyCutoffs, sdCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
 fs = samplingFrequency;
 clInd = ismember(clInfo.id, clIDs);
 depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
@@ -20,17 +20,11 @@ Dpth = -1*Dpth;
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 % depthCutoffs =[];
-if isempty(depthCutoffs)
-    depthCutoffs = [min(Dpth), max(Dpth)];
-elseif depthCutoffs > 0
-    depthCutoffs = -depthCutoffs;
-end
-depthCutoffs = sort(depthCutoffs, 'ascend');
 
-
-tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2)...
-    & depthCutoffs(1) <= Dpth & Dpth <= depthCutoffs(2);
-
+tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
+    %
+minDepth = Dpth(min(find(tagged)));
+maxDepth = Dpth(max(find(tagged)));
 fig = figure('Name', name, 'Color', 'White');
 x = [sum(tagged), length(mn)-sum(tagged)];
 explode = [1, 0];
@@ -41,18 +35,21 @@ pie(x, explode)
 
 
 ax = gca;
-ax.Children(2).FaceColor = [0 0 0];
+ax.Children(2).FaceColor = [0.5 0.5 0.5];
 ax.Children(4).FaceColor = [0 1 1];
 ax.FontSize = 30;
 % ax.FontName = 'Times New Roman';
 
 lgd = legend;
 lgd.String{1} = ['Opto-tagged'];
-text(1.25,0.75,['Mean Latency between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms']);
-text(1.25,0.50,['Standard Deviation between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms']);
-text(1.25,0.25,['Depth between ' num2str(depthCutoffs(2)), ' and ',num2str(depthCutoffs(1)), '\mum'], 'Interpreter', 'tex');
+text(1.25,1.0,['Selection Criteria:'],'FontSize', 15 );
+text(1.25,0.75,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
+text(1.25,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
+text(1.25,-0.25,'Tagged Units Displayed:', 'FontSize', 15);
+text(1.25,-0.5,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
 lgd.String{2} = ['Untagged '];
 lgd.Location = 'northoutside';
+
 
 end
 
