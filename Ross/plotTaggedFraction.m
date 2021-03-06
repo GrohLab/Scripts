@@ -45,7 +45,7 @@ lgd.String{1} = ['Opto-tagged'];
 text(1.25,1.0,['Selection Criteria:'],'FontSize', 15 );
 text(1.25,0.75,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
 text(1.25,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
-text(1.25,-0.25,'Tagged Units Displayed:', 'FontSize', 15);
+text(1.25,-0.25,'Opto-tagged Units Displayed:', 'FontSize', 15);
 text(1.25,-0.5,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
 lgd.String{2} = ['Untagged '];
 lgd.Location = 'northoutside';
