@@ -12,7 +12,7 @@ end
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Latency Vs Jitter: ', name];
-Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs);
+Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 Dpth = -1*Dpth;

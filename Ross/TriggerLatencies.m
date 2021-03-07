@@ -1,4 +1,4 @@
-function Latencies = TriggerLatencies(Array, TriggerTimes, samplingFrequency)
+function Latencies = TriggerLatencies(Array, TriggerTimes, samplingFrequency, timeBin)
 
 % TriggerLatencies
 % Feed in Unit spike times (1 cell per unit e.g. sortedData(goods,2) and trigger times (e.g. Conditions(2).Triggers)...
@@ -13,7 +13,7 @@ for ind = 1:length(Array)
     
     for TrigNo = 1:length(triggers)
         
-        spks = find(Train > triggers(TrigNo,1) & Train < triggers(TrigNo,1) + 5e-2);
+        spks = find(Train > triggers(TrigNo,1) & Train < triggers(TrigNo,1) + timeBin);
         
         if isempty(spks)
             firstSpks(TrigNo) = 0;
