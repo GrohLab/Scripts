@@ -1,4 +1,4 @@
-function fig = plotTaggedFraction(latencyCutoffs, sdCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
+function [fig, TaggedID] = plotTaggedFraction(latencyCutoffs, sdCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
 fs = samplingFrequency;
 clInd = ismember(clInfo.id, clIDs);
 depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
@@ -21,7 +21,9 @@ latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
-    %
+taggedInd = spkInd(tagged);
+TaggedID = sortedData(taggedInd,1);
+
 minDepth = Dpth(min(find(tagged)));
 maxDepth = Dpth(max(find(tagged)));
 fig = figure('Name', name, 'Color', 'White');
