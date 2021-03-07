@@ -18,11 +18,14 @@ sd = (cellfun(@std, Latencies)*1e3);
 Dpth = -1*Dpth;
 jitter = randi(20,size(Dpth));
 
+nan = isnan(mn);
+
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
 
+nontagged = ~tagged & ~nan;
 fig = figure('Name', name, 'Color', 'White');
 
 scatter(mn(~tagged),sd(~tagged), 50, [0.5, 0.5, 0.5], '*')
@@ -48,7 +51,7 @@ ax.FontSize = 20;
 %lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
 
 lgd = legend;
-lgd.String{1} = ['Units (n=', num2str(sum(~tagged)), ')'];
+lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
 lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 

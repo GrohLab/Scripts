@@ -16,6 +16,7 @@ Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 Dpth = -1*Dpth;
+nan = isnan(mn);
 
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
@@ -23,6 +24,8 @@ sdCutoffs = sort(sdCutoffs, 'ascend');
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
 taggedInd = spkInd(tagged);
 TaggedIDs = sortedData(taggedInd,1);
+
+nontagged = ~tagged | nan;
 
 minDepth = Dpth(min(find(tagged)));
 maxDepth = Dpth(max(find(tagged)));

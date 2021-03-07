@@ -12,18 +12,19 @@ end
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Optotagging: ', name];
-Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs);
+Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 Dpth = -1*Dpth;
-
+nan = isnan(mn);
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
 taggedInd = spkInd(tagged);
 TaggedIDs = sortedData(taggedInd,1);
-    %
+nontagged = ~tagged & ~nan;
+
 minDepth = Dpth(min(find(tagged)));
 maxDepth = Dpth(max(find(tagged)));
 
@@ -76,7 +77,7 @@ ax.FontSize = 20;
 %lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
 
 lgd = legend;
-lgd.String{1} = ['Units (n=', num2str(sum(~tagged)), ')'];
+lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
 lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 
@@ -115,7 +116,7 @@ ax.FontSize = 20;
 % lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
 
 lgd = legend;
-lgd.String{1} = (['Unit Mean +/- SD (n=', num2str(sum(~tagged)), ')']);
+lgd.String{1} = (['Unit Mean +/- SD (n=', num2str(sum(nontagged)), ')']);
 lgd.String{2} = (['Opto-tagged Units (n=', num2str(sum(tagged)), ')']);
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 % rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
@@ -159,7 +160,7 @@ rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth + 0.5, ax.YLim(2) 
 'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
 
 lgd = legend;
-lgd.String{1} = ['Units (n=', num2str(sum(~tagged)), ')'];
+lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
 lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 lgd.FontSize = 8;

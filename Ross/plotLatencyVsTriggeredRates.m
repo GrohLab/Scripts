@@ -1,4 +1,5 @@
-function fig = plotLatencyVsTriggeredRates(latencyCutoffs, sdCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
+function fig = plotLatencyVsTriggeredRates(TaggedIDs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
+
 fs = samplingFrequency;
 clInd = ismember(clInfo.id, clIDs);
 depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
@@ -9,6 +10,7 @@ spkInd = [];
 for i = 1:length(ID)
     spkInd = [spkInd; find(ismember(sortedData(:,1), ID(i)))];
 end
+tagged = ismember(ID, TaggedIDs);
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Latency vs Triggered Rate: ', name];
@@ -18,13 +20,9 @@ mnLat = (cellfun(@mean, Latencies)*1e3);
 sdLat = (cellfun(@std, Latencies)*1e3);
 mnRate = cellfun(@mean, Rates);
 sdRate = cellfun(@std, Rates);
-latencyCutoffs = sort(latencyCutoffs, 'ascend');
-sdCutoffs = sort(sdCutoffs, 'ascend');
+nan = isnan(mnLat);
 
-tagged = latencyCutoffs(1) <= mnLat & mnLat <= latencyCutoffs(2) & sdCutoffs(1) <= sdLat & sdLat <= sdCutoffs(2);
-taggedInd = spkInd(tagged);
-TaggedIDs = sortedData(taggedInd,1);
-
+nontagged = ~tagged & ~nan;
 fig = figure('Name', name, 'Color', 'White');
 
 
@@ -55,7 +53,7 @@ ax.FontSize = 20;
 % lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
 
 lgd = legend;
-lgd.String{1} = (['Unit Mean +/- SD (n=', num2str(sum(~tagged)), ')']);
+lgd.String{1} = (['Unit Mean +/- SD (n=', num2str(sum(nontagged)), ')']);
 lgd.String{2} = (['Opto-tagged Units (n=', num2str(sum(tagged)), ')']);
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 % rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...

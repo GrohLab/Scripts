@@ -17,9 +17,10 @@ mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
+nan = isnan(mn);
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
-
+nontagged = ~tagged & ~nan;
 fig = figure('Name', name, 'Color', 'White');
 
 h = histogram(round(mn(~tagged)));
@@ -53,7 +54,7 @@ rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth + 0.5, ax.YLim(2) 
 'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
 
 lgd = legend;
-lgd.String{1} = ['Units (n=', num2str(sum(~tagged)), ')'];
+lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
 lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 
