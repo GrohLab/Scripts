@@ -10,6 +10,7 @@ spkInd = [];
 for i = 1:length(ID)
     spkInd = [spkInd; find(ismember(sortedData(:,1), ID(i)))];
 end
+Dpth = -1*Dpth;
 tagged = ismember(ID, TaggedIDs);
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
