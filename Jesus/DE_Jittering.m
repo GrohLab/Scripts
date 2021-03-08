@@ -36,6 +36,7 @@ badsIdx = badsIdx | silentUnits;
 if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
     clInfo = addvars(clInfo,~badsIdx,'After','id',...
         'NewVariableNames','ActiveUnit');
+    writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'), 1);
 end
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
