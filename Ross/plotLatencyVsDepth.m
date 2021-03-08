@@ -22,22 +22,6 @@ fig = figure('Name', name, 'Color', 'White');
 
 errorbar(mn,Dpth,sd, 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 5);
 
-%Working on shit
-% ind = find(isnan(mn));
-% mn(ind) = [];
-% sd(ind) = [];
-% Dpth(ind) = [];
-% sd(sd == false) = 0.1;
-% hold on
-% for i = 1:length(mn)
-%     x1 = mn(i)-sd(i);
-%     x2 = mn(i) + sd(i);
-%     plot(x1,Dpth(i), 'LineStyle', 'none', 'Marker', '<', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', sd(i))
-%     plot(x2,Dpth(i), 'LineStyle', 'none', 'Marker', '>', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', sd(i))
-% end
-%     
-
-
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
 ylim([round(round(min(Dpth),-2)/2,-2)*2-200,0]);
