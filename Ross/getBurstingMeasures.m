@@ -51,7 +51,7 @@ if length(Bursts) == 0
 else
     nBursts = length(Bursts);
     
-    eventRatio = nBursts/(length(events)-nBursts);
+    eventRatio = nBursts/(length(Events)-nBursts);
     
     burstSpikes = cat(1, Bursts{:});
     burstCF = length(burstSpikes)/length(SpikeTrain);
