@@ -360,7 +360,7 @@ if ~isfield(Conditions,'Stimulus') ||...
         fprintf(1,'- %s\n', Conditions(cc).name)
         Conditions(cc).Stimulus = struct(...
             'Mechanical',reshape(mean(cst(whFlag(1),:,delayFlags(:,cdel)),3),...
-            1,Nt),'MechPressure',reshape(mean(cst(whFlag(3),:,delayFlags(:,cdel)),3),...
+            1,Nt),'MechPressure',reshape(mean(cst(whFlag(2),:,delayFlags(:,cdel)),3),...
             1,Nt),...
             'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
             1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
@@ -545,9 +545,9 @@ rasterDir = fullfile(figureDir,'Rasters\');
 if ~mkdir(rasterDir)
     fprintf(1,'There was an issue with the figure folder...\n');
 end
-for pwr = [5]%, 10, 15]
+for pwr = [15]%, 10, 15]
 MchTblInd = ['Mech_Control_', num2str(pwr), 'mW_MR'];
-LasTblInd = ['Laser_Control_', num2str(pwr), 'mW_LR'];
+LasTblInd =  [20,21,22]%['Laser_Control_', num2str(pwr), 'mW_LR'];
 MchCondControl = ['Mech_Control_', num2str(pwr), 'mW'];
 LasCondControl = ['Laser_Control_', num2str(pwr), 'mW'];
 MchLasCond = ['Mech_Laser_', num2str(pwr), 'mW'];
@@ -565,7 +565,7 @@ for a = 1:lngth
 %         rasCondSel = find(ismember(consCondNames, LasCondControl) | ismember(consCondNames, MchLasCond));
 %         label = 'Laser';
 %     end
-rasCondSel = [13, 14, 15];
+rasCondSel = [1:3];
     rasCond = consideredConditions(rasCondSel);
     rasCondNames = consCondNames(rasCondSel);
     Nrcl = numel(clSel);
@@ -590,7 +590,7 @@ rasCondSel = [13, 14, 15];
         for ccl = 1:Nrcl
             lidx = ccl + (cc - 1) * Nrcl;
             ax(lidx) = subplot(Nrcond, Nrcl, lidx);
-            title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}))
+            title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}), 'Interpreter', 'none')
             plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
                 timeLapse, fs,'',ax(lidx));
             ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
@@ -600,7 +600,7 @@ rasCondSel = [13, 14, 15];
             ax(lidx).XAxis.TickLabels =...
                 cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
                 'UniformOutput', 0);
-            xlabel(ax(lidx), 'Time [ms]')
+            xlabel(ax(lidx), 'Time_{(ms)}')
             initSub = 0;
             optsRect = {'EdgeColor','none','FaceColor','none'};
             for ctr = 1:numel(trigChange)
