@@ -15,8 +15,30 @@ name = ['Optotagging: ', name];
 Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
+
 Dpth = -1*Dpth;
-nan = isnan(mn);
+
+% Removing and highlighting dodgy units from plot
+lowestLat = 3;
+lowestSD = 0.5;
+dodgyMean = ID(find(mn<lowestLat));
+dodgySD = ID(find(sd<lowestSD));
+fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
+    '\n and have been removed from the plot: \n']);
+for a = 1:length(dodgyMean)
+    fprintf([num2str(dodgyMean{a}), '\n']);
+end
+fprintf(['\n The following units have mean standard devations lower than ', num2str(lowestSD), 'ms '...
+    '\n and have been removed from the plot: \n']);
+for a = 1:length(dodgySD)
+    fprintf([num2str(dodgySD{a}), '\n']);
+end
+
+mn(mn<lowestLat) = NaN;
+sd(sd<lowestSD) = NaN;
+nan = isnan(mn) | isnan(sd);
+
+
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 
@@ -138,10 +160,11 @@ hold off
 
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
-ylim([0,round(mode(round(mn)+5))]);
+% ylim([0,sum(mode(round(mn)+5))]);
 %yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
 xlim([0 50]);
 xticks(0:5:50);
+ylim([0, round(max(h.BinCounts) + 5, -1)]);
 xlabel('Latency_{(ms)}');
 ylabel('Frequency_{(no. of units)}', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
@@ -149,7 +172,6 @@ ax = gca;
 laserLngth = linspace(0, pulseWidth + 0.5);
 hold on
 laser = plot(laserLngth, (ax.YLim(2))*ones(length(laserLngth),1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
-ax = gca;
 ax.FontSize = 20;
 % ax.FontName = 'Times New Roman';
 % Create rectangle
