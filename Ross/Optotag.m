@@ -15,6 +15,7 @@ name = ['Optotagging: ', name];
 Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
+rng('default');
 jitter = randi(20,size(Dpth));
 Dpth = Dpth + jitter; % adding small random jitter for visualisation
 Dpth = -1*Dpth;
