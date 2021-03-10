@@ -480,34 +480,6 @@ for ccond = 1:Nccond
     saveFigure(psthFigs(ccond), figFilePath);
 end
 
-
-% PSTH in control
-% incsPSTH = 1-cumsum(PSTH(:,twIdx,1)./sum(PSTH(:,twIdx,1),2),2);
-% Exponential fit to the cumsum and getting the time value at 63% of the
-% response
-% Ngcl = nnz(filterIdx)-1;
-% mdls = zeros(Ngcl,2); r2 = zeros(Ngcl,1);
-%figure; % Review of the 1 - cumulative response
-% shtx = btx(twIdx);
-% quartCut = exp(-log([4/3, 2, exp(1), 4]))'; qVals = zeros(Ngcl,4);
-% for ccl = 1:Ngcl
-%     auxSignal = incsPSTH(ccl,:); auxSignal(auxSignal <= 0) = eps;
-%     %subplot(6,7,ccl); plot(btx(twIdx), auxSignal)
-%     [fitObj, gof] = fit(shtx', auxSignal', 'exp1');
-%     mdls(ccl,:) = coeffvalues(fitObj); r2(ccl) = gof.rsquare;
-%     %hold on; plot(fObj); legend off; xlabel('Time [s]'); 
-%     %ylabel('Response magnitude'); 
-%     %title(sprintf('$$%.2f \\exp^{%.2f x}$$ (%.2f)', mdls(ccl,:), r2(ccl)),...
-%     %    'Interpreter', 'latex')
-%     % Quartiles cut for exponential distribution (25, 50, 63.21, 75)
-%     quartFlags = auxSignal >= quartCut;
-%     [qSubs, ~] = find(diff(quartFlags'));
-%     il = arrayfun(@(x) fit_poly(shtx(x:x+1), auxSignal(x:x+1), 1), qSubs,...
-%         'UniformOutput', 0);il = cat(2,il{:});
-%     qVals(ccl,:) = (quartCut' - il(2,:))./il(1,:);
-% end
-% qDiff = diff(qVals(:,[1,4]),1,2);
-
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
 if strcmpi(rasAns,'Yes')
