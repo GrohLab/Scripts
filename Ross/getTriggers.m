@@ -78,7 +78,7 @@ for i = 1:length(CondSig)
         if contains(Trigs(a).name, ' ')
             spc = strfind(Trigs(a).name, ' ');
             Trigs(a).name(spc) = [];
-                     
+            
         elseif contains(Trigs(a).name, 'MechTTL') || contains(Trigs(a).name, 'Laser')
             Trigs(a).offset(i) = length(CondSig(i).Sig.(chanID));
             Obj = StepWaveform(Trigs(a).info{i}, fs);
@@ -99,20 +99,24 @@ for a = 1:length(Trigs(laserInd).Triggers)
     
     trig = Trigs(laserInd).Triggers{1,a};
     
-    pulseInds = diff(trig') >= 0.1*fs;
+    pulseInds = diff(trig') > 0.1*fs;
     pulsedTriggers = trig(pulseInds,:);
-    if range(diff(pulsedTriggers')) >= 0.1*fs
+    if range(diff(pulsedTriggers')) > 0.1*fs
         fprintf('Have you got continuous pulses of different lengths?.\n')
         fprintf('Time to alter the script to sort these.\n')
     end
     pulseLength = round(mean(diff(pulsedTriggers')/fs));
     gaps = sort(unique(round(diff(trig(:,1)),-3))/fs,'ascend');
-    minIntervalInd = find(abs(diff([pulseLength*ones(length(gaps),1), gaps]')) < 0.5);
-    % minInterval = gaps(abs(diff([pulseLength*ones(length(gaps),1), gaps]')) < 0.5);
+    minIntervalInd = find(abs(diff([pulseLength*ones(length(gaps),1), gaps]')) < 0.5); 
+    % assumes tha gap between stimuli cannot be shorter than any gap within
+    % a stimulus
     stimFrequencies = sort(round(1./gaps(1:minIntervalInd-1)), 'ascend');
     
     for i = 1:length(stimFrequencies)
         stimInd = diff(trig(:,1))> 0.9*fs/stimFrequencies(i) & diff(trig(:,1)) < 1.1*fs/stimFrequencies(i);
+        shifted = [0; stimInd(1:end-1)];
+        stimInd = stimInd | shifted;
+         
         Conditions(cc).name = ['Laser_', num2str(stimFrequencies(i)), 'Hz_' num2str(Power{a}), '_AllTriggers'];
         Conditions(cc).Triggers = trig(stimInd,:) + offset;
         cc = cc + 1;
@@ -149,64 +153,68 @@ mechStart = cc;
 
 
 for a = 1:length(Trigs(mchInd).Triggers)
-    % Assuming mechanical control is first condition
-    nMechConds = length(stimFrequencies) + length(pulseLength) + 1;
-    trig = Trigs(mchInd).Triggers{1,a} + offset;
-    offset = offset + Trigs(mchInd).offset(a); 
-    firstLaser = [];
-    if ~isempty(stimFrequencies)
-        for i = 1:nMechConds-1
-            firstLaser = [firstLaser; Conditions(2 + i).Triggers(1,1)];
-        end
-    else
-        for i = 1:nMechConds-1
-            firstLaser = [firstLaser; Conditions(1 + i).Triggers(1,1)];
-        end
-    end
-    
-    sortedFirsts = sort(firstLaser, 'ascend');
-    
-    
-    for i = 1:length(sortedFirsts)
+    if ~isempty(Trigs(mchInd).Triggers{1,a})
+        % Assuming mechanical control is first condition
+        nMechConds = length(stimFrequencies) + length(pulseLength) + 1;
+        trig = Trigs(mchInd).Triggers{1,a} + offset;
+        
+        firstLaser = [];
         if ~isempty(stimFrequencies)
-        ind = find(ismember(firstLaser, sortedFirsts(i))) + 2;
-        else
-            ind = find(ismember(firstLaser, sortedFirsts(i))) + 1;
-        end
-        laserPairing = Conditions(ind).name;
-        HzInd = strfind(laserPairing, 'Hz');
-        if HzInd == true
-            Hz = laserPairing(HzInd-2:HzInd-1);
-            if contains(Hz, '_') || contains(Hz, ' ')
-                Hz = [Hz(2:end), 'Hz'];
+            for i = 1:nMechConds-1
+                firstLaser = [firstLaser; Conditions(2 + i).Triggers(1,1)];
             end
         else
-            HzInd = strfind(laserPairing, 'sec');
-            Hz = laserPairing(HzInd-2:HzInd+2);
-            if contains(Hz, '_') || contains(Hz, ' ')
-                Hz = Hz(2:end);
+            for i = 1:nMechConds-1
+                firstLaser = [firstLaser; Conditions(1 + i).Triggers(1,1)];
             end
         end
         
-        PwrInd = strfind(laserPairing, 'mW');
-        Pwr = laserPairing(PwrInd-2:PwrInd-1);
-        if contains(Pwr, '_') || contains(Pwr, ' ')
-            Pwr = Pwr(2:end);
+        sortedFirsts = sort(firstLaser, 'ascend');
+        
+        
+        for i = 1:length(sortedFirsts)
+            if ~isempty(stimFrequencies)
+                ind = find(ismember(firstLaser, sortedFirsts(i))) + 2;
+            else
+                ind = find(ismember(firstLaser, sortedFirsts(i))) + 1;
+            end
+            laserPairing = Conditions(ind).name;
+            HzInd = strfind(laserPairing, 'Hz');
+            if HzInd == true
+                Hz = laserPairing(HzInd-2:HzInd-1);
+                if contains(Hz, '_') || contains(Hz, ' ')
+                    Hz = [Hz(2:end), 'Hz'];
+                end
+            else
+                HzInd = strfind(laserPairing, 'sec');
+                Hz = laserPairing(HzInd-2:HzInd+2);
+                if contains(Hz, '_') || contains(Hz, ' ')
+                    Hz = Hz(2:end);
+                end
+            end
+            
+            PwrInd = strfind(laserPairing, 'mW');
+            Pwr = laserPairing(PwrInd-2:PwrInd-1);
+            if contains(Pwr, '_') || contains(Pwr, ' ')
+                Pwr = Pwr(2:end);
+            end
+            Conditions(cc).name = ['Mech_Laser_',Hz, '_' num2str(Pwr), 'mW'];
+            Conditions(cc).Triggers = trig(1+i:nMechConds:end,:);
+            cc = cc + 1;
         end
-        Conditions(cc).name = ['Mech_Laser_',Hz, '_' num2str(Pwr), 'mW'];
-        Conditions(cc).Triggers = trig(1+i:nMechConds:end,:);
+        Conditions(cc).name = ['Mech_Control_', num2str(Pwr), 'mW'];
+        Conditions(cc).Triggers = trig(1:nMechConds:end,:);
         cc = cc + 1;
     end
-    Conditions(cc).name = ['Mech_Control_', num2str(Pwr), 'mW'];
-    Conditions(cc).Triggers = trig(1:nMechConds:end,:);
+    offset = offset + Trigs(mchInd).offset(a);
+end
+if ~isempty(cat(1, Conditions(mechStart:end).Triggers))
+    Conditions(cc).name = 'Mech_All';
+    Conditions(cc).Triggers = sort(cat(1, Conditions(mechStart:end).Triggers),'ascend');
     cc = cc + 1;
 end
-Conditions(cc).name = 'Mech_All';
-Conditions(cc).Triggers = sort(cat(1, Conditions(mechStart:end).Triggers),'ascend');
-cc = cc + 1;
-
 %% Getting laser control blocks
-if ~isempty(Trigs(mchInd).Triggers)
+if length(Conditions) >= mechStart
     nComparisons = mechStart-blockStart;
     lInd = blockStart;
     mInd = mechStart;
@@ -222,8 +230,8 @@ if ~isempty(Trigs(mchInd).Triggers)
         cc = cc + 1;
     end
 end
-        
-        
+
+
 
 %% Getting Triggers
 for a = 1:nTriggers
