@@ -15,7 +15,8 @@ name = ['Optotagging: ', name];
 Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
-
+jitter = randi(20,size(Dpth));
+Dpth = Dpth + jitter; % adding small random jitter for visualisation
 Dpth = -1*Dpth;
 
 % Removing and highlighting dodgy units from plot
@@ -52,31 +53,48 @@ maxDepth = Dpth(max(find(tagged)));
 
 fig = figure('Name', name, 'Color', 'White');
 
-subplot(2,2,1)
-x = [sum(tagged), sum(~tagged)];
-explode = [1, 0];
+subplot(3,2,2)
+x = [sum(~tagged), sum(tagged)];
+explode = [0, 1];
 % labels = {['Tagged Fraction = ',num2str(tg), '%'], ' '};
 pie(x, explode)
 ax = gca;
-ax.Children(2).FaceColor = [0.5 0.5 0.5];
 if sum(tagged) > 0
-ax.Children(4).FaceColor = [0 1 1];
+    ax.Children(2).FaceColor = [0 1 1];
+    ax.Children(4).FaceColor = [0.5 0.5 0.5];
+else
+    ax.Children(2).FaceColor = [0.5 0.5 0.5];
 end
-ax.FontSize = 30;
+ax.FontSize = 15;
 % ax.FontName = 'Times New Roman';
 
-lgd = legend;
-lgd.String{1} = ['Opto-tagged'];
-text(-4.25,1.0,['Selection Criteria:'],'FontSize', 15 );
-text(-4.25,0.75,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
-text(-4.25,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
-text(-4.25,-0.25,'Opto-tagged Units Displayed:', 'FontSize', 15);
-text(-4.25,-0.5,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
-lgd.String{2} = ['Untagged '];
-lgd.Location = 'northoutside';
-%lgd.Box = 'off';
+% Formatting (text is in weird place if there are no tagged cells)
 
-subplot(2,2,2)
+if sum(tagged) == 0
+    lgd = legend;
+    lgd.String{1} = ['Untagged'];
+    text(-5,1.0,['Selection Criteria:'],'FontSize', 15 );
+    text(-5,0.75,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-5,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-5,-0.25,'Opto-tagged Units Displayed:', 'FontSize', 15);
+    text(-5,-0.5,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
+    lgd.String{2} = ['Opto-tagged'];
+    lgd.Location = 'northoutside';
+    %lgd.Box = 'off';
+    
+else
+    lgd = legend;
+    lgd.String{1} = ['Untagged'];
+    text(-6,1.5,['Selection Criteria:'],'FontSize', 15 );
+    text(-6,1,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-6,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-6,-0.5,'Opto-tagged Units Displayed:', 'FontSize', 15);
+    text(-6,-1,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
+    lgd.String{2} = ['Opto-tagged'];
+    lgd.Location = 'northoutside';
+    %lgd.Box = 'off';
+end
+subplot(3,2,4)
 
 scatter(mn(~tagged),sd(~tagged), 50, [0.5, 0.5, 0.5], '*')
 hold on
@@ -109,15 +127,15 @@ lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 % 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
 
 rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
-'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
 lgd.FontSize = 8;
 
 
-subplot(2,2,3)
+subplot(1,2,1)
 
-errorbar(mn(~tagged),Dpth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 5);
+errorbar(mn(~tagged),Dpth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
 hold on
-errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 1, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 5);
+errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 1, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
 hold off
 
 
@@ -147,11 +165,10 @@ lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 % 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
 
 rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
-'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
 lgd.FontSize = 8;
 
-
-subplot(2,2,4)
+subplot(3,2,6)
 
 h = histogram(round(mn(~tagged)));
 h.FaceColor = [0.5, 0.5, 0.5];
@@ -166,7 +183,8 @@ pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 %yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
 xlim([0 50]);
 xticks(0:5:50);
-ylim([0, round(max(h.BinCounts) + 5, -1)]);
+yMax = max([max(h.BinCounts), max(j.BinCounts)]);
+ylim([0, round(yMax + 5, -1)]);
 xlabel('Latency_{(ms)}');
 ylabel('Frequency_{(no. of units)}', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
@@ -181,7 +199,7 @@ ax.FontSize = 20;
 
 
 rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth + 0.5, ax.YLim(2) - ax.YLim(1)], ...
-'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
 
 lgd = legend;
 lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
