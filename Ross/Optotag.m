@@ -59,7 +59,9 @@ explode = [1, 0];
 pie(x, explode)
 ax = gca;
 ax.Children(2).FaceColor = [0.5 0.5 0.5];
+if sum(tagged) > 0
 ax.Children(4).FaceColor = [0 1 1];
+end
 ax.FontSize = 30;
 % ax.FontName = 'Times New Roman';
 
