@@ -31,7 +31,7 @@ spkSubs = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
 sponSpks = cellfun(@(x) (x/fs)*1e3, sponSpks,...
 'UniformOutput', false);
 formatSpec = '%f \n';
-ind = FR > 0.5;
+ind = FR > 0.5; % Take only units with spont rate over a certain threshold (GLM complains if 0.1 or under)
 
 sponSpks = sponSpks(find(ind));
 for a = 1:length(sponSpks)
