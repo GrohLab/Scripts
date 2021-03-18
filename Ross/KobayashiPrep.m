@@ -25,19 +25,19 @@ goods = setdiff(1:size(sortedData,1),bads);
 
 %% Finding Spontaneous activity of good clusters
 spkSubs = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
-'UniformOutput', false);
+    'UniformOutput', false);
 [FR, ~, sponSpks, ~] = getSpontFireFreq(spkSubs, Conditions(1).Triggers, [0, Nt], fs, 2);
 %% Saving Spikes in Kobayashi format
 sponSpks = cellfun(@(x) (x/fs)*1e3, sponSpks,...
-'UniformOutput', false);
+    'UniformOutput', false);
 formatSpec = '%f \n';
 ind = FR > 0.5; % Take only units with spont rate over a certain threshold (GLM complains if 0.1 or under)
 
 sponSpks = sponSpks(find(ind));
 for a = 1:length(sponSpks)
-fileID = fopen([KobaDir, ['cell', num2str(a-1)], '.txt'], 'w');
-fprintf(fileID, formatSpec, sponSpks{a});
-fclose(fileID);
+    fileID = fopen([KobaDir, ['cell', num2str(a-1)], '.txt'], 'w');
+    fprintf(fileID, formatSpec, sponSpks{a});
+    fclose(fileID);
 end
 
 iOK = true;
