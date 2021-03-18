@@ -1,4 +1,4 @@
-function [Conditions, Triggers] = getTriggers(expName, dataDir, fs)
+% function [Conditions, Triggers] = getTriggers(expName, dataDir, fs)
 %% Finding and rearranging smrx files
 iOk = -1;
 impStr = 'Rhd';
@@ -45,7 +45,8 @@ else
 end
 clearvars nSmrxFiles nFileOrder
 %% getting ConditionSignals
-for i = 1:length(str2num(cell2mat(answr)))
+answr =  cellfun(@(x) str2num(x),answr);
+for i = 1:length(answr)
     getConditionSignalsBF(fopen([dataDir, '\', smrxFiles(i).name]));
     CondSig(i).name = smrxFiles(i).name(1:end-5);
     CondSig(i).Sig = load([dataDir, '\', CondSig(i).name, '_CondSig.mat']);
@@ -107,11 +108,14 @@ for a = 1:length(Trigs(laserInd).Triggers)
     end
     pulseLength = round(mean(diff(pulsedTriggers')/fs));
     gaps = sort(unique(round(diff(trig(:,1)),-3))/fs,'ascend');
-    minIntervalInd = find(abs(diff([pulseLength*ones(length(gaps),1), gaps]')) < 0.5); 
-    % assumes tha gap between stimuli cannot be shorter than any gap within
+    minIntervalInd = find(abs(diff([pulseLength*ones(length(gaps),1), gaps]')) < 0.5);
+    
+    % assumes that gap between stimuli cannot be shorter than any gap within
     % a stimulus
     stimFrequencies = sort(round(1./gaps(1:minIntervalInd-1)), 'ascend');
-    
+    if isnan(pulseLength)
+        stimFrequencies = sort(round(1./gaps(1:find(gaps==max(gaps))-1)), 'ascend');
+    end
     for i = 1:length(stimFrequencies)
         stimInd = diff(trig(:,1))> 0.9*fs/stimFrequencies(i) & diff(trig(:,1)) < 1.1*fs/stimFrequencies(i);
         shifted = [0; stimInd(1:end-1)];
@@ -147,90 +151,90 @@ else
     blockStart = 2;
 end
 
-%% Splitting mechanical conditions
-offset = 0;
-mechStart = cc;
-
-
-for a = 1:length(Trigs(mchInd).Triggers)
-    if ~isempty(Trigs(mchInd).Triggers{1,a})
-        % Assuming mechanical control is first condition
-        nMechConds = length(stimFrequencies) + length(pulseLength) + 1;
-        trig = Trigs(mchInd).Triggers{1,a} + offset;
-        
-        firstLaser = [];
-        if ~isempty(stimFrequencies)
-            for i = 1:nMechConds-1
-                firstLaser = [firstLaser; Conditions(2 + i).Triggers(1,1)];
-            end
-        else
-            for i = 1:nMechConds-1
-                firstLaser = [firstLaser; Conditions(1 + i).Triggers(1,1)];
-            end
-        end
-        
-        sortedFirsts = sort(firstLaser, 'ascend');
-        
-        
-        for i = 1:length(sortedFirsts)
-            if ~isempty(stimFrequencies)
-                ind = find(ismember(firstLaser, sortedFirsts(i))) + 2;
-            else
-                ind = find(ismember(firstLaser, sortedFirsts(i))) + 1;
-            end
-            laserPairing = Conditions(ind).name;
-            HzInd = strfind(laserPairing, 'Hz');
-            if HzInd == true
-                Hz = laserPairing(HzInd-2:HzInd-1);
-                if contains(Hz, '_') || contains(Hz, ' ')
-                    Hz = [Hz(2:end), 'Hz'];
-                end
-            else
-                HzInd = strfind(laserPairing, 'sec');
-                Hz = laserPairing(HzInd-2:HzInd+2);
-                if contains(Hz, '_') || contains(Hz, ' ')
-                    Hz = Hz(2:end);
-                end
-            end
-            
-            PwrInd = strfind(laserPairing, 'mW');
-            Pwr = laserPairing(PwrInd-2:PwrInd-1);
-            if contains(Pwr, '_') || contains(Pwr, ' ')
-                Pwr = Pwr(2:end);
-            end
-            Conditions(cc).name = ['Mech_Laser_',Hz, '_' num2str(Pwr), 'mW'];
-            Conditions(cc).Triggers = trig(1+i:nMechConds:end,:);
-            cc = cc + 1;
-        end
-        Conditions(cc).name = ['Mech_Control_', num2str(Pwr), 'mW'];
-        Conditions(cc).Triggers = trig(1:nMechConds:end,:);
-        cc = cc + 1;
-    end
-    offset = offset + Trigs(mchInd).offset(a);
-end
-if ~isempty(cat(1, Conditions(mechStart:end).Triggers))
-    Conditions(cc).name = 'Mech_All';
-    Conditions(cc).Triggers = sort(cat(1, Conditions(mechStart:end).Triggers),'ascend');
-    cc = cc + 1;
-end
-%% Getting laser control blocks
-if length(Conditions) >= mechStart
-    nComparisons = mechStart-blockStart;
-    lInd = blockStart;
-    mInd = mechStart;
-    for a = 1:nComparisons
-        las = round((Conditions(lInd).Triggers),-2);
-        mech = round((Conditions(mInd).Triggers),-2);
-        controlInd = ~ismember(las, mech);
-        Conditions(cc).name = ['Laser_Control', Conditions(mInd).name(11:end)];
-        Conditions(cc).Triggers(:,1) = Conditions(lInd).Triggers(controlInd(:,1),1);
-        Conditions(cc).Triggers(:,2) = Conditions(lInd).Triggers(controlInd(:,2),2);
-        lInd = lInd + 1;
-        mInd = mInd + nMechConds;
-        cc = cc + 1;
-    end
-end
-
+% %% Splitting mechanical conditions
+% offset = 0;
+% mechStart = cc;
+% 
+% 
+% for a = 1:length(Trigs(mchInd).Triggers)
+%     if ~isempty(Trigs(mchInd).Triggers{1,a})
+%         % Assuming mechanical control is first condition
+%         nMechConds = length(stimFrequencies) + length(pulseLength) + 1;
+%         trig = Trigs(mchInd).Triggers{1,a} + offset;
+%         
+%         firstLaser = [];
+%         if ~isempty(stimFrequencies)
+%             for i = 1:nMechConds-1
+%                 firstLaser = [firstLaser; Conditions(2 + i).Triggers(1,1)];
+%             end
+%         else
+%             for i = 1:nMechConds-1
+%                 firstLaser = [firstLaser; Conditions(1 + i).Triggers(1,1)];
+%             end
+%         end
+%         
+%         sortedFirsts = sort(firstLaser, 'ascend');
+%         
+%         
+%         for i = 1:length(sortedFirsts)
+%             if ~isempty(stimFrequencies)
+%                 ind = find(ismember(firstLaser, sortedFirsts(i))) + 2;
+%             else
+%                 ind = find(ismember(firstLaser, sortedFirsts(i))) + 1;
+%             end
+%             laserPairing = Conditions(ind).name;
+%             HzInd = strfind(laserPairing, 'Hz');
+%             if HzInd == true
+%                 Hz = laserPairing(HzInd-2:HzInd-1);
+%                 if contains(Hz, '_') || contains(Hz, ' ')
+%                     Hz = [Hz(2:end), 'Hz'];
+%                 end
+%             else
+%                 HzInd = strfind(laserPairing, 'sec');
+%                 Hz = laserPairing(HzInd-2:HzInd+2);
+%                 if contains(Hz, '_') || contains(Hz, ' ')
+%                     Hz = Hz(2:end);
+%                 end
+%             end
+%             
+%             PwrInd = strfind(laserPairing, 'mW');
+%             Pwr = laserPairing(PwrInd-2:PwrInd-1);
+%             if contains(Pwr, '_') || contains(Pwr, ' ')
+%                 Pwr = Pwr(2:end);
+%             end
+%             Conditions(cc).name = ['Mech_Laser_',Hz, '_' num2str(Pwr), 'mW'];
+%             Conditions(cc).Triggers = trig(1+i:nMechConds:end,:);
+%             cc = cc + 1;
+%         end
+%         Conditions(cc).name = ['Mech_Control_', num2str(Pwr), 'mW'];
+%         Conditions(cc).Triggers = trig(1:nMechConds:end,:);
+%         cc = cc + 1;
+%     end
+%     offset = offset + Trigs(mchInd).offset(a);
+% end
+% if ~isempty(cat(1, Conditions(mechStart:end).Triggers))
+%     Conditions(cc).name = 'Mech_All';
+%     Conditions(cc).Triggers = sort(cat(1, Conditions(mechStart:end).Triggers),'ascend');
+%     cc = cc + 1;
+% end
+% %% Getting laser control blocks
+% if length(Conditions) >= mechStart
+%     nComparisons = mechStart-blockStart;
+%     lInd = blockStart;
+%     mInd = mechStart;
+%     for a = 1:nComparisons
+%         las = round((Conditions(lInd).Triggers),-2);
+%         mech = round((Conditions(mInd).Triggers),-2);
+%         controlInd = ~ismember(las, mech);
+%         Conditions(cc).name = ['Laser_Control', Conditions(mInd).name(11:end)];
+%         Conditions(cc).Triggers(:,1) = Conditions(lInd).Triggers(controlInd(:,1),1);
+%         Conditions(cc).Triggers(:,2) = Conditions(lInd).Triggers(controlInd(:,2),2);
+%         lInd = lInd + 1;
+%         mInd = mInd + nMechConds;
+%         cc = cc + 1;
+%     end
+% end
+% 
 
 
 %% Getting Triggers
@@ -242,6 +246,6 @@ for a = 1:nTriggers
 end
 
 %% Save
-%save(fullfile(dataDir, [expName, '_analysis.mat']), 'Conditions', 'Triggers', '-v7.3');
+% save(fullfile(dataDir, [expName, '_analysis.mat']), 'Conditions', 'Triggers', '-v7.3');
 
-end
+% end

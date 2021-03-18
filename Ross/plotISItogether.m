@@ -8,6 +8,11 @@ function [fig, Hist, FRpu] = plotISItogether(spkSubs, fs, ID)
 %   Output parameters:
 %       - fig - figures array containing all created figures.
 %       - FRpu - Firing rate per unit
+
+
+
+
+% make figure, then call function
 %% Input validation
 fig = gobjects(1);
 [Nr, Nc] = size(spkSubs);
@@ -44,7 +49,7 @@ if Nu >= 100
 end
 %% Inter-spike intervals
 FRpu = zeros(Nu,3);
-figure('Visible','off','Color',[1,1,1]);
+% figure('Visible','off','Color',[1,1,1]);
 hold on
 for cu = 1:Nu
     lisi = log10(diff(spkSubs{cu}./fs));

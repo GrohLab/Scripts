@@ -44,6 +44,8 @@ for a = 1:length(ID)
     WvMeasures(a).ID = figureName;
     WvMeasures(a).PeakTrough = bartho(1);
     WvMeasures(a).HalfWidth = bartho(2);
+    WvMeasures(a).FirstPeak = bartho(3);
+    WvMeasures(a).SecondPeak = bartho(4);
     if class(ID) == 'char'
     return
     

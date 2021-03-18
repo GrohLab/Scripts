@@ -547,7 +547,7 @@ if ~mkdir(rasterDir)
 end
 for pwr = [15]%, 10, 15]
 MchTblInd = ['Mech_Control_', num2str(pwr), 'mW_MR'];
-LasTblInd =  [20,21,22]%['Laser_Control_', num2str(pwr), 'mW_LR'];
+LasTblInd =  [20,21,22];%['Laser_Control_', num2str(pwr), 'mW_LR'];
 MchCondControl = ['Mech_Control_', num2str(pwr), 'mW'];
 LasCondControl = ['Laser_Control_', num2str(pwr), 'mW'];
 MchLasCond = ['Mech_Laser_', num2str(pwr), 'mW'];
