@@ -12,7 +12,8 @@ end
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Optotagging: ', name];
-Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
+tm = 2.5e-2;
+Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 rng('default');
@@ -61,7 +62,7 @@ explode = [0, 1];
 pie(x, explode)
 ax = gca;
 if sum(tagged) > 0
-    ax.Children(2).FaceColor = [0 1 1];
+    ax.Children(2).FaceColor = [0, 0.5, 1];
     ax.Children(4).FaceColor = [0.5 0.5 0.5];
 else
     ax.Children(2).FaceColor = [0.5 0.5 0.5];
@@ -97,16 +98,16 @@ else
 end
 subplot(3,2,4)
 
-scatter(mn(~tagged),sd(~tagged), 50, [0.5, 0.5, 0.5], '*')
+scatter(mn(~tagged),sd(~tagged), tm*1e3, [0.5, 0.5, 0.5], '*')
 hold on
-scatter(mn(tagged),sd(tagged), 50, [0.5, 1, 1], '*')
+scatter(mn(tagged),sd(tagged), tm*1e3, [0, 0.5, 1], '*')
 hold off
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
 ylim([0,round(round(max(sd))+5,-1)]);
 %yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
-xlim([0 50]);
-xticks(0:5:50);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
 xlabel('Latency_{(ms)}');
 ylabel('StdDev_{(ms)}', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
@@ -136,7 +137,7 @@ subplot(1,2,1)
 
 errorbar(mn(~tagged),Dpth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
 hold on
-errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 1, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
+errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
 hold off
 
 
@@ -144,8 +145,8 @@ pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
 ylim([round(round(min(Dpth),-2)/2,-2)*2-200,0]);
 yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
-xlim([0 50]);
-xticks(0:5:50);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
 xlabel('Latency_{(ms)}');
 ylabel('Depth_{(\mum)}', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
@@ -175,15 +176,15 @@ h = histogram(round(mn(~tagged)));
 h.FaceColor = [0.5, 0.5, 0.5];
 hold on
 j = histogram(round(mn(tagged)));
-j.FaceColor = [0, 1, 1];
+j.FaceColor = [0, 0.5, 1];
 hold off
 
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
 % ylim([0,sum(mode(round(mn)+5))]);
 %yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
-xlim([0 50]);
-xticks(0:5:50);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
 yMax = max([max(h.BinCounts), max(j.BinCounts)]);
 ylim([0, round(yMax + 5, -1)]);
 xlabel('Latency_{(ms)}');
