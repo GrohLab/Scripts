@@ -4,8 +4,8 @@ if ~mkdir(isiDir)
     fprintf(1,'There was an issue with the figure folder...\n');
 end
 
-plotISI(spkSubs,fs,gclID);
+plotISI(spkSubs2,fs,gclID);
 for a = 1:length(gclID(2:end))
     H = figure(a);
-    savefig(H,fullfile(isiDir, ['Cluster_', gclID{a + 1,1}]), 'compact');
+    savefig(H,fullfile(isiDir, ['Unit ', num2str(gclID{a}), '.fig']), 'compact');
 end

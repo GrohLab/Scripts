@@ -1,4 +1,4 @@
-function [fig, sumSalIsi, sumCfaIsi] = SalineVsCFAISI(SalISIhist, CfaISIhist)
+function fig = SalineVsCFAISI(SalISIhist, CfaISIhist)
 %% Saline vs CFA Spontaneous
 for model = 1:2
     if model == 1

@@ -33,10 +33,10 @@ silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
 badsIdx = badsIdx | silentUnits;
-% if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
-%     clInfo = addvars(clInfo,~badsIdx,'After','id',...
-%         'NewVariableNames','ActiveUnit');
-% end
+if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
+    clInfo = addvars(clInfo,~badsIdx,'After','id',...
+        'NewVariableNames','ActiveUnit');
+end
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
 % Logical spike trace for the first good cluster
@@ -313,7 +313,7 @@ end
 % Significant mechanical responses per condition
 b = length(consCondNames);
 for a = 1 : length(consCondNames)
-    clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_MR']} = Results(b).Activity(1).Pvalues < 0.05;
+    clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_R']} = Results(b).Activity(1).Pvalues < 0.05;
     b = b + length(consCondNames) - a;
 end
 
@@ -359,12 +359,14 @@ if ~isfield(Conditions,'Stimulus') ||...
     for cc = consideredConditions
         fprintf(1,'- %s\n', Conditions(cc).name)
         Conditions(cc).Stimulus = struct(...
-            'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
-            1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
+            'Mechanical',reshape(mean(cst(whFlag(1),:,delayFlags(:,cdel)),3),...
+            1,Nt),'MechPressure',reshape(mean(cst(whFlag(2),:,delayFlags(:,cdel)),3),...
+            1,Nt),...
+            'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
             1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
         cdel = cdel + 1;
     end
-    save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
+    save(fullfile(dataDir,[expName,'_analysis.mat']),'Conditions','-append')
 end
 
 
@@ -532,9 +534,9 @@ for ccond = 1:Nccond
     end
     
 end
-for a = 1:length(consideredConditions)
-    savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH.fig']));
-end
+% for a = 1:length(consideredConditions)
+%     savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH_0.001binSz.fig']));
+% end
 %% Rasters
 % DE_Jittering needs to be unfiltered for significance for this to work!
 
@@ -543,26 +545,27 @@ rasterDir = fullfile(figureDir,'Rasters\');
 if ~mkdir(rasterDir)
     fprintf(1,'There was an issue with the figure folder...\n');
 end
-for pwr = [5, 10, 15]
+for pwr = [15]%, 10, 15]
 MchTblInd = ['Mech_Control_', num2str(pwr), 'mW_MR'];
-LasTblInd = ['Laser_Control_', num2str(pwr), 'mW_LR'];
+LasTblInd =  [20,21,22];%['Laser_Control_', num2str(pwr), 'mW_LR'];
 MchCondControl = ['Mech_Control_', num2str(pwr), 'mW'];
 LasCondControl = ['Laser_Control_', num2str(pwr), 'mW'];
 MchLasCond = ['Mech_Laser_', num2str(pwr), 'mW'];
 EffectTblInd = ['Mech_Control_', num2str(pwr), 'mW_vs_Mech_Laser_', num2str(pwr), 'mW_Evoked_Response'];
-TblInd = find(clInfo.(MchTblInd)); % ATM this only makes rasters that show sig control mech response
+TblInd = find(clInfo.ActiveUnit); % ATM this only makes rasters that show sig control mech response
 clIDind = clInfo.id(TblInd);
 lngth = length(clIDind);
 for a = 1:lngth
     cl = clIDind(a);
     clSel = find(ismember(pclID, cl));
-    if chCond == 1
-        rasCondSel = find(ismember(consCondNames, MchCondControl) | ismember(consCondNames, MchLasCond));
-        label = 'Mech';
-    else
-        rasCondSel = find(ismember(consCondNames, LasCondControl) | ismember(consCondNames, MchLasCond));
-        label = 'Laser';
-    end
+%     if chCond == 1
+%         rasCondSel = find(ismember(consCondNames, MchCondControl) | ismember(consCondNames, MchLasCond));
+%         label = 'Mech';
+%     else
+%         rasCondSel = find(ismember(consCondNames, LasCondControl) | ismember(consCondNames, MchLasCond));
+%         label = 'Laser';
+%     end
+rasCondSel = [1:3];
     rasCond = consideredConditions(rasCondSel);
     rasCondNames = consCondNames(rasCondSel);
     Nrcl = numel(clSel);
@@ -587,7 +590,7 @@ for a = 1:lngth
         for ccl = 1:Nrcl
             lidx = ccl + (cc - 1) * Nrcl;
             ax(lidx) = subplot(Nrcond, Nrcl, lidx);
-            title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}))
+            title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}), 'Interpreter', 'none')
             plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
                 timeLapse, fs,'',ax(lidx));
             ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
@@ -597,7 +600,7 @@ for a = 1:lngth
             ax(lidx).XAxis.TickLabels =...
                 cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
                 'UniformOutput', 0);
-            xlabel(ax(lidx), 'Time [ms]')
+            xlabel(ax(lidx), 'Time_{(ms)}')
             initSub = 0;
             optsRect = {'EdgeColor','none','FaceColor','none'};
             for ctr = 1:numel(trigChange)
@@ -610,7 +613,7 @@ for a = 1:lngth
         end
     end
     linkaxes(ax,'x')
-    rasFigName = ['Unit_', cell2mat(cl), '_', label, '_', num2str(pwr), 'mW_Raster']; 
+    rasFigName = ['Unit_', cell2mat(cl), '_', '15mW_Raster']; 
     configureFigureToPDF (rasFig);
     savefig(rasFig,fullfile(rasterDir, [rasFigName, '.fig']));
 end

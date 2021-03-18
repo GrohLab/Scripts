@@ -1,4 +1,4 @@
-%function [PT, fig] = PeakTrough(clWaveforms, ID, fs)
+function [PT, fig] = PeakTrough(clWaveforms, ID, fs)
 PT = zeros(length(ID),1);
 r = 1;
 for a = 1:length(ID)
@@ -22,4 +22,4 @@ xlabel('Time (msec)');
 fig = gcf;
 ax = fig(1).Children;
 ax.FontSize = 20;
-%end
+end

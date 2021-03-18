@@ -21,7 +21,7 @@ for model = 1:2
         fig(cf) = figure('Color',[1,1,1], 'Name', [modName, ' ', wName, ' Cumulative Fraction']);
         cf = cf + 1;
         
-        for a = 1:3
+        for a = 3%:3
             pwr = a*5;
             if a == 1
                 chCond = [7 8 9];
@@ -30,7 +30,7 @@ for model = 1:2
             elseif a == 3
                 chCond = [4 5 6];
             end
-            subplot(3,1,a)
+            % subplot(3,1,a)
             hold on
             for chFig = chCond
                 IsiStack = zeros(length(Histy(chFig).Vals(wIndex).ISI), length(Histy(chFig).Vals(wIndex).ISI{1}));
@@ -69,8 +69,8 @@ for model = 1:2
             % Results(c).name = kstest2(CumISI(chCond(1)).Condition(wIndex).Vals;
             ylabel('Cumulative Fraction');
             xlabel('ISI (msecs)');
-            xlim([-3, 2]);
-            xticks([-3:2])
+            xlim([-3, 1]);
+            xticks([-3:1])
             ylim([0, 1]);
             legend(Histy(chCond(1)).name, Histy(chCond(2)).name, Histy(chCond(3)).name);
             fig = gcf;
@@ -80,27 +80,27 @@ for model = 1:2
 
         end
         c = 0;
-        for a = 1:3
-            pwr = a*5;
-            if a == 1
-                chCond = [7 8 9];
-            elseif a == 2
-                chCond = [1 2 3];
-            elseif a == 3
-                chCond = [4 5 6];
-            end
-            for d = 1:length(chCond)-1
-                for b  = d+1: length(chCond)
-                    ksResults(r).name = [modName, ' ', Histy(chCond(d) + c).name, ' vs ', Histy(chCond(b) + c).name, ' ', wName];
-                    ksResults(r).kstest2 = findKSsignificance(sum(Histy(chCond(d) + c).Vals(wIndex).ISIsum), sum(Histy(chCond(b) + c).Vals(wIndex).ISIsum));
-                    r = r + 1;
-                end
-            end
+%         for a = 1:3
+%             pwr = a*5;
+%             if a == 1
+%                 chCond = [7 8 9];
+%             elseif a == 2
+%                 chCond = [1 2 3];
+%             elseif a == 3
+%                 chCond = [4 5 6];
+%             end
+%             for d = 1:length(chCond)-1
+%                 for b  = d+1: length(chCond)
+%                     ksResults(r).name = [modName, ' ', Histy(chCond(d) + c).name, ' vs ', Histy(chCond(b) + c).name, ' ', wName];
+%                     ksResults(r).kstest2 = findKSsignificance(sum(Histy(chCond(d) + c).Vals(wIndex).ISIsum), sum(Histy(chCond(b) + c).Vals(wIndex).ISIsum));
+%                     r = r + 1;
+%                 end
+%             end
           
         end
     end
 end
 %%
-for a = 1:length(ksResults)
-    fprintf(1, [ksResults(a).name,' Kolgorov-Smirnov Test ', num2str(ksResults(a).kstest2), ' \n \n'])
-end
+% for a = 1:length(ksResults)
+%     fprintf(1, [ksResults(a).name,' Kolgorov-Smirnov Test ', num2str(ksResults(a).kstest2), ' \n \n'])
+% end

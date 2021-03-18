@@ -1,4 +1,4 @@
-pisi =SalSpontISI;
+pisi =CfaSpontISI;
 currentIsi = cellfun(@(x) x(1:end-1)/fs, pisi, 'UniformOutput', 0);
 nextIsi = cellfun(@(x) x(2:end)/fs, pisi, 'UniformOutput', 0);
 isiReturnMap = {cat(1, currentIsi{:}), cat(1, nextIsi{:})};
