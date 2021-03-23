@@ -13,12 +13,12 @@ for ind = 1:length(Array)
     
     for TrigNo = 1:length(triggers)
         
-        spks = find(Train > triggers(TrigNo,1) & Train < triggers(TrigNo,1) + timeBin);
+        spkInds = find(Train > triggers(TrigNo,1) & Train < triggers(TrigNo,1) + timeBin);
         
-        if isempty(spks)
+        if isempty(spkInds)
             rate(TrigNo) = 0;
         else
-            cts = length(spks);
+            cts = length(spkInds);
             rate(TrigNo) = cts/timeBin;
         end
     end
