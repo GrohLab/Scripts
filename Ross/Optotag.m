@@ -12,13 +12,13 @@ end
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Optotagging: ', name];
-tm = 2.5e-2;
+tm = 5e-2;
 Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 rng('default');
 jitter = randi(20,size(Dpth));
-Dpth = Dpth + jitter; % adding small random jitter for visualisation
+Dpth = Dpth + jitter; % adding small jitter for visualisation
 Dpth = -1*Dpth;
 
 % Removing and highlighting dodgy units from plot
@@ -31,7 +31,7 @@ fprintf(['\n The following units have mean latenices lower than ', num2str(lowes
 for a = 1:length(dodgyMean)
     fprintf([num2str(dodgyMean{a}), '\n']);
 end
-fprintf(['\n The following units have mean standard devations lower than ', num2str(lowestSD), 'ms '...
+fprintf(['\n The following units have standard devations lower than ', num2str(lowestSD), 'ms '...
     '\n and have been removed from the plot: \n']);
 for a = 1:length(dodgySD)
     fprintf([num2str(dodgySD{a}), '\n']);
@@ -56,7 +56,7 @@ maxDepth = Dpth(max(find(tagged)));
 fig = figure('Name', name, 'Color', 'White');
 
 subplot(3,2,2)
-x = [sum(~tagged), sum(tagged)];
+x = [sum(nontagged), sum(tagged)];
 explode = [0, 1];
 % labels = {['Tagged Fraction = ',num2str(tg), '%'], ' '};
 pie(x, explode)
@@ -135,9 +135,9 @@ lgd.FontSize = 8;
 
 subplot(1,2,1)
 
-errorbar(mn(~tagged),Dpth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
+errorbar(mn(~tagged),Dpth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0.5,0.5,0.5]);
 hold on
-errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0);
+errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0,0.5,1]);
 hold off
 
 
