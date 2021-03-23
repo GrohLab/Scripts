@@ -1,4 +1,4 @@
-function fig = plotUnitInfo(ID, sortedData, clInfo, clWaveforms, Conditions, samplingFrequency)
+function fig = plotUnitInfo(ID, sortedData, clInfo, clWaveforms, Conditions, samplingFrequency, Triggers)
 
 
 
@@ -17,7 +17,7 @@ end
 spkSubs = cellfun(@(x) round(x.*fs), sortedData(spkInd,2),...
 'UniformOutput', false);
 
-TriggerTimes = Conditions(1).Triggers; % assumes Condition(1).Triggers is LaserALL
+TriggerTimes = Conditions(1).Triggers(1,:); % assumes Condition(1).Triggers is LaserALL
 
 [firingRatePerCluster, deltaTrigTimeSum, sponSpks, sponIsi] =...
     getSpontFireFreq(spkSubs, TriggerTimes, [0, Conditions(1).Triggers(end,end)], fs, 2);
@@ -33,54 +33,39 @@ figureName = ['Unit Info: ', figureName];
 fig = figure('Name', figureName, 'Color', 'White');
 
 
-%% Latency vs Depth
+%% Triggered Dose_Response
 
-
-Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, 5e-2);
-mn = (cellfun(@mean, Latencies)*1e3);
-sd = (cellfun(@std, Latencies)*1e3);
-Dpth = -1*Dpth;
-jitter = randi(20,size(Dpth));
-Dpth = Dpth + jitter; % adding small random jitter for visualisation
 subplot(2,2,1)
+plotTriggeredDoseResponse(ID, sortedData, [3:17], Conditions, fs);
 
-errorbar(mn,Dpth,sd, 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 5);
-
-pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
-% title(name, 'Interpreter', 'none');
-ylim([round(round(min(Dpth),-2)/2,-2)*2-200,0]);
-yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
-xlim([0 50]);
-xticks(0:5:50);
-xlabel('Latency_{(ms)}');
-ylabel('Depth_{(\mum)}', 'Interpreter', 'tex')
-% ax.XTickLabelRotation = -45;
-ax = gca;
-hold on
-laser = plot([0:pulseWidth], ax.YLim(2)*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
-ax = gca;
-ax.FontSize = 15;
-% ax.FontName = 'Times New Roman';
-% Create rectangle
-% lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
-
-lgd = legend;
-lgd.String{1} = 'Unit Mean +/- SD';
-lgd.String{2} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
-lgd.FontSize = 8;
-
-% rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
-% 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
-
-rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
-    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
-
+ax.FontSize = 20;
+ax.FontName = 'Arial';
 %% Rasters
+
+ctrl = false(length(Conditions),1);
+mech = false(length(Conditions),1);
+for a = 1:length(Conditions)
+ctrl(a) = contains(Conditions(a).name, 'control', 'IgnoreCase', true);
+mech(a) = contains(Conditions(a).name, 'mech', 'IgnoreCase', true);
+end
+mcIndices = find(ctrl & mech);
+if ~isempty(mcIndices)
+    CondTriggers = sort(cat(1,Conditions(mcIndices).Triggers), 'Ascend');
+    clr = [1,0,0];
+else
+    CondTriggers = Conditions(2).Triggers(3:3:end,:);
+    clr = [0,1,1];
+end
+
+
 subplot(2,2,2)
 
 
+plotUnitTriggeredResponse(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
 
 
+ax.FontSize = 20;
+ax.FontName = 'Arial';
 %% Waveform
 subplot(2,2,3)
 
@@ -94,24 +79,24 @@ if isempty(inds)
 end
 
 ind = inds(1);
-bartho = getBarthoMeasure((mean(clWaveforms{ind,2},2)), fs);
+[bartho, peak2Ind] = getBarthoMeasure((mean(clWaveforms{ind,2},2)), fs);
 plot(mean(clWaveforms{ind,2},2), 'Color', 'b');
 ax = gca;
 sz = size(clWaveforms{ind,2}(:,1));
 sz = sz(1);
 
-trough = min(mean(clWaveforms{ind,2},2));
-troughInd = find(ismember(mean(clWaveforms{ind,2},2), trough));
-peak2 = max(mean(clWaveforms{ind,2}(troughInd:end,:),2));
-peak2Ind = find(ismember(mean(clWaveforms{ind,2},2), peak2));
-hold on
-plot(peak2Ind*ones(100), linspace(trough, peak2, 100),...
-    'LineStyle', '--', 'Color', 'k');
-plot(linspace(troughInd, peak2Ind,peak2Ind-troughInd), ...
-    trough*ones(peak2Ind-troughInd), 'Color', 'k');
-text(peak2Ind + 1, trough, [num2str(round(bartho(1)*1e3, 3)), '_{ms}'])
-hold off
-
+ trough = min(mean(clWaveforms{ind,2},2));
+% troughInd = find(ismember(mean(clWaveforms{ind,2},2), trough));
+% peak2 = max(mean(clWaveforms{ind,2}(troughInd:end,:),2));
+% % peak2Ind = find(ismember(mean(clWaveforms{ind,2},2), peak2));
+% hold on
+% plot(peak2Ind*ones(100), linspace(trough, peak2, 100),...
+%     'LineStyle', '--', 'Color', 'k');
+% plot(linspace(troughInd, peak2Ind,peak2Ind-troughInd), ...
+%     trough*ones(peak2Ind-troughInd), 'Color', 'k');
+% text(peak2Ind + 1, trough, [num2str(round(bartho(1)*1e3, 2)), '_{ms}'])
+% hold off
+%                       FIX THIS!
 
 ax.FontSize = 15;
 ax.XLim = [1, sz];
@@ -124,12 +109,13 @@ ax.XTickLabelRotation = -45;
 % title(['Unit ',clWaveforms{ind,1},' Waveform'], 'Interpreter', 'none');
 xlabel(ax,'Time_{(ms)}');
 ylabel(ax,'Amplitude_{(mV)}');
-WvMeasure(a).ID = figureName;
-WvMeasure(a).PeakTrough = bartho(1);
-WvMeasure(a).HalfWidth = bartho(2);
+WvMeasure.ID = figureName;
+WvMeasure.PeakTrough = bartho(1);
+WvMeasure.HalfWidth = bartho(2);
 
 
-
+ax.FontSize = 20;
+ax.FontName = 'Arial';
 %% ISIs & Bursting
 
 subplot(2,2,4)
@@ -201,6 +187,7 @@ end
 
 [burstSpkFreq, burstCF, nBursts, nSpikes, eventRatio] = getBurstingMeasures(ID, 4, 100, 2, sortedData, fs);
 
-text(ax, 0.5, 0.5, ['Burst/SpikeRatio = ', num2str(round(eventRatio, 2))]);
-
+text(ax, 0.5, 0.5, ['Burst/Spike Ratio = ', num2str(round(eventRatio, 2))]);
+ax.FontSize = 20;
+ax.FontName = 'Arial';
 end
