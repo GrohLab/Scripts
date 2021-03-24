@@ -42,6 +42,7 @@ ax.FontSize = 20;
 ax.FontName = 'Arial';
 %% Rasters
 
+% Defaulting to mech control if exists
 ctrl = false(length(Conditions),1);
 mech = false(length(Conditions),1);
 for a = 1:length(Conditions)
@@ -57,11 +58,20 @@ else
     clr = [0,1,1];
 end
 
+ subplot(4,2,2)
 
-subplot(2,2,2)
 
 
-plotUnitTriggeredResponse(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
+plotUnitTriggeredRaster(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
+
+
+ax.FontSize = 20;
+ax.FontName = 'Arial';
+
+%% PSTH
+subplot(4,2,4)
+
+plotUnitTriggeredPSTH(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
 
 
 ax.FontSize = 20;
@@ -175,7 +185,10 @@ for cu = 1:Nu
     plot(bns,cts./sum(cts),'LineWidth',1);
     ax = gca;
     ax.FontSize = 15;
-    ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
+    ax.XLim = [-3, 1];
+    ax.XTick = [-3:1];
+    ax.XTickLabel = 10.^ax.XTick * 1e3;
+    ax.XTickLabelRotation = -45;
     xlabel(ax,'Time_{(ms)}'); ylabel(ax,'ISI Probability');
     grid(ax,'on')
     Ncts = cts/sum(cts);
@@ -187,7 +200,7 @@ end
 
 [burstSpkFreq, burstCF, nBursts, nSpikes, eventRatio] = getBurstingMeasures(ID, 4, 100, 2, sortedData, fs);
 
-text(ax, 0.5, 0.5, ['Burst/Spike Ratio = ', num2str(round(eventRatio, 2))]);
+text(ax, -0.5, 0.5, ['Burst/Spike Ratio = ', num2str(round(eventRatio, 2))]);
 ax.FontSize = 20;
 ax.FontName = 'Arial';
 end
