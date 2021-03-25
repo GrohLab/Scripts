@@ -16,6 +16,22 @@ rates = zeros(lngth, length(condIndices));
 sds = zeros(lngth, length(condIndices));
 timeBin = 5;
 conds = zeros(1,length(condIndices));
+
+alltext = cat(2, Conditions.name);
+undscore = strfind(alltext, "_");
+allHzind = strfind(alltext, "Hz");
+freqConds = zeros(length(allHzind),1);
+hzUnd = zeros(length(allHzind),1);
+for a = 1:length(allHzind)
+    hzUnd(a) = max(undscore(undscore<allHzind(a)));
+    freqConds(a) = str2double(alltext(hzUnd(a)+1:allHzind(a)-1));
+end
+freqConds = unique(freqConds);
+for a = 1:length(freqConds)
+    FreqConds{a} = [num2str(freqConds(a)), 'Hz'];
+end
+
+
 for b = 1:lngth
     spkInd = ismember(sortedData(:,1), ID);
     train = sortedData(spkInd, 2);
@@ -25,11 +41,13 @@ for b = 1:lngth
         rate = TriggeredRates(train, Cond{a},fs, timeBin);
         rates(b,a) = mean(rate{:});
         sds(b,a) = std(rate{:});
-        if contains(Conditions(condIndices(a)).name, "1Hz") % Can make it so we don't need to know text i.e. Hz Ind = yadayadayada...later
-            conds(a) = 1;
-        elseif contains(Conditions(condIndices(a)).name, "10Hz")
-            conds(a) = 2;
-        elseif contains(Conditions(condIndices(a)).name, ["pulse", "control"], 'IgnoreCase', true)
+        for i = 1:length(FreqConds)
+            
+            if contains(Conditions(condIndices(a)).name, FreqConds{i}) % Can make it so we don't need to know text i.e. Hz Ind = yadayadayada...later
+                conds(a) = i;
+            end
+        end
+        if contains(Conditions(condIndices(a)).name, ["pulse", "control"], 'IgnoreCase', true)
             conds(a) = 3;
         end
     end
