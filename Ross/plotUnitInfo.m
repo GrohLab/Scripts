@@ -35,14 +35,26 @@ fig = figure('Name', figureName, 'Color', 'White');
 
 %% Triggered Dose_Response
 
+% Preparing condIndices
+laser = false(length(Conditions),1);
+alltriggers = false(length(Conditions),1);
+mech = false(length(Conditions),1);
+for a = 1:length(Conditions)
+    laser(a) = contains(Conditions(a).name, 'laser', 'IgnoreCase', true);
+    alltriggers(a) = contains(Conditions(a).name, 'alltriggers', 'IgnoreCase', true);
+    mech(a) = contains(Conditions(a).name, 'mech', 'IgnoreCase', true);
+end
+lIndices = find(laser & ~mech & ~alltriggers);
+
+
 subplot(2,2,1)
-plotTriggeredDoseResponse(ID, sortedData, [3:17], Conditions, fs);
+plotTriggeredDoseResponse(ID, sortedData, lIndices, Conditions, fs); % Need to find the CondIndices!!
 
 ax.FontSize = 20;
 ax.FontName = 'Arial';
-%% Rasters
+%% Defaulting to Mech Control for Rasters & PSTH
 
-% Defaulting to mech control if exists
+
 ctrl = false(length(Conditions),1);
 mech = false(length(Conditions),1);
 for a = 1:length(Conditions)
@@ -53,10 +65,14 @@ mcIndices = find(ctrl & mech);
 if ~isempty(mcIndices)
     CondTriggers = sort(cat(1,Conditions(mcIndices).Triggers), 'Ascend');
     clr = [1,0,0];
+    figtitle = 'Mechanical Control Response';
 else
     CondTriggers = Conditions(2).Triggers(3:3:end,:);
     clr = [0,1,1];
+    figtitle = 'Laser Pulse Responses (power ascending)';
 end
+
+%% Rasters
 
  subplot(4,2,2)
 
@@ -64,7 +80,8 @@ end
 
 plotUnitTriggeredRaster(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
 
-
+ax = gca;
+ax.Title.String = figtitle;
 ax.FontSize = 20;
 ax.FontName = 'Arial';
 
@@ -160,9 +177,7 @@ for cu = 1:Nu
     lisi = log10(diff(spkSubs{cu}./fs));
     if any(isinf(lisi)) 
         fprintf(1,'Cluster %d ',cu);
-        if IDflag
-            fprintf(1,'(%s)',ID{cu})
-        end
+        
         fprintf(1,' has repeated time points.\n')
         fprintf(1,'These time points will not be considered.\n')
         lisi(isinf(lisi)) = [];
@@ -185,8 +200,8 @@ for cu = 1:Nu
     plot(bns,cts./sum(cts),'LineWidth',1);
     ax = gca;
     ax.FontSize = 15;
-    ax.XLim = [-3, 1];
-    ax.XTick = [-3:1];
+    ax.XLim = [-4, 2];
+    ax.XTick = [-4:2];
     ax.XTickLabel = 10.^ax.XTick * 1e3;
     ax.XTickLabelRotation = -45;
     xlabel(ax,'Time_{(ms)}'); ylabel(ax,'ISI Probability');
