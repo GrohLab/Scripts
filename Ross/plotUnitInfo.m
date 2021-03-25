@@ -49,7 +49,7 @@ lIndices = find(laser & ~mech & ~alltriggers);
 
 subplot(2,2,1)
 plotTriggeredDoseResponse(ID, sortedData, lIndices, Conditions, fs); % Need to find the CondIndices!!
-
+ax = gca;
 ax.FontSize = 20;
 ax.FontName = 'Arial';
 %% Defaulting to Mech Control for Rasters & PSTH
