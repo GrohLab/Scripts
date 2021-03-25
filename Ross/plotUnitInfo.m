@@ -35,7 +35,7 @@ fig = figure('Name', figureName, 'Color', 'White');
 
 %% Triggered Dose_Response
 
-% Preparing condIndices
+% Preparing condIndices (lIndices)
 laser = false(length(Conditions),1);
 alltriggers = false(length(Conditions),1);
 mech = false(length(Conditions),1);
@@ -44,7 +44,7 @@ for a = 1:length(Conditions)
     alltriggers(a) = contains(Conditions(a).name, 'alltriggers', 'IgnoreCase', true);
     mech(a) = contains(Conditions(a).name, 'mech', 'IgnoreCase', true);
 end
-lIndices = find(laser & ~mech & ~alltriggers);
+lIndices = find(laser & ~mech & ~alltriggers); 
 
 
 subplot(2,2,1)
