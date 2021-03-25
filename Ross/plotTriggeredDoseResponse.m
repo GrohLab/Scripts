@@ -2,9 +2,9 @@ function plotTriggeredDoseResponse(ID, sortedData, condIndices, Conditions, fs)
 
 
 
-% atm only works on block conditions....come back to this
+            % atm only works on block conditions (plotUnitInfo omits these for now)....come back to this
 
-
+% Naming the figure
 if class(ID) == 'cell'
     figureName = ID{1};
     lngth = 1; % generalise this!
@@ -12,6 +12,8 @@ else
     figureName = ID;
     lngth = 1;
 end
+
+% Finding the different frequencies - probably lots of redundancy
 rates = zeros(lngth, length(condIndices));
 sds = zeros(lngth, length(condIndices));
 timeBin = 5;
@@ -31,7 +33,7 @@ for a = 1:length(freqConds)
     FreqConds{a} = [num2str(freqConds(a)), 'Hz'];
 end
 
-
+% Getting the mean rates and SDs for the considered Conditions 
 for b = 1:lngth
     spkInd = ismember(sortedData(:,1), ID);
     train = sortedData(spkInd, 2);
@@ -43,29 +45,34 @@ for b = 1:lngth
         sds(b,a) = std(rate{:});
         for i = 1:length(FreqConds)
             
-            if contains(Conditions(condIndices(a)).name, FreqConds{i}) % Can make it so we don't need to know text i.e. Hz Ind = yadayadayada...later
+            if contains(Conditions(condIndices(a)).name, FreqConds{i}) % sorting the rates into frequency groups
                 conds(a) = i;
             end
         end
         if contains(Conditions(condIndices(a)).name, ["pulse", "control"], 'IgnoreCase', true)
-            conds(a) = 3;
+            conds(a) = i+1; % looking for continuous pulse conditions
         end
     end
 end
-
-cond1 = conds == 1;
-cond2 = conds == 2;
-cond3 = conds == 3;
-condFlg = [cond1; cond2; cond3];
+condInd = unique(conds);
+condFlg = false(length(condInd), length(conds));
+for a = 1:length(condInd)
+    condFlg(a,:) = conds == condInd(a);
+end
 consConds = sum(condFlg,2) ~= false;
 
 
-condInd = find(consConds);
+cc = find(consConds);
 legText = [];
-legendCell = [{['1Hz', legText]}, {['10Hz', legText]}, {['Pulse', legText]}];
+legendCell = cell(length(condInd),1);
+for a = 1:length(condInd)-1
+    legendCell{a} = [FreqConds{a}, legText];
+end
+legendCell{a+1} = ['Pulse', legText];
 ax = gca;
 
 
+% Sorting by Laser Intensity
 
 xnames = cell(1, length(condIndices));
 pwrs = zeros(1, length(condIndices));
@@ -83,23 +90,28 @@ for a = 1:length(condIndices)
         Conditions(condIndices(a)).name(1) = 'P';
     end
     xnames{a} = Conditions(condIndices(a)).name;
-    spaceInd = strfind(xnames{a}, ' ');
     
     
 end
 pwrs = unique(pwrs);
+pwrCell = cell(length(pwrs),1);
 for a = 1:length(pwrs)
-pwrCell{a} = num2str(pwrs(a));
+    pwrCell{a} = num2str(pwrs(a));
 end
+
+
+% Plotting
 
 hold on
 x = 1:length(pwrs);
 offset = 0.1;
-for a = 1:length(condInd)
-    errorbar(ax, x + offset*(a-1), rates(condFlg(condInd(a),:)), sds(condFlg(condInd(a),:)), 'vertical', 'LineWidth', 3);
+for a = 1:length(cc)
+    errorbar(ax, x + offset*(a-1), rates(condFlg(cc(a),:)), sds(condFlg(cc(a),:)), 'vertical', 'LineWidth', 3);
 end
 
-legend(legendCell(condInd), 'Location', 'northwest')
+% Formatting
+
+legend(legendCell, 'Location', 'northwest')
 xlabel('Laser Intensity _{(mW)}');
 ax.XLim(1) = 0;
 ax.XLim(2) = length(pwrs) + 1;
