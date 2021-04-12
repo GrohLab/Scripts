@@ -345,7 +345,7 @@ condParams = zeros(M,3,Nccond);
 txpdf = responseWindow(1):1/fs:responseWindow(2);
 condPDF = zeros(numel(txpdf),Nccond);
 csvBase = fullfile(dataDir, expName);
-csvSubfx = sprintf(' VW%.1f-%.1f ms.csv', timeLapse(1)*1e3, timeLapse(2)*1e3);
+csvSubfx = sprintf(' VW%.1f-%.1f ms (%s).csv', timeLapse*1e3, filtStr);
 existFlag = false;
 condRelativeSpkTms = cell(Nccond,1);
 relativeSpkTmsStruct = struct('name',{},'SpikeTimes',{});
@@ -407,9 +407,9 @@ for ccond = 1:size(delayFlags,2)
 end
 
 relSpkFileName =...
-    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms %s exportSpkTms.mat',...
+    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
     expName, responseWindow*1e3, spontaneousWindow*1e3,...
-    Conditions(chCond).name);
+    Conditions(chCond).name, filtStr);
 if ~exist(relSpkFileName,'file')
     save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
         'configStructure')
