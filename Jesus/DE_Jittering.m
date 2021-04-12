@@ -600,14 +600,14 @@ if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
         prevFlag = true;
     else
         PSTHtrial = PSTH ./ Na; 
-        [optoCl, ~] = find(PSTHtrial > 0.63); % Consistency
-        optoCl = unique(optoCl);
-        optoPSTH = PSTH(optoCl,:,:); oqVals = qVals(optoCl,:);
+        
+        
+        oqVals = qVals(optoCl,:);
         [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
         availableIdx = oqVals(:,3) <= 7e-3; % Availability
         preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
         optoTaggedCl = optoCl(availableIdx & preciseIdx);
-        optoIdx = contains(gclID,pclID(optoTaggedCl));
+        optoIdx = ismember(gclID,pclID(optoTaggedCl));
         fprintf(1, 'Found %d clusters\n', sum(optoIdx))
     end
     if any(optoIdx)
