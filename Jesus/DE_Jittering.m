@@ -282,7 +282,7 @@ CtrlCond = contains(consCondNames,'control','IgnoreCase',true);
 if ~nnz(CtrlCond)
     CtrlCond = true(size(H,2),1);
 end
-wruIdx = any(H(:,CtrlCond),2);
+wruIdx = all(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
