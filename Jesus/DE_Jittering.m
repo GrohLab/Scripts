@@ -480,7 +480,18 @@ for ccond = 1:Nccond
     figFilePath = fullfile(figureDir, figFileName);
     saveFigure(psthFigs(ccond), figFilePath);
 end
-
+%% Log PSTH -- Generalise this part!!
+Nbin = 64;
+ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
+lpFigName = sprintf('%s Log-likePSTH %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
+    expName, Nccond, responseWindow*1e3, Nbin, filtStr);
+lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
+    expName, Nccond, responseWindow*1e3, Nbin, filtStr);
+logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
+    'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin);
+logFigs = plotLogPSTH(logPSTH);
+saveFigure(logFigs(1), fullfile(figureDir, lpFigName))
+saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
 if strcmpi(rasAns,'Yes')
