@@ -483,13 +483,16 @@ end
 %% Log PSTH -- Generalise this part!!
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
-lpFigName = sprintf('%s Log-likePSTH %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
-    expName, Nccond, responseWindow*1e3, Nbin, filtStr);
+
 lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
     expName, Nccond, responseWindow*1e3, Nbin, filtStr);
 logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
-    'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin);
+    'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin,...
+    'normalization', 'fr');
 logFigs = plotLogPSTH(logPSTH);
+
+lpFigName = sprintf('%s Log-likePSTH %s %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
+    expName, logPSTH.Normalization, Nccond, responseWindow*1e3, Nbin, filtStr);
 saveFigure(logFigs(1), fullfile(figureDir, lpFigName))
 saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
 %% Rasters from interesting clusters
