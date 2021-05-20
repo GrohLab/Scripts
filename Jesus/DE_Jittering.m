@@ -586,7 +586,9 @@ if strcmpi(rasAns,'Yes')
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
     rasFigPath = fullfile(figureDir, rasFigName);
+    arrayfun(@(x) set(x,'Color','none'), ax); 
     saveFigure(rasFig, rasFigPath);
+    clearvars ax rasFig
 end
 %% Response speed characterization
 btx = (0:Nbn-1)*binSz + timeLapse(1);
