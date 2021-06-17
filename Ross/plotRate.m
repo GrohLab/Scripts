@@ -1,4 +1,4 @@
-function RateMap = plotRate( rates, ID, binSize, nUnits, numSamples, fs)
+function RateMap = plotRate(rates, ID, binSize, nUnits, numSamples, fs)
 
 binSamples = fs*binSize;
 nBins = round(numSamples/binSamples);

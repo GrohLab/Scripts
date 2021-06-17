@@ -1,5 +1,12 @@
 % function ISIbox = TriggeredISIs(clInfo,sortedData,Conditions,responseWindow,fs,ISIspar,onOffStr)
 % spontaneousWindow = -flip(responseWindow);
+
+
+
+
+
+
+
 ConsConds = Conditions(3:end);
 nCond = length(ConsConds);
 for ChCond = 1:nCond

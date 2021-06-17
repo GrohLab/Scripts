@@ -1,9 +1,9 @@
-function fig = plotSpontFRvsDepth(ID, clInfo, sortedData, Triggers, samplingFrequency)
+function fig = plotSpontFRvsDepth(ID, clInfo, sortedData, CondTriggers, Triggers, samplingFrequency)
 
 clIDs = ID;
 fs = samplingFrequency;
 clInd = ismember(clInfo.id, clIDs);
-depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
+depths = table(clInfo.id(clInd), clInfo.abs_depth(clInd));
 depths = sortrows(depths,'Var2','ascend');
 ID = depths{:,1};
 Dpth = depths.Var2;
@@ -17,9 +17,10 @@ Dpth = Dpth + jitter; % adding small random jitter for visualisation
 
 spkSubs = cellfun(@(x) round(x.*fs), sortedData(spkInd,2),...
 'UniformOutput', false);
-
+Ns = min(structfun(@numel,Triggers));
+Nt = Ns/fs;
 [firingRatePerCluster, deltaTrigTimeSum, sponSpks, sponIsi] =...
-    getSpontFireFreq(spkSubs, Triggers, [0, Triggers(end,end)], fs, 2);
+    getSpontFireFreq(spkSubs, CondTriggers, [0, Ns], fs, 1);
 
 
 if class(ID) == 'cell'
@@ -29,7 +30,7 @@ else
 end
 figureName(strfind(figureName, '_')) = ' ';
 figureName = ['Spont FR vs Depth: ', figureName];
-fig = figure('Name', figureName, 'Color', 'White');
+%fig = figure('Name', figureName, 'Color', 'White');
 
 scatter(firingRatePerCluster, Dpth, 500, [1, 0, 0], '*')
 xlabel('Spont. Firing Rate_{(Hz)}')

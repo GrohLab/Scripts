@@ -98,30 +98,13 @@ end
 [PSTH, trig, sweeps] = getPSTH(discStack([1,2],:,:),timeLapse,...
     ~delayFlags,binSz,fs);
 trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
-% % Plotting lines for depicting the on- and offset of the trigger
-% tObj = StepWaveform(trig,1/mean(diff(trigTX)));
-% tSubs = tObj.subTriggers;
-% % if ~isempty(tSubs)
-% %     for ct = 1:size(tSubs,1)
-% %         for nf = 1:size(tSubs,2)
-% %             line(ax,'XData',repmat(trigTX(tSubs(ct,nf)),1,2),'YData',[0.5,Na+0.5],...
-% %                 'Color',clr,'LineWidth',2)
-% %         end
-% %     end
-% % else
-%     trig = logical(trig/max(trig(:)));
-%     line(ax,'XData',trigTX,'YData',(Na+1.5)*trig - 0.5,...
-%         'Color',clr,'LineWidth',2)
-% end
-% ax.YAxis.Label.String = ['# Trials'];
-% ax.FontSize = 20;
-% ax.FontName = 'Arial';
+
 
 
 
 
 PSTHax = linspace(timeLapse(1),timeLapse(2),size(PSTH,2));
-area(PSTHax, PSTH, 'FaceColor', [1,0,0], 'LineStyle', 'none', 'FaceAlpha', 0.5);
+area(PSTHax, PSTH, 'FaceColor', [1,0,0], 'LineStyle', 'none', 'FaceAlpha', 1);
 ax = gca;
 
 sc = 1/(Na*binSz);
@@ -134,57 +117,34 @@ yscl = [ax.YLim(1):10/sc: ax.YLim(2)];
 ax.YAxis.TickValues = yscl;
 ax.YAxis.TickLabels = sc.*ax.YAxis.TickValues;
 
-line('XData',trigTX,'YData',(0.25*mxYTick)*trig - 0.5,...
-    'Color',clr,'LineWidth',2);
 
 ax.XLim = timeLapse;
 ax.YAxis.Label.String = ['Firing Rate _{(Hz)}'];
-ax.XLabel.String = 'Time _{(s)}';
-ax.FontSize = 20;
+ax.FontSize = 8;
 ax.FontName = 'Arial';
+hold on
+
+[stims, r, csNames] = getTriggeredTTL(cst, delayFlags, trigNames, clr, Nt);
+yyaxis right
+for cs = r
+    if exist('IDs','var')
+        plot(gca, trigTX,stims(:,cs),'LineStyle',':','LineWidth',1.5,...
+            'DisplayName', IDs{cs}, 'Color', clr)
+    else
+        plot(gca, trigTX,stims(:,cs),'LineStyle',':','LineWidth',1.5, 'Color', clr)
+    end
+    
+end
+% fInd = [1:length(csNames)] - 1;
+f = get(gca,'Children');
+lgd = legend(f((end-0)), csNames);
+lgd.Box = 'off';
+ax = gca;
+ax.Box = 'off';
+
+ax.YAxis(2).Visible = 'off';
+end
 
 
-
-
-
-
-% stims = mean(cst(:,:,delayFlags,3));
-%     stims = stims - median(stims,2);
-%     for cs = 1:size(stims,1)
-%         if abs(log10(var(stims(cs,:),[],2))) < 13
-%             [m,b] = lineariz(stims(cs,:),1,0);
-%             stims(cs,:) = m*stims(cs,:) + b;
-%         else
-%             stims(cs,:) = zeros(1,Nt);
-%         end
-%     end
-% ax3 = subplot(totlX,1,5,'Parent',fig);
-% [r,c] = size(stims);
-% if r < c
-%     stims = stims';
-% end
-% 
-% for cs = 1:min(r,c)
-%     if exist('IDs','var')
-%         plot(ax3,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
-%             'DisplayName', IDs{cs})
-%     else
-%         plot(ax3,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5)
-%     end
-%     
-%     ax3.Children(1).Color = defineColorForStimuli(IDs(cs));
-%     
-%     if cs == 1
-%         ax3.NextPlot = 'add';
-%     end
-% end
-% legend(ax3,'show','Location','best')
-% 
-% ax3.Box = 'off';
-% ax3.XLim = [timeLapse(1), timeLapse(2)];
-% ax3.XAxis.Visible = 'off';
-% ax3.YAxis.Visible = 'off';
-% linkaxes([ax1,ax2,ax3],'x')
-% end
 
 

@@ -1,7 +1,7 @@
 function fig = plotLatencyVsDepth(clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
 fs = samplingFrequency;
 clInd = ismember(clInfo.id, clIDs);
-depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
+depths = table(clInfo.id(clInd), clInfo.abs_depth(clInd));
 depths = sortrows(depths,'Var2','ascend');
 ID = depths{:,1};
 Dpth = depths.Var2;

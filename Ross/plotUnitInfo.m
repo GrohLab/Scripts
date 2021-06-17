@@ -9,6 +9,7 @@ depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
 depths = sortrows(depths,'Var2','ascend');
 ID = depths{:,1};
 Dpth = depths.Var2;
+Dpth = -Dpth;
 spkInd = [];
 for i = 1:length(ID)
     spkInd = [spkInd; find(ismember(sortedData(:,1), ID(i)))];
@@ -33,68 +34,99 @@ figureName = ['Unit Info: ', figureName];
 fig = figure('Name', figureName, 'Color', 'White');
 
 
-%% Triggered Dose_Response
 
 % Preparing condIndices (lIndices)
 laser = false(length(Conditions),1);
 alltriggers = false(length(Conditions),1);
 mech = false(length(Conditions),1);
+Hz10 = false(length(Conditions),1);
 for a = 1:length(Conditions)
     laser(a) = contains(Conditions(a).name, 'laser', 'IgnoreCase', true);
     alltriggers(a) = contains(Conditions(a).name, 'alltriggers', 'IgnoreCase', true);
     mech(a) = contains(Conditions(a).name, 'mech', 'IgnoreCase', true);
+    Hz10(a) = contains(Conditions(a).name, '10Hz', 'IgnoreCase', true);
 end
-lIndices = find(laser & ~mech & ~alltriggers); 
+lIndices = find(laser & ~mech & ~alltriggers);
+Hz10 = Hz10 & alltriggers;
 
+
+OptInd = find(Hz10,1,'last');
+if ~isempty(OptInd)
+    TaggedIDs = TagID([3,6], [0.1,3], clInfo, ID, Conditions((OptInd)).Triggers, sortedData, fs);
+else
+    TaggedIDs = [];
+end
+if ~isempty(TaggedIDs)
+    rasclr = [0, 0, 1];
+else
+     rasclr = [0, 0, 0];
+end
+
+
+%% Triggered Dose_Response
 
 subplot(2,2,1)
 plotTriggeredDoseResponse(ID, sortedData, lIndices, Conditions, fs); % Need to find the CondIndices!!
 ax = gca;
-ax.FontSize = 20;
+
+ax.Box = 'off';
+ax.FontSize = 9;
 ax.FontName = 'Arial';
-%% Defaulting to Mech Control for Rasters & PSTH
+%% Rasters & PSTHs
+% Defaulting to Mech Control for Rasters & PSTH
 
 
 ctrl = false(length(Conditions),1);
 mech = false(length(Conditions),1);
 for a = 1:length(Conditions)
-ctrl(a) = contains(Conditions(a).name, 'control', 'IgnoreCase', true);
-mech(a) = contains(Conditions(a).name, 'mech', 'IgnoreCase', true);
+    ctrl(a) = contains(Conditions(a).name, 'control', 'IgnoreCase', true);
+    mech(a) = contains(Conditions(a).name, 'mech', 'IgnoreCase', true);
 end
 mcIndices = find(ctrl & mech);
 if ~isempty(mcIndices)
     CondTriggers = sort(cat(1,Conditions(mcIndices).Triggers), 'Ascend');
     clr = [1,0,0];
+    
     figtitle = 'Mechanical Control Response';
+    
 else
-    CondTriggers = Conditions(2).Triggers(3:3:end,:);
-    clr = [0,1,1];
-    figtitle = 'Laser Pulse Responses (power ascending)';
+    figtitle = [{'1Hz Responses (power ascending)'}, {'10Hz Responses (power ascending)'}, {'5Sec Pulse Responses (power ascending)'}];
+    for i = 1:3
+        CondTriggers = Conditions(2).Triggers(i:3:end,:);
+        clr = [0,1,1];
+        
+        
+        
+        
+        % Rasters
+        
+        %subplot(6,2,4*i-2)
+        subplot(3,2,2*i)
+        
+        
+        plotUnitTriggeredRaster(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr, rasclr)
+        
+        ax = gca;
+        xlabel(ax,'Time_{(ms)}');
+        ax.Title.String = figtitle{i};
+        ax.FontSize = 8;
+        ax.FontName = 'Arial';
+        
+        
+%         % PSTH
+%         
+%         subplot(6,2,4*i)
+%         
+%         plotUnitTriggeredPSTH(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
+%         
+%         ax = gca;
+%         ax.FontSize = 8;
+%         ax.FontName = 'Arial';
+    end
 end
-
-%% Rasters
-
- subplot(4,2,2)
-
-
-
-plotUnitTriggeredRaster(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
-
-ax = gca;
-ax.Title.String = figtitle;
-ax.FontSize = 20;
-ax.FontName = 'Arial';
-
-%% PSTH
-subplot(4,2,4)
-
-plotUnitTriggeredPSTH(ID, clInfo, sortedData, CondTriggers, fs, Triggers, clr)
-
-
-ax.FontSize = 20;
-ax.FontName = 'Arial';
 %% Waveform
-subplot(2,2,3)
+
+subplot(4,2,7)
 
 inds = find(ismember(clWaveforms(:,1), ID));
 if isempty(inds)
@@ -109,6 +141,7 @@ ind = inds(1);
 [bartho, peak2Ind] = getBarthoMeasure((mean(clWaveforms{ind,2},2)), fs);
 plot(mean(clWaveforms{ind,2},2), 'Color', 'b');
 ax = gca;
+
 sz = size(clWaveforms{ind,2}(:,1));
 sz = sz(1);
 
@@ -125,7 +158,7 @@ sz = sz(1);
 % hold off
 %                       FIX THIS!
 
-ax.FontSize = 15;
+
 ax.XLim = [1, sz];
 ax.YLim = [round(1.1*trough,-2), round(-1.1*trough,-2)]; % round here
 ax.YTick = round((ax.YLim(1):100:ax.YLim(2)));
@@ -139,24 +172,25 @@ ylabel(ax,'Amplitude_{(mV)}');
 WvMeasure.ID = figureName;
 WvMeasure.PeakTrough = bartho(1);
 WvMeasure.HalfWidth = bartho(2);
-
-
-ax.FontSize = 20;
+difs = [ax.XLim(2)-ax.XLim(1); ax.YLim(2)-ax.YLim(1)];
+text(ax, ax.XLim(1)+0.1*difs(1), ax.YLim(2)-0.1*difs(2), ['Depth = ', num2str(Dpth),'{\mum}'], 'Interpreter', 'tex');
+ax.Box = 'off';
+ax.FontSize = 9;
 ax.FontName = 'Arial';
 %% ISIs & Bursting
 
-subplot(2,2,4)
+subplot(4,2,5)
 
 
 
-[Nr, Nc] = size(spkSubs);
-if iscell(spkSubs) && all(cellfun(@isnumeric,spkSubs))
+[Nr, Nc] = size(sponSpks);
+if iscell(sponSpks) && all(cellfun(@isnumeric,sponSpks))
     Nu = max(Nr,Nc);
     % Validation for subscripts or time points.
     SubsFlag = any(cellfun(@all,cellfun(@eq,...
         cellfun(@minus,...
-        cellfun(@round,spkSubs,...
-        'UniformOutput',false),spkSubs,...
+        cellfun(@round,sponSpks,...
+        'UniformOutput',false),sponSpks,...
         'UniformOutput',false),repmat({0},Nr,Nc),...
         'UniformOutput',false)));
     mintd = 1/fs;
@@ -174,7 +208,7 @@ end
 %% Inter-spike intervals
 FRpu = zeros(Nu,3);
 for cu = 1:Nu
-    lisi = log10(diff(spkSubs{cu}./fs));
+    lisi = log10(diff(sponSpks{cu}./fs));
     if any(isinf(lisi)) 
         fprintf(1,'Cluster %d ',cu);
         
@@ -199,7 +233,7 @@ for cu = 1:Nu
     bns = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
     plot(bns,cts./sum(cts),'LineWidth',1);
     ax = gca;
-    ax.FontSize = 15;
+    ax.FontSize = 9;
     ax.XLim = [-4, 2];
     ax.XTick = [-4:2];
     ax.XTickLabel = 10.^ax.XTick * 1e3;
@@ -215,7 +249,9 @@ end
 
 [burstSpkFreq, burstCF, nBursts, nSpikes, eventRatio] = getBurstingMeasures(ID, 4, 100, 2, sortedData, fs);
 
-text(ax, -0.5, 0.5, ['Burst/Spike Ratio = ', num2str(round(eventRatio, 2))]);
-ax.FontSize = 20;
+difs = [ax.XLim(2)-ax.XLim(1); ax.YLim(2)-ax.YLim(1)];
+text(ax, ax.XLim(2)-0.3*difs(1), ax.YLim(2)-0.1*difs(2), ['Burst/Spike Ratio = ', num2str(round(eventRatio, 2))]);
+ax.Box = 'off';
+ax.FontSize = 9;
 ax.FontName = 'Arial';
 end

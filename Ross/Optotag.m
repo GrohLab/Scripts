@@ -1,10 +1,10 @@
-function [fig, TaggedIDs] = Optotag(latencyCutoffs, sdCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
+function [TaggedIDs, fig] = Optotag(latencyCutoffs, sdCutoffs, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
 fs = samplingFrequency;
 clInd = ismember(clInfo.id, clIDs);
-depths = table(clInfo.id(clInd), clInfo.AbsDepth(clInd));
+depths = table(clInfo.id(clInd), clInfo.abs_depth(clInd));
 depths = sortrows(depths,'Var2','ascend');
 ID = depths{:,1};
-Dpth = depths.Var2;
+depth = depths.Var2;
 spkInd = [];
 for i = 1:length(ID)
     spkInd = [spkInd; find(ismember(sortedData(:,1), ID(i)))];
@@ -17,9 +17,9 @@ Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 rng('default');
-jitter = randi(20,size(Dpth));
-Dpth = Dpth + jitter; % adding small jitter for visualisation
-Dpth = -1*Dpth;
+jitter = randi(20,size(depth));
+depth = depth + jitter; % adding small jitter for visualisation
+depth = -1*depth;
 
 % Removing and highlighting dodgy units from plot
 lowestLat = 3;
@@ -50,8 +50,8 @@ taggedInd = spkInd(tagged);
 TaggedIDs = sortedData(taggedInd,1);
 nontagged = ~tagged & ~nan;
 
-minDepth = Dpth(min(find(tagged)));
-maxDepth = Dpth(max(find(tagged)));
+minDepth = depth(min(find(tagged)));
+maxDepth = depth(max(find(tagged)));
 
 fig = figure('Name', name, 'Color', 'White');
 
@@ -135,16 +135,16 @@ lgd.FontSize = 8;
 
 subplot(1,2,1)
 
-errorbar(mn(~tagged),Dpth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0.5,0.5,0.5]);
+errorbar(mn(~tagged),depth(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0.5,0.5,0.5]);
 hold on
-errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0,0.5,1]);
+errorbar(mn(tagged),depth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0,0.5,1]);
 hold off
 
 
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
-ylim([round(round(min(Dpth),-2)/2,-2)*2-200,0]);
-yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
+ylim([round(round(min(depth),-2)/2,-2)*2-200,0]);
+yticks([round(round(min(depth),-2)/2,-2)*2-200:200:0]);
 xlim([0 tm*1e3]);
 xticks(0:5:tm*1e3);
 xlabel('Latency_{(ms)}');

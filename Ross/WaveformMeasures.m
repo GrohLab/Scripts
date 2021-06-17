@@ -25,17 +25,17 @@ for a = 1:length(ID)
     
     
     
-    ax.XLim = [1, sz];
-    ax.YLim = [1.1*trough, -1.1*trough]; % round here
-    ax.YTick = round(linspace(ax.YLim(1), ax.YLim(2), 10));
-    ax.YTickLabel = round(ax.YTick./1e3,2);
-    ax.XTick = linspace(1,sz,10);
-    ax.XTickLabel = round(ax.XTick./fs*1e3,1);
-    ax.XTickLabelRotation = -45;
-    title(['Unit ',clWaveforms{ind,1},' Waveform']);
-    xlabel(ax,'Time_{(ms)}');
-    ylabel(ax,'Amplitude_{(mV)}');
-    ax.FontSize = 20;
+%     ax.XLim = [1, sz];
+%     ax.YLim = [1.1*trough, -1.1*trough]; % round here
+%     ax.YTick = round(linspace(ax.YLim(1), ax.YLim(2), 10));
+%     ax.YTickLabel = round(ax.YTick./1e3,2);
+%     ax.XTick = linspace(1,sz,10);
+%     ax.XTickLabel = round(ax.XTick./fs*1e3,1);
+%     ax.XTickLabelRotation = -45;
+%     title(['Unit ',clWaveforms{ind,1},' Waveform']);
+%     xlabel(ax,'Time_{(ms)}');
+%     ylabel(ax,'Amplitude_{(mV)}');
+%     ax.FontSize = 20;
     if class(ID) == 'cell'
         figureName = ID{a};
     else
@@ -47,8 +47,9 @@ for a = 1:length(ID)
     WvMeasures(a).FirstPeak = bartho(3);
     WvMeasures(a).SecondPeak = bartho(4);
     if class(ID) == 'char'
-    return
+        return
+        
+    end
     
 end
-
 end
