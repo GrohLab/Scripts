@@ -484,17 +484,20 @@ end
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
 
-lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
-    expName, Nccond, responseWindow*1e3, Nbin, filtStr);
+
 logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
     'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin,...
     'normalization', 'fr');
 logFigs = plotLogPSTH(logPSTH);
-
+% Saving the figures
 lpFigName = sprintf('%s Log-likePSTH %s %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
     expName, logPSTH.Normalization, Nccond, responseWindow*1e3, Nbin, filtStr);
 saveFigure(logFigs(1), fullfile(figureDir, lpFigName))
-saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
+if numel(logFigs) > 1
+    lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
+        expName, Nccond, responseWindow*1e3, Nbin, filtStr);
+    saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
+end
 %% Rasters from interesting clusters
 rasAns = questdlg('Plot rasters?','Raster plot','Yes','No','Yes');
 if strcmpi(rasAns,'Yes')
@@ -554,8 +557,10 @@ if strcmpi(rasAns,'Yes')
         tSubs = tLoc(trigSubset);
         % Trigger subset for stimulation shading
         trigAlSubs = Conditions(rasCond(cc)).Triggers(trigSubset,:);
-        timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
-        trigChange = find(diff(timeDur) ~= 0);
+        timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3); tol = 0.02/max(timeDur);
+        timeDurUniq = uniquetol(timeDur, tol);
+        %trigChange = find(diff(timeDur) ~= 0);
+        trigChange = find(~ismembertol(timeDur, timeDurUniq, tol));
         for ccl = 1:Nrcl
             lidx = ccl + (cc - 1) * Nrcl;
             ax(lidx) = subplot(Nrcond, Nrcl, lidx);
