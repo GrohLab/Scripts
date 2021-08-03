@@ -613,7 +613,7 @@ end
 % end
 
 
-%% PopPSTH Comparisons
+%% PopPSTH Comparisons - One Plot (+ TTL)
 
 for ccond = 1: length(consideredConditions)
     ruIdxDim = size(ruIdx);
@@ -748,7 +748,138 @@ end
 % end
 
 
-
+%% PopPSTH Comparisons - Individual Plots
+for ccond = 1: length(consideredConditions)
+    ruIdxDim = size(ruIdx);
+    nFilters = dimID(2);
+    
+    fig = figure('Name',[expName,'_', consCondNames{ccond}],'Color',[1,1,1]);
+    fthAxFlag = false;
+    if ~exist('stims','var')
+        totlX = nFilters;
+        
+    elseif ~isempty(stims)
+        fthAxFlag = true;
+        totlX = nFilters + 1;
+    end
+%     ax1 = subplot(totlX,1,1:2,'Parent',fig);
+    
+    
+    datclr =  [0:0.8/(nFilters-1):0.8]' * ones(1, nFilters);
+    
+    for a = 1:nFilters
+        ax(a) = subplot(totlX,1,a,'Parent',fig);
+        [PSTHarray{a}(:,:,ccond), trig, sweeps] = getPSTH(discStack(ruIdx(:,a),:,:),timeLapse,...
+            ~delayFlags(:,ccond),binSz,fs);
+        
+        PSTH = PSTHarray{a}(:,:,ccond);
+        [Ncl, Npt] = size(PSTH);
+        PSTHn = PSTH./max(PSTH,[],2);
+        
+        
+        psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+        trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+        popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+        plot(psthTX,popPSTH,'Color', datclr(a,:), 'DisplayName','Population PSTH')
+        ax(a).XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
+        ax(a).XLim = [timeLapse(1), timeLapse(2)];
+        ax(a).Box = 'off';
+        ax(a).ClippingStyle = 'rectangle';
+        legend(ax(a),'show','Location','best')
+        ruNames = [{'Tagged'}, {'S1'}, {'VPL'}];
+        ax(a).Legend.String = ruNames{a};
+        ax(a).YAxis(1).Label.String = axLabel;
+        
+    end
+    ax(1).Title.String = consCondNames(ccond);
+    %ax1.Title.String = consCondNames(ccond);
+    % %if fthAxFlag
+    ax2 = subplot(totlX,1,nFilters + 1,'Parent',fig);
+    
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    stims = stims - median(stims,2);
+    for cs = 1:size(stims,1)
+        if abs(log10(var(stims(cs,:),[],2))) < 13
+            [m,b] = lineariz(stims(cs,:),1,0);
+            stims(cs,:) = m*stims(cs,:) + b;
+        else
+            stims(cs,:) = zeros(1,Nt);
+        end
+    end
+    
+    [r,c] = size(stims);
+    
+    if r < c
+        stims = stims';
+        stmClr = zeros(r, 3);
+        
+    end
+    
+    
+    stmClr([1,5,9]) = 1;
+    stmClr(stmClr == 0) = 0.25;
+    
+    
+    
+    for cs = 1:min(r,c)
+        if exist('IDs','var')
+            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
+                'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
+        else
+            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,  'Color', stmClr(cs,:))
+        end
+        
+        %                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
+        
+        if cs == 1
+            ax2.NextPlot = 'add';
+        end
+    end
+    legend(ax2,'show','Location','best')
+    
+    ax2.Box = 'off';
+    ax2.XLim = [timeLapse(1), timeLapse(2)];
+    ax2.XAxis.Visible = 'off';
+    ax2.YAxis.Visible = 'off';
+    linkaxes([ax, ax2], 'x')
+    %end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    %      [Ncl, Npt] = size(PSTH);
+    %
+    %     psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+    %     trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+    %     % clr = defineColorForStimuli(IDe);
+    %     popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+    %     plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
+    %     axLabel = 'Population activity';
+    %      yyaxis(ax1,'right')
+    %     plot(ax1,trigTX,trig,'LineWidth',1.5,...
+    %         'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
+    %
+    % Formatting the population PSTH plot
+    
+    ax2.YAxis(1).Limits = [0,1.01];
+    ax2.Legend.String = csNames;
+    %
+    %
+    
+    %     title(ax1,[expName,sprintf(' %d trials',sweeps)], 'Interpreter', 'none')
+    %
+    %
+    clear PSTH
+    
+    
+end
+% end
 %% Rasters
 % DE_Jittering needs to be unfiltered for significance for this to work!
 
