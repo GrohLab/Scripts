@@ -22,8 +22,8 @@ depth = depth + jitter; % adding small jitter for visualisation
 depth = -1*depth;
 
 % Removing and highlighting dodgy units from plot
-lowestLat = 3;
-lowestSD = 0.5;
+lowestLat = latencyCutoffs(1);
+lowestSD = sdCutoffs(1);
 dodgyMean = ID(find(mn<lowestLat));
 dodgySD = ID(find(sd<lowestSD));
 fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
