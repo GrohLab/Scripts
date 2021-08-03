@@ -176,7 +176,7 @@ end
 % catch
 %     fprintf(1, 'Perhaps there''s not enough memory to cope with this ISIs\n');
 %     % General ISI
-%     
+%
 % end
 % %[dst, cst] = getStacks(spkLog, allWhiskersPlusLaserControl,...
 % %    'on',timeLapse,fs,fs,[spkSubs;{Conditions(allLaserStimulus).Triggers}],...
@@ -325,17 +325,17 @@ e = 1;
 f = length(consCondNames);
 % for a = 1:length(consCondNames) - 1
 %     for b = (a + 1): length(consCondNames)
-%         
+%
 %         for c = 1: sZ(1,2)
 %             clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
 %             %RAM example
 %             %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
 %             %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
-%             
+%
 %         end
-%         
+%
 %         e = e + 1;
-%         
+%
 %         if e == f
 %             e = e + 1;
 %         end
@@ -355,7 +355,7 @@ dif = abs(dpth) - 1275;
 abs_depth = clInfo.depth + dif;
 
 clInfo = addvars(clInfo,abs_depth,'After','depth',...
-'NewVariableNames','abs_depth');
+    'NewVariableNames','abs_depth');
 
 writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 
@@ -456,7 +456,7 @@ ansFilt = questdlg('Would you like to filter for significance?','Filter',...
     'Yes','No','Yes');
 filtStr = 'unfiltered';
 if strcmp(ansFilt,'Yes')
-    filterIdx = [true; ruIdx]; 
+    filterIdx = [true; ruIdx];
     filtStr = 'filtered';
 end
 %ruIdx = wruIdx;
@@ -501,10 +501,10 @@ for ccond = 1:size(delayFlags,2)
         end
     end
     fID = 1;
-%     if ~existFlag
-%         fID = fopen(csvFileName,'w');
-%         fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
-%     end
+    %     if ~existFlag
+    %         fID = fopen(csvFileName,'w');
+    %         fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
+    %     end
     for cr = 1:size(relativeSpikeTimes, 1)
         clSpkTms(cr) = {sort(cell2mat(relativeSpikeTimes(cr,:)))};
         if fID > 2
@@ -598,14 +598,14 @@ for ccond = 1:Nccond
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
-%     if ~exist([figFileName,'.pdf'], 'file')
-%         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
-%             '-dpdf','-fillpage')
-%     end
-%     if ~exist([figFileName,'.emf'], 'file')
-%         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
-%             '-dmeta')
-%     end
+    %     if ~exist([figFileName,'.pdf'], 'file')
+    %         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
+    %             '-dpdf','-fillpage')
+    %     end
+    %     if ~exist([figFileName,'.emf'], 'file')
+    %         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
+    %             '-dmeta')
+    %     end
     
 end
 % for a = 1:length(consideredConditions)
@@ -651,44 +651,56 @@ for ccond = 1: length(consideredConditions)
         
     end
     
-      ax1.Title.String = consCondNames(ccond);
-      % %if fthAxFlag
-      ax2 = subplot(totlX,1,3,'Parent',fig);
-      [r,c] = size(stims);
-     
-      if r < c
-          stims = stims';
-           stmClr = zeros(r, 3);
-          
-      end
-      
-     
-      stmClr([1,5,9]) = 1;
-      stmClr(stmClr == 0) = 0.25;
-      
-      
-      
-      for cs = 1:min(r,c)
-          if exist('IDs','var')
-              plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
-                  'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
-          else
-              plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,  'Color', stmClr(cs,:))
-          end
-          
-%                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
-          
-          if cs == 1
-              ax2.NextPlot = 'add';
-          end
-      end
-      legend(ax2,'show','Location','best')
-      
-        ax2.Box = 'off';
-        ax2.XLim = [timeLapse(1), timeLapse(2)];
-        ax2.XAxis.Visible = 'off';
-        ax2.YAxis.Visible = 'off';
-        linkaxes([ax1,ax2],'x')
+    ax1.Title.String = consCondNames(ccond);
+    % %if fthAxFlag
+    ax2 = subplot(totlX,1,3,'Parent',fig);
+    
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    stims = stims - median(stims,2);
+    for cs = 1:size(stims,1)
+        if abs(log10(var(stims(cs,:),[],2))) < 13
+            [m,b] = lineariz(stims(cs,:),1,0);
+            stims(cs,:) = m*stims(cs,:) + b;
+        else
+            stims(cs,:) = zeros(1,Nt);
+        end
+    end
+    
+    [r,c] = size(stims);
+    
+    if r < c
+        stims = stims';
+        stmClr = zeros(r, 3);
+        
+    end
+    
+    
+    stmClr([1,5,9]) = 1;
+    stmClr(stmClr == 0) = 0.25;
+    
+    
+    
+    for cs = 1:min(r,c)
+        if exist('IDs','var')
+            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
+                'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
+        else
+            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,  'Color', stmClr(cs,:))
+        end
+        
+        %                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
+        
+        if cs == 1
+            ax2.NextPlot = 'add';
+        end
+    end
+    legend(ax2,'show','Location','best')
+    
+    ax2.Box = 'off';
+    ax2.XLim = [timeLapse(1), timeLapse(2)];
+    ax2.XAxis.Visible = 'off';
+    ax2.YAxis.Visible = 'off';
+    linkaxes([ax1,ax2],'x')
     %end
     
     
@@ -698,47 +710,38 @@ for ccond = 1: length(consideredConditions)
     
     
     
-%      stims = mean(cst(:,:,delayFlags(:,ccond)),3);
-%      stims = stims - median(stims,2);
-%      for cs = 1:size(stims,1)
-%          if abs(log10(var(stims(cs,:),[],2))) < 13
-%              [m,b] = lineariz(stims(cs,:),1,0);
-%              stims(cs,:) = m*stims(cs,:) + b;
-%          else
-%              stims(cs,:) = zeros(1,Nt); 
-%          end
-%      end
-%      
-%      [Ncl, Npt] = size(PSTH);
-%     
-%     psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
-%     trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
-%     % clr = defineColorForStimuli(IDe);
-%     popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
-%     plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
-%     axLabel = 'Population activity';
-%      yyaxis(ax1,'right')
-%     plot(ax1,trigTX,trig,'LineWidth',1.5,...
-%         'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
-%     
-     % Formatting the population PSTH plot
-     ax1.YAxis(1).Label.String = axLabel;
-     ax2.YAxis(1).Limits = [0,1.01];
-     ax2.Legend.String = csNames;
-%     
-%     
-     ax1.XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
-     ax1.XLim = [timeLapse(1), timeLapse(2)];
-     ax1.Box = 'off';
-     ax1.ClippingStyle = 'rectangle';
-%     
-     legend(ax1,'show','Location','best')
-     ruNames = [{'Tagged'}, {'S1'}, {'VPL'}]; 
-     ax1.Legend.String = ruNames;
-%     title(ax1,[expName,sprintf(' %d trials',sweeps)], 'Interpreter', 'none')
-%     
-%     
-     clear PSTH
+    
+    
+    %      [Ncl, Npt] = size(PSTH);
+    %
+    %     psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+    %     trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+    %     % clr = defineColorForStimuli(IDe);
+    %     popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+    %     plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
+    %     axLabel = 'Population activity';
+    %      yyaxis(ax1,'right')
+    %     plot(ax1,trigTX,trig,'LineWidth',1.5,...
+    %         'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
+    %
+    % Formatting the population PSTH plot
+    ax1.YAxis(1).Label.String = axLabel;
+    ax2.YAxis(1).Limits = [0,1.01];
+    ax2.Legend.String = csNames;
+    %
+    %
+    ax1.XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
+    ax1.XLim = [timeLapse(1), timeLapse(2)];
+    ax1.Box = 'off';
+    ax1.ClippingStyle = 'rectangle';
+    %
+    legend(ax1,'show','Location','best')
+    ruNames = [{'Tagged'}, {'S1'}, {'VPL'}];
+    ax1.Legend.String = ruNames;
+    %     title(ax1,[expName,sprintf(' %d trials',sweeps)], 'Interpreter', 'none')
+    %
+    %
+    clear PSTH
     
     
 end
