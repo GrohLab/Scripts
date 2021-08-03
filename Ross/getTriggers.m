@@ -55,7 +55,12 @@ end
 
 % Merging order
 fileOrder = (1:Nf)';
-defInput = num2cell(num2str(fileOrder));
+fO = num2cell(fileOrder);
+for i = 1: length(fO)
+    fO{i} = num2str(fO{i});
+end
+
+defInput = fO;
 answr = inputdlg(cellSmrxFiles,'File order',[1, 60],defInput);
 nFileOrder = str2double(answr);
 nSmrxFiles = smrxFiles;
@@ -68,7 +73,7 @@ else
 end
 clearvars nSmrxFiles nFileOrder
 %% getting ConditionSignals
-for i = 1:length(str2num(cell2mat(answr)))
+for i = 1:length(answr)
     getConditionSignalsBF(fopen([dataDir, '\', smrxFiles(i).name]));
     CondSigs(i).name = smrxFiles(i).name(1:end-5);
     CondSigs(i).Sig = load([dataDir, '\', CondSigs(i).name, '_CondSig.mat']);
@@ -198,10 +203,12 @@ for a = 1:length(Trigs(laserInd).Triggers)
             pulseLength{a} = round(mean(diff(pulsedTriggers')/fs));
             gaps = sort(unique(round(diff(trig(:,1)),-2))/fs,'ascend');
             minIntervalInd = find(abs(diff([pulseLength{a}*ones(length(gaps),1), gaps]')) < 0.5);
-            minIntervalInd = minIntervalInd(1);
-            minInt = gaps(minIntervalInd);
-            
-            stimFrequencies{a} = sort(round(1./gaps(1:minIntervalInd-1)), 'ascend');
+            if ~isempty(minIntervalInd)
+                minIntervalInd = minIntervalInd(1);
+                minInt = gaps(minIntervalInd);
+                
+                stimFrequencies{a} = sort(round(1./gaps(1:minIntervalInd-1)), 'ascend');
+            end
         else
             %gaps = sort(unique(round(diff(trig(:,1)),-3))/fs,'ascend'); % What if a condition has no pulses? e.g. Opto-tagging
             gaps = sort(unique(diff(trig(:,1)))/fs,'ascend');
