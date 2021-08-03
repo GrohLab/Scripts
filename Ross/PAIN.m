@@ -323,26 +323,26 @@ sZ = size(Counts);
 d = length(consCondNames);
 e = 1;
 f = length(consCondNames);
-for a = 1:length(consCondNames) - 1
-    for b = (a + 1): length(consCondNames)
-        
-        for c = 1: sZ(1,2)
-            clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
-            %RAM example
-            %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
-            %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
-            
-        end
-        
-        e = e + 1;
-        
-        if e == f
-            e = e + 1;
-        end
-    end
-    d = d - 1;
-    f = f + d;
-end
+% for a = 1:length(consCondNames) - 1
+%     for b = (a + 1): length(consCondNames)
+%         
+%         for c = 1: sZ(1,2)
+%             clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+%             %RAM example
+%             %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
+%             %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
+%             
+%         end
+%         
+%         e = e + 1;
+%         
+%         if e == f
+%             e = e + 1;
+%         end
+%     end
+%     d = d - 1;
+%     f = f + d;
+% end
 writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 %% adding abs_depth to table
 
@@ -352,7 +352,7 @@ dpth = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
 
 dpth = str2double(dpth{1});
 dif = abs(dpth) - 1275;
-abs_depth = clInfo.depth + ab;
+abs_depth = clInfo.depth + dif;
 
 clInfo = addvars(clInfo,abs_depth,'After','depth',...
 'NewVariableNames','abs_depth');
@@ -440,7 +440,7 @@ if ~isfield(Conditions,'Stimulus') ||...
             1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
         cdel = cdel + 1;
     end
-    save(fullfile(dataDir,[expName,'_analysis.mat']),'Conditions','-append')
+    %save(fullfile(dataDir,[expName,'_analysis.mat']),'Conditions','-append')
 end
 
 
@@ -456,10 +456,10 @@ ansFilt = questdlg('Would you like to filter for significance?','Filter',...
     'Yes','No','Yes');
 filtStr = 'unfiltered';
 if strcmp(ansFilt,'Yes')
-    filterIdx = [true; wruIdx]; 
+    filterIdx = [true; ruIdx]; 
     filtStr = 'filtered';
 end
-
+%ruIdx = wruIdx;
 %% Getting the relative spike times for the whisker responsive units (wru)
 % For each condition, the first spike of each wru will be used to compute
 % the standard deviation of it.
@@ -615,102 +615,134 @@ end
 
 %% PopPSTH Comparisons
 
-
-
-fig = figure('Name',expName,'Color',[1,1,1]);
-hold on
-
-
-ax1 = subplot(totlX,1,1:2,'Parent',fig);
-if fthAxFlag
-    ax2 = subplot(totlX,1,3,'Parent',fig);
-    [r,c] = size(stims);
-    if r < c
-        stims = stims';
-    end
+for ccond = 1: length(consideredConditions)
+    ruIdxDim = size(ruIdx);
+    nFilters = dimID(2);
     
-    for cs = 1:min(r,c)
-        if exist('IDs','var')
-            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
-                'DisplayName', IDs{cs})
-        else
-            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5)
-        end
-        
-%         ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
-        
-        if cs == 1
-            ax2.NextPlot = 'add';
-        end
-    end
-    legend(ax2,'show','Location','best')
-    
-    ax2.Box = 'off';
-    ax2.XLim = [timeLapse(1), timeLapse(2)];
-    ax2.XAxis.Visible = 'off';
-    ax2.YAxis.Visible = 'off';
-    linkaxes([ax1,ax2,ax2],'x')
-end
-
-
-
-for a = 1:nFilters
-    
-     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx(:,a),:,:),timeLapse,...
-        ~delayFlags(:,ccond),binSz,fs);
-    
-    
-    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
-    stims = stims - median(stims,2);
-    for cs = 1:size(stims,1)
-        if abs(log10(var(stims(cs,:),[],2))) < 13
-            [m,b] = lineariz(stims(cs,:),1,0);
-            stims(cs,:) = m*stims(cs,:) + b;
-        else
-            stims(cs,:) = zeros(1,Nt);
-        end
-    end
+    fig = figure('Name',expName,'Color',[1,1,1]);
+    hold on
     fthAxFlag = false;
     if ~exist('stims','var')
         totlX = 2;
+        
     elseif ~isempty(stims)
         fthAxFlag = true;
         totlX = 3;
     end
-    [Ncl, Npt] = size(PSTH);
-    
-    psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
-    trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
-    % clr = defineColorForStimuli(IDe);
-    popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
-    plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
-    axLabel = 'Population activity';
-    yyaxis(ax1,'right')
-    plot(ax1,trigTX,trig,'LineWidth',1.5,...
-        'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
-    
-    % Formatting the population PSTH plot
-    ax1.YAxis(1).Label.String = axLabel;
-    % ax2.YAxis(1).Limits = [0,1.01];
-    ax1.YAxis(2).Limits = [0,1.01];
-    ax1.YAxis(2).Color = 'k';
-    ax1.YAxis(2).Label.String = 'Stimulus probability';
+    ax1 = subplot(totlX,1,1:2,'Parent',fig);
     
     
-    ax1.XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
-    ax1.XLim = [timeLapse(1), timeLapse(2)];
-    ax1.Box = 'off';
-    ax1.ClippingStyle = 'rectangle';
+    datclr =  [0:0.8/(nFilters-1):0.8]' * ones(1, nFilters);
     
-    legend(ax1,'show','Location','best')
+    for a = 1:nFilters
+        [PSTHarray{a}(:,:,ccond), trig, sweeps] = getPSTH(discStack(ruIdx(:,a),:,:),timeLapse,...
+            ~delayFlags(:,ccond),binSz,fs);
+        
+        PSTH = PSTHarray{a}(:,:,ccond);
+        [Ncl, Npt] = size(PSTH);
+        PSTHn = PSTH./max(PSTH,[],2);
+        
+        
+        psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+        trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+        popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+        plot(psthTX,popPSTH,'Color', datclr(a,:), 'DisplayName','Population PSTH')
+        hold on
+        
+    end
+    
+      ax1.Title.String = consCondNames(ccond);
+      % %if fthAxFlag
+      ax2 = subplot(totlX,1,3,'Parent',fig);
+      [r,c] = size(stims);
+     
+      if r < c
+          stims = stims';
+           stmClr = zeros(r, 3);
+          
+      end
+      
+     
+      stmClr([1,5,9]) = 1;
+      stmClr(stmClr == 0) = 0.25;
+      
+      
+      
+      for cs = 1:min(r,c)
+          if exist('IDs','var')
+              plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
+                  'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
+          else
+              plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,  'Color', stmClr(cs,:))
+          end
+          
+%                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
+          
+          if cs == 1
+              ax2.NextPlot = 'add';
+          end
+      end
+      legend(ax2,'show','Location','best')
+      
+        ax2.Box = 'off';
+        ax2.XLim = [timeLapse(1), timeLapse(2)];
+        ax2.XAxis.Visible = 'off';
+        ax2.YAxis.Visible = 'off';
+        linkaxes([ax1,ax2],'x')
+    %end
+    
+    
+    
+    
+    
+    
+    
+    
+%      stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+%      stims = stims - median(stims,2);
+%      for cs = 1:size(stims,1)
+%          if abs(log10(var(stims(cs,:),[],2))) < 13
+%              [m,b] = lineariz(stims(cs,:),1,0);
+%              stims(cs,:) = m*stims(cs,:) + b;
+%          else
+%              stims(cs,:) = zeros(1,Nt); 
+%          end
+%      end
+%      
+%      [Ncl, Npt] = size(PSTH);
+%     
+%     psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+%     trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+%     % clr = defineColorForStimuli(IDe);
+%     popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+%     plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
+%     axLabel = 'Population activity';
+%      yyaxis(ax1,'right')
+%     plot(ax1,trigTX,trig,'LineWidth',1.5,...
+%         'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
+%     
+     % Formatting the population PSTH plot
+     ax1.YAxis(1).Label.String = axLabel;
+     ax2.YAxis(1).Limits = [0,1.01];
+     ax2.Legend.String = csNames;
+%     
+%     
+     ax1.XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
+     ax1.XLim = [timeLapse(1), timeLapse(2)];
+     ax1.Box = 'off';
+     ax1.ClippingStyle = 'rectangle';
+%     
+     legend(ax1,'show','Location','best')
+     ruNames = [{'Tagged'}, {'S1'}, {'VPL'}]; 
+     ax1.Legend.String = ruNames;
 %     title(ax1,[expName,sprintf(' %d trials',sweeps)], 'Interpreter', 'none')
-    
-    
-    clear PSTH
+%     
+%     
+     clear PSTH
     
     
 end
-
+% end
 
 
 
@@ -755,7 +787,7 @@ for a = 1:length(pwrs)
     % TblInd = find(clInfo.ActiveUnit); % ATM this only makes rasters that show sig control mech response
     % clIDind = clInfo.id(TblInd);
     pwrInd = Power == pwr;
-    clIDind =  decreased{6}(bidi); %gclID;
+    clIDind =  gclID;
     lngth = length(clIDind);
     for a = 1:lngth
         cl = clIDind(a);
@@ -815,11 +847,18 @@ for a = 1:length(pwrs)
                     Nma - initSub],optsRect{:})
             end
         end
+        rasConds = rasCondNames{1};
+        if length(rasCondNames) > 1
+            for a = 2:length(rasCondNames)
+                rasConds = [rasConds, '+', rasCondNames{a}];
+            end
+        end
+        
         linkaxes(ax,'x')
         rasFigName = ['Unit_', cell2mat(cl), '_', ];
         configureFigureToPDF (rasFig);
         %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
-        savefig(rasFig,fullfile(rasterDir, [rasFigName, 'continuous_pulse.fig']));
+        savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '_continuous_pulse.fig']));
     end
 end
 % close all
