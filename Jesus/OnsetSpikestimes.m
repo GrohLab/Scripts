@@ -1,7 +1,7 @@
 
 
     ControlOnsetFlags = ClustersControlOnset >=0.0 & ClustersControlOnset <=0.05;
-    PopControlOnsetTimes = ClustersControlOnset (ControlOnsetFlags) 
+    PopControlOnsetTimes = ClustersControlOnset (ControlOnsetFlags);
  
 OnsetSpikesTimesControl= nan(500,(max(sum(ControlOnsetFlags,1))));
 for Sz=1:size(ClustersControlOnset,2)
