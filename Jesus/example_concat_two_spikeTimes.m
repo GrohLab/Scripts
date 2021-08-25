@@ -1,0 +1,1 @@
+ c=cat(1,relativeSpkTmsStruct_1(6).SpikeTimes{:,1:40}, relativeSpkTmsStruct_2(6).SpikeTimes{:,1:40});

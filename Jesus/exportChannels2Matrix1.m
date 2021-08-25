@@ -1,8 +1,8 @@
 
 clear all
 %open('D:\mat to brainstorm\TestAllChannels1.mat')
-path='D:\mat to brainstorm\'
-myfile='TestAllChannels1.mat'
+path='C:\Users\jesus\Desktop\Test'
+myfile='Test18.mat'
 cd(path)
 names=fieldnames(open(myfile));
 goods=[];

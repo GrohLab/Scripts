@@ -88,7 +88,7 @@ saveas(figure(3),[pwd '/New figures Jesus/ControlandL200/Boxplot individiual cla
 allControlOn=RspControlOn(:); allL200On=RspL200On(:);
 allControlOff=RspControlOff(:);allL200Off=RspL200Off(:);
 % On scatter plot and Cumulative distribution
-figure (4); scatterhist(allControlOn,allL200On,'Direction','out','NBins',50);
+figure(4); scatterhist(allControlOn,allL200On,'Direction','out','NBins',50);
 saveas(figure(4),[pwd '/New figures Jesus/ControlandL200/scatterhist On response Control and L200.emf']);
 saveas(figure(4),[pwd '/New figures Jesus/ControlandL200/scatterhist On response Control and L200.pdf']);
 figure (5); cdfplot(allControlOn)% off response scatter plot and Cumulative distribution
@@ -494,7 +494,7 @@ saveas(figure(119),[pwd '/New figures Jesus/ControlandL200/Contour ON ControlsVS
 %% Contours
 %Off response
 XValidControlOff=allControlOff(~isnan(allControlOff));
-YValidL1Off=allL1Off(~isnan(allL1Off));
+YValidL200Off=allL200Off(~isnan(allL200Off));
 allValidOff=nan(4000,2);
 allValidOff(1:size(XValidControlOff),2)=XValidControlOff;
 allValidOff(1:size(YValidL200Off),1)=YValidL200Off;

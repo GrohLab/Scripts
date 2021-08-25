@@ -1,4 +1,4 @@
-dataDir = 'Path\to\your\data';
+dataDir = 'Z:\Jesus\Jittering\201016_jiterring_TRN_ap1500_ml1500_dv1370_and_bad_S1\TRN';
 pgObj = ProtocolGetter(dataDir);
 pgObj.getConditionSignals;
 pgObj.getSignalEdges;
