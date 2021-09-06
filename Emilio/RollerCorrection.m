@@ -2,7 +2,7 @@ fnOpts = {"UniformOutput", false};
 vidTx = (0:length(sPx)-1)'/fr;
 expTx = (0:length(trig)-1)'/fs;
 
-timeLapse = [-2, 2];
+timeLapse = [-2, 4];
 % All triggers in the experiment without overlap
 allTSubs = sort(cat(1,Conditions(3:5).Triggers));
 % Aligning the roller signal to the highest temporal correlation.
