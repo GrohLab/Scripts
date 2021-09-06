@@ -550,6 +550,7 @@ if strcmpi(rasAns,'Yes')
     rasFig = figure;
     Nrcond = length(rasCond);
     ax = gobjects(Nrcond*Nrcl,1);
+    timeFlags = all([tx(:) >= timeLapse(1), tx(:) <= timeLapse(2)],2);
     for cc = 1:length(rasCond)
         % Equalize trial number
         trigSubset = sort(randsample(Na(rasCondSel(cc)),Nma));
@@ -565,16 +566,16 @@ if strcmpi(rasAns,'Yes')
             lidx = ccl + (cc - 1) * Nrcl;
             ax(lidx) = subplot(Nrcond, Nrcl, lidx);
             title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}))
-            plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
+            plotRasterFromStack(discStack([1,clSub(ccl)],timeFlags,tSubs),...
                 timeLapse, fs,'',ax(lidx));
             ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
             ax(lidx).YAxis.Label.String = Nma;
             ax(lidx).YAxis.Label.Position =...
                 [timeLapse(1)-timeLapse(1)*0.65, Nma,0];
-            ax(lidx).XAxis.TickLabels =...
-                cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
-                'UniformOutput', 0);
-            xlabel(ax(lidx), 'Time [ms]')
+            %ax(lidx).XAxis.TickLabels =...
+            %    cellfun(@(x) str2num(x)*1e3, ax(lidx).XAxis.TickLabels,...
+            %    'UniformOutput', 0);
+            xlabel(ax(lidx), 'Time [s]')
             initSub = 0;
             optsRect = {'EdgeColor',rectColor,'FaceColor','none'};
             for ctr = 1:numel(trigChange)
