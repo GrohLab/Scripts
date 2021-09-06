@@ -71,7 +71,7 @@ Conditions_corrected = cat(1, Conditions_corrected{:});
 %% Producing the final figures
 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
 miinOpts = {"Color", 'k', "LineWidth", 2};
-vMean = zeros(size(vStack,1), 3); vcount = 1;
+vMean = zeros(length(stTx), 3); vcount = 1;
 vFigs = gobjects(4, 1); 
 for ccond = 3:5
     [~, vStack] = getStacks(false, Conditions_corrected(ccond).Triggers, 'on',...
