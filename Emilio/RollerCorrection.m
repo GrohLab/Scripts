@@ -2,7 +2,7 @@ fnOpts = {"UniformOutput", false};
 vidTx = (0:length(sPx)-1)'/fr;
 expTx = (0:length(trig)-1)'/fs;
 
-timeLapse = [-1, 2];
+timeLapse = [-2, 2];
 % All triggers in the experiment without overlap
 allTSubs = sort(cat(1,Conditions(3:5).Triggers));
 % Aligning the roller signal to the highest temporal correlation.
@@ -21,7 +21,7 @@ plotEEGchannels(vStack(:,~excludeFlag)', [], diff(timeLapse), fsRoll,...
     1, abs(timeLapse(1)));
 % Peaks and valleys for each trial.
 cpts = getWaveformCriticalPoints(vStack, fsRoll);
-cpts = cellfun(@(x) x - 1, cpts, fnOpts{:});
+cpts = cellfun(@(x) x + timeLapse(1), cpts, fnOpts{:});
 % Amplitude for each peak and valley
 camp = arrayfun(@(x) interp1(stTx, vStack(:,x), cpts{x,1}),...
     (1:size(vStack,2))', fnOpts{:});
@@ -46,7 +46,7 @@ Na = sum(delayFlags,1);
 %% RANSAC line estimation
 n = 1;
 [rmdl, inln] = boot_fit_poly([pts(:,1), pts(:,2)-0.5], n, (n+1)/size(pts,1),...
-    2^15, 0.4);
+    2^15, 0.6);
 %% RANSAC correction
 Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name,...
     'Triggers', Conditions(x).Triggers +...
@@ -55,10 +55,12 @@ Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name,...
 Conditions_corrected = cat(1, Conditions_corrected{:});
 %% RANSAC threshold estimation
 n = 1; xpts = [0;pts(end,1)];
-for cth = 0.4:0.01:0.6
-    [rmdl, inln] = boot_fit_poly(pts, n, (n+1)/size(pts,1), 2^14, cth);
-    figure; gscatter(pts(:,1), pts(:,2), inln); title(sprintf('%.4f',cth))
-    hold on; plot(xpts, xpts.^(n:-1:0) * rmdl)
+for cth = 0.65:0.05:0.8
+    [rmdl, inln] = boot_fit_poly(pts, n, (n+1)/size(pts,1), 2^16, cth);
+    if islogical(inln)
+        figure; gscatter(pts(:,1), pts(:,2), inln); title(sprintf('%.4f',cth))
+        hold on; plot(xpts, xpts.^(n:-1:0) * rmdl)
+    end
 end
 %% Special case for GAD49 frequency stimulation
 Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name, 'Triggers', Conditions(x).Triggers + ...
