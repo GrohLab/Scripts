@@ -94,7 +94,7 @@ end
 %%
 arrayfun(@(x) saveFigure(vFigs(x), fullfile(figureDir,...
     sprintf('RollerSpeed_%s VW%.1f - %.1f s (corrected)',...
-    Conditions(x).name, timeLapse)),1, 1), (1:3));
+    Conditions(x+2).name, timeLapse)),1, 1), (1:3)');
 vFigs(4) = figure; plot(stTx, vMean); 
 lgnd = legend(arrayfun(@(x) Conditions(x).name, (3:5)', fnOpts{:}));
 set(lgnd, "Box", "off", "Location", "best")
