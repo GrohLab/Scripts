@@ -46,7 +46,7 @@ Na = sum(delayFlags,1);
 %% RANSAC line estimation
 n = 1;
 [rmdl, inln] = boot_fit_poly([pts(:,1), pts(:,2)-0.5], n, (n+1)/size(pts,1),...
-    2^15, 0.6);
+    2^15, 0.4);
 %% RANSAC correction
 Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name,...
     'Triggers', Conditions(x).Triggers +...
@@ -55,7 +55,7 @@ Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name,...
 Conditions_corrected = cat(1, Conditions_corrected{:});
 %% RANSAC threshold estimation
 n = 1; xpts = [0;pts(end,1)];
-for cth = 0.65:0.05:0.8
+for cth = 0.2:0.1:0.9
     [rmdl, inln] = boot_fit_poly(pts, n, (n+1)/size(pts,1), 2^16, cth);
     if islogical(inln)
         figure; gscatter(pts(:,1), pts(:,2), inln); title(sprintf('%.4f',cth))
@@ -79,7 +79,8 @@ for ccond = 3:5
     [~, vStack] = getStacks(false, Conditions_corrected(ccond).Triggers, 'on',...
         timeLapse, fs, fsRoll, [], {vf_corrected});
     vStack = squeeze(vStack); 
-    excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+    excludeFlag = false(size(vStack,2),1);
     plotEEGchannels(vStack(:, ~excludeFlag)', '', diff(timeLapse),...
         fsRoll, 1, abs(timeLapse(1)));
     vFigs(vcount) = figure; 
