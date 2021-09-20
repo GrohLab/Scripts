@@ -1,6 +1,6 @@
 % PAIN
 % 30.08.19 Jittering analysis by using the Data Explorer.
-clearvars
+%clearvars
 %% Load the data
 % Choosing the working directory
 dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
@@ -274,6 +274,7 @@ for cc = 1:numel(Figs)
     %     end
     savefig(Figs(cc),fullfile(figureDir, [altCondNames, '.fig']));
 end
+
 H = cell2mat(cellfun(@(x) x.Pvalues,...
     arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
     'UniformOutput', 0)) < 0.05;
@@ -304,9 +305,11 @@ fprintf('- %s\n',gclID{wruIdx})
 % clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
 % clInfo{gclID, 'ActiveUnit'} = true;
 
+window = responseWindow(2)-responseWindow(1);
+
 for a = 1: length(consCondNames)
-    clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Counts_Spont']} = mean(Counts{a,1}')';
-    clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Counts_Evoked']} = mean(Counts{a,2}')';
+    clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Rate_Spont']} = mean(Counts{a,1}')'/window;
+    clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a}, '_Rate_Evoked']} = mean(Counts{a,2}')'/window;
 end
 
 
@@ -344,15 +347,32 @@ f = length(consCondNames);
 %     f = f + d;
 % end
 writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
+%% Add modulation index
+
+ml = clInfo.Mech_Laser_5mW_Rate_Evoked;
+mc = clInfo.Mech_Control_5mW_Rate_Evoked;
+modInd = (ml - mc)./(ml + mc);
+
+if ~any(ismember(clInfo.Properties.VariableNames,'modIndex'))
+    clInfo = addvars(clInfo,modInd,'After','shank',...
+        'NewVariableNames','modIndex');
+end
+% writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 %% adding abs_depth to table
 
 promptStrings = {'How deep was your probe? (um)'};
-defInputs = {'-1600'};
+defInputs = {'1500'};
 dpth = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
 
 dpth = str2double(dpth{1});
-dif = abs(dpth) - 1275;
-abs_depth = clInfo.depth + dif;
+
+
+abs_depth = dpth - clInfo.depth;
+% dif = abs(dpth) - 1275;
+% abs_depth = clInfo.depth + dif;
+
+
+
 
 clInfo = addvars(clInfo,abs_depth,'After','depth',...
     'NewVariableNames','abs_depth');
@@ -360,9 +380,9 @@ clInfo = addvars(clInfo,abs_depth,'After','depth',...
 writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 
 %% Depth vs Modulation Plots
-clInd = ismember(clInfo.id, IDs);
+clInd = ismember(clInfo.id, gclID);
 depths = table(clInfo.id(clInd), clInfo.abs_depth(clInd));
-depths = sortrows(depths,'Var2','ascend');
+depths = sortrows(depths,'Var2','descend');
 ID = depths{:,1};
 depth = depths.Var2;
 jitter = randi(20,size(depth));
@@ -402,19 +422,19 @@ for chc = 1:length(consideredConditions)
     end
     
     
-    legend on
+    %     legend on
     %plot(deltaRate(:,2), depth, 'LineStyle', '-', 'Marker', 'none', 'Color', [0.5, 1, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01,  'MarkerFaceColor',[0.5,0.5,0.5])
     title(['Depth vs Change in Firing Rate: ', consCondNames{chc}], 'Interpreter', 'none')
     ylabel( 'Depth_{(\mum)}', 'Interpreter', 'tex');
     xlabel('\Delta Firing Rate_{ Hz}', 'Interpreter', 'tex');
-    ax.XLim = [-1.1*max(deltaRate(:,2)), 1.1*max(deltaRate(:,2))];
-    % ax.YLim = [ax.YLim(1), 0];
+    %ax.XLim = [-1.1*max(deltaRate(:,2)), 1.1*max(deltaRate(:,2))];
+    ax.XLim = [-50, 50];
     
     hold on
     plot(deltaRate(:,1), linspace(ax.YLim(1),ax.YLim(2), length(deltaRate)), 'LineStyle', '-', 'Color', 'k');
     ax.FontSize = 20;
-    ax.Legend.String = {'Late Responders'};
-    savefig(fig, fullfile('Z:\Ross\Experiments\smrxFiles\16.12.20\12.6.21\Figures\', [consCondNames{chc}, '_LateResponders_Depth_vs_Modulation.fig']));
+    %     ax.Legend.String = {'Late Responders'};
+    %     savefig(fig, fullfile('Z:\Ross\Experiments\smrxFiles\16.12.20\12.6.21\Figures\', [consCondNames{chc}, '_LateResponders_Depth_vs_Modulation.fig']));
 end
 
 %% Get significantly different clusters
@@ -432,9 +452,9 @@ if ~isfield(Conditions,'Stimulus') ||...
     for cc = consideredConditions
         fprintf(1,'- %s\n', Conditions(cc).name)
         Conditions(cc).Stimulus = struct(...
-            'Mechanical',reshape(mean(cst(whFlag(1),:,delayFlags(:,cdel)),3),...
+            'Mechanical',reshape(mean(cst((1),:,delayFlags(:,cdel)),3),...
             1,Nt),...
-            'MechPressure',reshape(mean(cst(whFlag(1),:,delayFlags(:,cdel)),3),...
+            'MechPressure',reshape(mean(cst((2),:,delayFlags(:,cdel)),3),...
             1,Nt),...
             'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
             1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
@@ -456,8 +476,8 @@ ansFilt = questdlg('Would you like to filter for significance?','Filter',...
     'Yes','No','Yes');
 filtStr = 'unfiltered';
 if strcmp(ansFilt,'Yes')
-    filterIdx = [true; ruIdx];
-    filtStr = 'filtered';
+    filterIdx = [true; wruIdx];
+    filtStr = 'Filtered';
 end
 %ruIdx = wruIdx;
 %% Getting the relative spike times for the whisker responsive units (wru)
@@ -559,7 +579,7 @@ if strcmp(dans, 'Yes')
     orderedStr = [orderedStr, 'ordered'];
     
     if ~strcmp(ordVar,'id')
-        [~,ordSubs] = sortrows(clInfo(pclID,:),ordVar);
+        [~,ordSubs] = sortrows(clInfo(pclID,:),ordVar, 'descend');
     end
 end
 
@@ -611,6 +631,413 @@ end
 % for a = 1:length(consideredConditions)
 %     savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH_0.001binSz.fig']));
 % end
+
+
+%% Plot PSTH - MODIFIED (Only makes sense if depth ordered)
+
+pclTblInd = ismember(clInfo.id, pclID(ordSubs));
+depthOrd = sort(clInfo.abs_depth(pclTblInd), 'descend');
+depthVals = [4200:-200:0];
+depthInds = zeros(length(depthVals), 1);
+for a = 1:length(depthInds)
+    selDepths = depthOrd < depthVals(a);
+    if sum(selDepths)> 0
+        depthInd = find(selDepths);
+        depthInds(a) = depthInd(1);
+    end
+end
+topDepth = find(depthInds == 0);
+topDepth = topDepth(1);
+depthInds(topDepth) = length(pclID);
+depthInds = depthInds(depthInds > 0);
+selClIDs = cell(length(pclID),1);
+depthVals = depthVals(1:length(depthInds))';
+for a = 1:length(depthInds)
+    selClIDs{depthInds(a)} = num2str(depthVals(a));
+end
+goodsIdx = logical(clInfo.ActiveUnit);
+csNames = fieldnames(Triggers);
+csNames = csNames(2:end);
+Nbn = diff(timeLapse)/binSz;
+if (Nbn - round(Nbn)) ~= 0
+    Nbn = ceil(Nbn);
+end
+PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
+psthFigs = gobjects(Nccond,1);
+for ccond = 1:Nccond
+    figFileName = sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
+        expName, Conditions(consideredConditions(ccond)).name, timeLapse*1e3,...
+        binSz*1e3, responseWindow*1e3, spontaneousWindow*1e3, onOffStr,...
+        orderedStr, filtStr);
+    [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
+        ~delayFlags(:,ccond),binSz,fs);
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    stims = stims([2,3],:);
+    stims = stims - median(stims,2);
+    for cs = 1:size(stims,1)
+        if abs(log10(var(stims(cs,:),[],2))) < 13
+            [m,b] = lineariz(stims(cs,:),1,0);
+            stims(cs,:) = m*stims(cs,:) + b;
+        else
+            stims(cs,:) = zeros(1,Nt);
+        end
+    end
+    psthFigs(ccond) = plotClusterReactivityRoss(PSTH(ordSubs,:,ccond),trig,sweeps,timeLapse,binSz,...
+        [{Conditions(consideredConditions(ccond)).name};...
+        selClIDs],...
+        strrep(expName,'_','\_'),...
+        stims, csNames);
+    configureFigureToPDF(psthFigs(ccond));
+    psthFigs(ccond).Children(end).Title.String = consCondNames{ccond};
+    %     psthFigs(ccond).Children(end).YLabel.String =...
+    %         [psthFigs(ccond).Children(end).YLabel.String,...
+    %         sprintf('^{%s}',orderedStr)];
+    %     if ~exist([figFileName,'.pdf'], 'file')
+    %         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.pdf']),...
+    %             '-dpdf','-fillpage')
+    %     end
+    %     if ~exist([figFileName,'.emf'], 'file')
+    %         print(psthFigs(ccond), fullfile(figureDir,[figFileName, '.emf']),...
+    %             '-dmeta')
+    %     end
+    
+end
+% for a = 1:length(consideredConditions)
+%     savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH_0.001binSz.fig']));
+% end
+
+
+
+%% PopPSTH Comparisons - Individual Plots
+axLabel = 'Population activity';
+for ccond = 1: length(consideredConditions)
+    ruIdxDim = size(ruIdx);
+    nFilters = ruIdxDim(2);
+    
+    fig = figure('Name',[expName,'_', consCondNames{ccond}],'Color',[1,1,1]);
+    fthAxFlag = false;
+    if ~exist('stims','var')
+        totlX = nFilters;
+        
+    elseif ~isempty(stims)
+        fthAxFlag = true;
+        totlX = nFilters + 1;
+    end
+    %     ax1 = subplot(totlX,1,1:2,'Parent',fig);
+    
+    clrDivider = nFilters-1;
+    if nFilters <= 1
+        clrDivider = nFilters;
+    end
+    datclr =  [0:0.8/(nFilters-1):0.8]' * ones(1, 3);
+    
+    for a = 1:nFilters
+        ax(a) = subplot(totlX,1,a,'Parent',fig);
+        [PSTHarray{a}(:,:,ccond), trig, sweeps] = getPSTH(discStack(ruIdx(:,a),:,:),timeLapse,...
+            ~delayFlags(:,ccond),binSz,fs);
+        
+        PSTH = PSTHarray{a}(:,:,ccond);
+        [Ncl, Npt] = size(PSTH);
+        PSTHn = PSTH./max(PSTH,[],2);
+        
+        
+        psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+        trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+        popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+        plot(psthTX,popPSTH,'Color', datclr(a,:), 'DisplayName','Population PSTH')
+        ax(a).XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
+        ax(a).XLim = [timeLapse(1), timeLapse(2)];
+        ax(a).Box = 'off';
+        ax(a).ClippingStyle = 'rectangle';
+        legend(ax(a),'show','Location','best')
+        ruNames = [{'Tagged'}, {'S1'}, {'VPL'}];
+        ax(a).Legend.String = ruNames{a};
+        ax(a).YAxis(1).Label.String = axLabel;
+        
+    end
+    ax(1).Title.String = consCondNames(ccond);
+    %ax1.Title.String = consCondNames(ccond);
+    % %if fthAxFlag
+    ax2 = subplot(totlX,1,nFilters + 1,'Parent',fig);
+    
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    stims = stims - median(stims,2);
+    for cs = 1:size(stims,1)
+        if abs(log10(var(stims(cs,:),[],2))) < 13
+            [m,b] = lineariz(stims(cs,:),1,0);
+            stims(cs,:) = m*stims(cs,:) + b;
+        else
+            stims(cs,:) = zeros(1,Nt);
+        end
+    end
+    
+    [r,c] = size(stims);
+    
+    if r < c
+        stims = stims';
+        stmClr = zeros(r, 3);
+        
+    end
+    
+    
+    stmClr([1,5,9]) = 1;
+    stmClr(stmClr == 0) = 0.25;
+    
+    
+    
+    for cs = 1:min(r,c)
+        if exist('IDs','var')
+            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
+                'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
+        else
+            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,  'Color', stmClr(cs,:))
+        end
+        
+        %                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
+        
+        if cs == 1
+            ax2.NextPlot = 'add';
+        end
+    end
+    legend(ax2,'show','Location','best')
+    
+    ax2.Box = 'off';
+    ax2.XLim = [timeLapse(1), timeLapse(2)];
+    ax2.XAxis.Visible = 'off';
+    ax2.YAxis.Visible = 'off';
+    linkaxes([ax, ax2], 'x')
+    %end
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    %      [Ncl, Npt] = size(PSTH);
+    %
+    %     psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+    %     trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+    %     % clr = defineColorForStimuli(IDe);
+    %     popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
+    %     plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
+    %     axLabel = 'Population activity';
+    %      yyaxis(ax1,'right')
+    %     plot(ax1,trigTX,trig,'LineWidth',1.5,...
+    %         'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
+    %
+    % Formatting the population PSTH plot
+    
+    ax2.YAxis(1).Limits = [0,1.01];
+    ax2.Legend.String = csNames;
+    %
+    %
+    
+    %     title(ax1,[expName,sprintf(' %d trials',sweeps)], 'Interpreter', 'none')
+    %
+    %
+    clear PSTH
+    
+    
+end
+% end
+%% Rasters
+% DE_Jittering needs to be unfiltered for significance for this to work!
+csNames = fieldnames(Triggers);
+csNames = csNames(2:end);
+IDs = csNames;
+trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+
+rasterDir = fullfile(figureDir,'Rasters\');
+if ~mkdir(rasterDir)
+    fprintf(1,'There was an issue with the figure folder...\n');
+end
+
+
+Power = NaN(length(consCondNames),1);
+for cc = 1:length(consCondNames)
+    
+    mWfind = strfind(consCondNames{cc}, 'mW');
+    
+    pwr = consCondNames{cc}(mWfind-2:mWfind+1);
+    if isnan(pwr)
+        pwrMissing = true;
+    elseif contains(pwr, '.')
+        pwr = consCondNames{cc}(mWfind-3:mWfind+1);
+    elseif contains(pwr, '_') || contains(pwr, ' ')
+        pwr = pwr(2:end);
+    end
+    pwr = str2double(pwr(1:end-2));
+    Power(cc) = pwr;
+end
+pwrs = unique(Power);
+
+
+
+for a = 1:length(pwrs)
+    pwr = pwrs(a);
+    % MchTblInd = ['Mech_Control_', num2str(pwr), 'mW_MR'];
+    % LasTblInd =  [20,21,22];%['Laser_Control_', num2str(pwr), 'mW_LR'];
+    % MchCondControl = ['Mech_Control_', num2str(pwr), 'mW'];
+    % LasCondControl = ['Laser_Control_', num2str(pwr), 'mW'];
+    % MchLasCond = ['Mech_Laser_', num2str(pwr), 'mW'];
+    % EffectTblInd = ['Mech_Control_', num2str(pwr), 'mW_vs_Mech_Laser_', num2str(pwr), 'mW_Evoked_Response'];
+    % TblInd = find(clInfo.ActiveUnit); % ATM this only makes rasters that show sig control mech response
+    % clIDind = clInfo.id(TblInd);
+    pwrInd = Power == pwr;
+    clIDind =  gclID;
+    lngth = length(clIDind);
+    for a = 1:lngth
+        cl = clIDind(a);
+        clSel = find(ismember(pclID, cl));
+        %     if chCond == 1
+        %         rasCondSel = find(ismember(consCondNames, MchCondControl) | ismember(consCondNames, MchLasCond));
+        %         label = 'Mech';
+        %     else
+        %         rasCondSel = find(ismember(consCondNames, LasCondControl) | ismember(consCondNames, MchLasCond));
+        %         label = 'Laser';
+        %     end
+        rasCondSel = find(pwrInd);
+        rasCond = consideredConditions(rasCondSel);
+        rasCondNames = consCondNames(rasCondSel);
+        Nrcl = numel(clSel);
+        % Reorganize the rasters in the required order.
+        clSub = find(ismember(gclID, pclID(clSel)))+1;
+        [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
+        clSub = clSub(rasOrd(rasIdx));
+        clSel = clSel(rasOrd(rasOrd ~= 0));
+        Nma = min(Na(rasCondSel));
+        rasFig = figure;
+        columns = length(pwrs);
+        Nrcond = length(rasCond);
+        ax = gobjects(Nrcond*Nrcl,1);
+        for cc = 1:length(rasCond)
+            % Equalize trial number
+            trigSubset = sort(randsample(Na(rasCondSel(cc)),Nma));
+            tLoc = find(delayFlags(:,rasCondSel(cc)));
+            tSubs = tLoc(trigSubset);
+            % Trigger subset for stimulation shading
+            trigAlSubs = Conditions(rasCond(cc)).Triggers(trigSubset,:);
+            timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
+            trigChange = find(diff(timeDur) ~= 0);
+            
+            for ccl = 1:Nrcl
+                lidx = ccl + (cc - 1) * Nrcl;
+                ax(lidx) = subplot( Nrcl, Nrcond, lidx);
+                title(ax(lidx),sprintf(rasCondNames{cc}), 'Interpreter', 'none') % ,pclID{clSel(ccl)}
+                plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
+                    timeLapse, fs,'',ax(lidx));
+                ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
+                ax(lidx).YAxis.Label.String = 'Trials';
+%                 ax(lidx).YAxis.Label.Position =...
+%                     [timeLapse(1)-timeLapse(1)*0.65, Nma,0];
+                %             ax(lidx).XAxis.TickLabels =...
+                %                 cellfun(@(x) (x)*1e3, ax(lidx).XAxis.TickValues,...
+                %                 'UniformOutput', 0);
+                xlabel(ax(lidx), 'Time [s]')
+                initSub = 0;
+                optsRect = {'EdgeColor','none','FaceColor','none'};
+                for ctr = 1:numel(trigChange)
+                    rectangle('Position',[0, initSub,...
+                        timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
+                    initSub = trigChange(ctr);
+                end
+                rectangle('Position', [0, initSub, timeDur(Nma),...
+                    Nma - initSub],optsRect{:})
+                
+                
+                stims = mean(cst(:,:,delayFlags(:,rasCondSel(cc))),3);
+                stims = stims([2,3],:);
+                
+                stims = stims - median(stims,2);
+                
+                
+                
+                for cs = 1:size(stims,1)
+                    if abs(log10(var(stims(cs,:),[],2))) < 13
+                        [m,b] = lineariz(stims(cs,:),1,0);
+                        stims(cs,:) = m*stims(cs,:) + b;
+                    else
+                        stims(cs,:) = zeros(1,Nt);
+                    end
+                end
+                
+                [r,c] = size(stims);
+                
+                if r < c
+                    stims = stims';
+                    stmClr = zeros(r, 3);
+                    
+                end
+                
+                stmClr =[ 0 1 1 0.25; 1 0 0 0.25];
+                
+                
+                
+                yyaxis('right');
+                hold on
+                for cs = 1:min(r,c)
+                    if exist('IDs','var')
+                        plot(trigTX,stims(:,cs),'LineStyle','-','LineWidth', 3,...
+                            'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
+                    else
+                        plot(trigTX,stims(:,cs),'LineStyle','-','LineWidth',3, 'Color', stmClr(cs,:))
+                    end
+                    
+                    
+                    %                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
+                    
+%                     if cs == 1
+%                         ax2.NextPlot = 'add';
+%                     end
+
+                end
+                hold off
+                ax = gca;
+                
+               
+                ax.YAxis(2).Limits = [0.015, 1];
+                ax.YAxis(2).Visible = 'off';
+                ax.FontName ='Arial';
+                ax.FontSize = 25;
+                
+                f=get(gca,'Children');
+                legend(f)
+                
+                
+                
+                
+            end
+        end
+        
+        
+        
+        
+        
+        rasConds = rasCondNames{1};
+        if length(rasCondNames) > 1
+            for r = 2:length(rasCondNames)
+                rasConds = [rasConds, '+', rasCondNames{r}];
+            end
+        end
+        
+        linkaxes(ax,'x')
+        rasFigName = ['Unit_', cell2mat(cl), '_', ];
+        rasFig.Name = [rasFigName, '_', num2str(pwr), 'mW'];
+        configureFigureToPDF (rasFig);
+        set(rasFig, 'Position', get(0, 'ScreenSize'));
+        saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.emf']));
+        %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
+        savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
+    end
+end
+close all
+
+
+
 
 
 %% PopPSTH Comparisons - One Plot (+ TTL)
@@ -746,253 +1173,3 @@ for ccond = 1: length(consideredConditions)
     
 end
 % end
-
-
-%% PopPSTH Comparisons - Individual Plots
-for ccond = 1: length(consideredConditions)
-    ruIdxDim = size(ruIdx);
-    nFilters = dimID(2);
-    
-    fig = figure('Name',[expName,'_', consCondNames{ccond}],'Color',[1,1,1]);
-    fthAxFlag = false;
-    if ~exist('stims','var')
-        totlX = nFilters;
-        
-    elseif ~isempty(stims)
-        fthAxFlag = true;
-        totlX = nFilters + 1;
-    end
-%     ax1 = subplot(totlX,1,1:2,'Parent',fig);
-    
-    
-    datclr =  [0:0.8/(nFilters-1):0.8]' * ones(1, nFilters);
-    
-    for a = 1:nFilters
-        ax(a) = subplot(totlX,1,a,'Parent',fig);
-        [PSTHarray{a}(:,:,ccond), trig, sweeps] = getPSTH(discStack(ruIdx(:,a),:,:),timeLapse,...
-            ~delayFlags(:,ccond),binSz,fs);
-        
-        PSTH = PSTHarray{a}(:,:,ccond);
-        [Ncl, Npt] = size(PSTH);
-        PSTHn = PSTH./max(PSTH,[],2);
-        
-        
-        psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
-        trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
-        popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
-        plot(psthTX,popPSTH,'Color', datclr(a,:), 'DisplayName','Population PSTH')
-        ax(a).XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
-        ax(a).XLim = [timeLapse(1), timeLapse(2)];
-        ax(a).Box = 'off';
-        ax(a).ClippingStyle = 'rectangle';
-        legend(ax(a),'show','Location','best')
-        ruNames = [{'Tagged'}, {'S1'}, {'VPL'}];
-        ax(a).Legend.String = ruNames{a};
-        ax(a).YAxis(1).Label.String = axLabel;
-        
-    end
-    ax(1).Title.String = consCondNames(ccond);
-    %ax1.Title.String = consCondNames(ccond);
-    % %if fthAxFlag
-    ax2 = subplot(totlX,1,nFilters + 1,'Parent',fig);
-    
-    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
-    stims = stims - median(stims,2);
-    for cs = 1:size(stims,1)
-        if abs(log10(var(stims(cs,:),[],2))) < 13
-            [m,b] = lineariz(stims(cs,:),1,0);
-            stims(cs,:) = m*stims(cs,:) + b;
-        else
-            stims(cs,:) = zeros(1,Nt);
-        end
-    end
-    
-    [r,c] = size(stims);
-    
-    if r < c
-        stims = stims';
-        stmClr = zeros(r, 3);
-        
-    end
-    
-    
-    stmClr([1,5,9]) = 1;
-    stmClr(stmClr == 0) = 0.25;
-    
-    
-    
-    for cs = 1:min(r,c)
-        if exist('IDs','var')
-            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,...
-                'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
-        else
-            plot(ax2,trigTX,stims(:,cs),'LineStyle','-.','LineWidth',0.5,  'Color', stmClr(cs,:))
-        end
-        
-        %                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
-        
-        if cs == 1
-            ax2.NextPlot = 'add';
-        end
-    end
-    legend(ax2,'show','Location','best')
-    
-    ax2.Box = 'off';
-    ax2.XLim = [timeLapse(1), timeLapse(2)];
-    ax2.XAxis.Visible = 'off';
-    ax2.YAxis.Visible = 'off';
-    linkaxes([ax, ax2], 'x')
-    %end
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    %      [Ncl, Npt] = size(PSTH);
-    %
-    %     psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
-    %     trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
-    %     % clr = defineColorForStimuli(IDe);
-    %     popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps);
-    %     plot(ax1,psthTX,popPSTH,'DisplayName','Population PSTH')
-    %     axLabel = 'Population activity';
-    %      yyaxis(ax1,'right')
-    %     plot(ax1,trigTX,trig,'LineWidth',1.5,...
-    %         'LineStyle',':')%,'Color',clr,'DisplayName',IDe{1},...
-    %
-    % Formatting the population PSTH plot
-    
-    ax2.YAxis(1).Limits = [0,1.01];
-    ax2.Legend.String = csNames;
-    %
-    %
-    
-    %     title(ax1,[expName,sprintf(' %d trials',sweeps)], 'Interpreter', 'none')
-    %
-    %
-    clear PSTH
-    
-    
-end
-% end
-%% Rasters
-% DE_Jittering needs to be unfiltered for significance for this to work!
-
-
-rasterDir = fullfile(figureDir,'Rasters\');
-if ~mkdir(rasterDir)
-    fprintf(1,'There was an issue with the figure folder...\n');
-end
-
-
-Power = NaN(length(consCondNames),1);
-for cc = 1:length(consCondNames)
-    
-    mWfind = strfind(consCondNames{cc}, 'mW');
-    
-    pwr = consCondNames{cc}(mWfind-2:mWfind+1);
-    if isnan(pwr)
-        pwrMissing = true;
-    elseif contains(pwr, '.')
-        pwr = consCondNames{cc}(mWfind-3:mWfind+1);
-    elseif contains(pwr, '_') || contains(pwr, ' ')
-        pwr = pwr(2:end);
-    end
-    pwr = str2double(pwr(1:end-2));
-    Power(cc) = pwr;
-end
-pwrs = unique(Power);
-
-
-
-for a = 1:length(pwrs)
-    pwr = pwrs(a);
-    % MchTblInd = ['Mech_Control_', num2str(pwr), 'mW_MR'];
-    % LasTblInd =  [20,21,22];%['Laser_Control_', num2str(pwr), 'mW_LR'];
-    % MchCondControl = ['Mech_Control_', num2str(pwr), 'mW'];
-    % LasCondControl = ['Laser_Control_', num2str(pwr), 'mW'];
-    % MchLasCond = ['Mech_Laser_', num2str(pwr), 'mW'];
-    % EffectTblInd = ['Mech_Control_', num2str(pwr), 'mW_vs_Mech_Laser_', num2str(pwr), 'mW_Evoked_Response'];
-    % TblInd = find(clInfo.ActiveUnit); % ATM this only makes rasters that show sig control mech response
-    % clIDind = clInfo.id(TblInd);
-    pwrInd = Power == pwr;
-    clIDind =  gclID;
-    lngth = length(clIDind);
-    for a = 1:lngth
-        cl = clIDind(a);
-        clSel = find(ismember(pclID, cl));
-        %     if chCond == 1
-        %         rasCondSel = find(ismember(consCondNames, MchCondControl) | ismember(consCondNames, MchLasCond));
-        %         label = 'Mech';
-        %     else
-        %         rasCondSel = find(ismember(consCondNames, LasCondControl) | ismember(consCondNames, MchLasCond));
-        %         label = 'Laser';
-        %     end
-        rasCondSel = find(pwrInd);
-        rasCond = consideredConditions(rasCondSel);
-        rasCondNames = consCondNames(rasCondSel);
-        Nrcl = numel(clSel);
-        % Reorganize the rasters in the required order.
-        clSub = find(ismember(gclID, pclID(clSel)))+1;
-        [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
-        clSub = clSub(rasOrd(rasIdx));
-        clSel = clSel(rasOrd(rasOrd ~= 0));
-        Nma = min(Na(rasCondSel));
-        rasFig = figure;
-        columns = length(pwrs);
-        Nrcond = length(rasCond);
-        ax = gobjects(Nrcond*Nrcl,1);
-        for cc = 1:length(rasCond)
-            % Equalize trial number
-            trigSubset = sort(randsample(Na(rasCondSel(cc)),Nma));
-            tLoc = find(delayFlags(:,rasCondSel(cc)));
-            tSubs = tLoc(trigSubset);
-            % Trigger subset for stimulation shading
-            trigAlSubs = Conditions(rasCond(cc)).Triggers(trigSubset,:);
-            timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
-            trigChange = find(diff(timeDur) ~= 0);
-            for ccl = 1:Nrcl
-                lidx = ccl + (cc - 1) * Nrcl;
-                ax(lidx) = subplot(Nrcond, Nrcl, lidx);
-                title(ax(lidx),sprintf('%s cl:%s',rasCondNames{cc},pclID{clSel(ccl)}), 'Interpreter', 'none')
-                plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
-                    timeLapse, fs,'',ax(lidx));
-                ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
-                ax(lidx).YAxis.Label.String = Nma;
-                ax(lidx).YAxis.Label.Position =...
-                    [timeLapse(1)-timeLapse(1)*0.65, Nma,0];
-                %             ax(lidx).XAxis.TickLabels =...
-                %                 cellfun(@(x) (x)*1e3, ax(lidx).XAxis.TickValues,...
-                %                 'UniformOutput', 0);
-                xlabel(ax(lidx), 'Time_{(s)}')
-                initSub = 0;
-                optsRect = {'EdgeColor','none','FaceColor','none'};
-                for ctr = 1:numel(trigChange)
-                    rectangle('Position',[0, initSub,...
-                        timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
-                    initSub = trigChange(ctr);
-                end
-                rectangle('Position', [0, initSub, timeDur(Nma),...
-                    Nma - initSub],optsRect{:})
-            end
-        end
-        rasConds = rasCondNames{1};
-        if length(rasCondNames) > 1
-            for a = 2:length(rasCondNames)
-                rasConds = [rasConds, '+', rasCondNames{a}];
-            end
-        end
-        
-        linkaxes(ax,'x')
-        rasFigName = ['Unit_', cell2mat(cl), '_', ];
-        configureFigureToPDF (rasFig);
-        %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
-        savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '_continuous_pulse.fig']));
-    end
-end
-% close all
