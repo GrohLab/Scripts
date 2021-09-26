@@ -3,6 +3,7 @@ vidTx = (0:length(sPx)-1)'/fr;
 expTx = (0:length(trig)-1)'/fs;
 
 timeLapse = [-2, 4];
+consideredConditions = 3:5;
 % All triggers in the experiment without overlap
 allTSubs = sort(cat(1,Conditions(3:5).Triggers));
 % Aligning the roller signal to the highest temporal correlation.
@@ -34,11 +35,11 @@ ttms = allTSubs./fs; emptyCells = cellfun(@isempty, dlTms);
 pts = [ttms(~emptyCells), cat(1,dlTms{~emptyCells})];
 figure; scatter(pts(:,1), pts(:,2), "filled")
 %% DE_jittering
-NTa = size(vStack,2); Nccond = 2; consideredConditions = [3,4]; 
+NTa = size(vStack,2); Nccond = length(consideredConditions); 
 delayFlags = false(NTa,Nccond); chCond = 1;
 counter2 = 1;
 for ccond = consideredConditions
-    delayFlags(:,counter2) = ismember(Conditions(chCond).Triggers(:,1),...
+    delayFlags(:,counter2) = ismember(allTSubs(:,1),...
         Conditions(ccond).Triggers(:,1));
     counter2 = counter2 + 1;
 end
@@ -75,11 +76,17 @@ en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
 miinOpts = {"Color", 'k', "LineWidth", 2};
 vMean = zeros(length(stTx), 3); vcount = 1;
 vFigs = gobjects(4, 1); 
-for ccond = 3:5
+for ccond = consideredConditions
     [~, vStack] = getStacks(false, Conditions_corrected(ccond).Triggers, 'on',...
         timeLapse, fs, fsRoll, [], {vf_corrected});
     vStack = squeeze(vStack); 
+    % No movement before nor after
     % excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+    % No movement before but only after the trigger
+    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) < 0.9;
+    % No movement before
+    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85;
+    % No exclusion
     excludeFlag = false(size(vStack,2),1);
     plotEEGchannels(vStack(:, ~excludeFlag)', '', diff(timeLapse),...
         fsRoll, 1, abs(timeLapse(1)));
