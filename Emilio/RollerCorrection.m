@@ -36,7 +36,7 @@ ttms = allTSubs./fs; emptyCells = cellfun(@isempty, dlTms);
 pts = [ttms(~emptyCells), cat(1,dlTms{~emptyCells})];
 figure; scatter(pts(:,1), pts(:,2), "filled")
 %% DE_jittering
-Nccond = length(consideredConditions);
+NTa = size(vStack,2); Nccond = length(consideredConditions); 
 delayFlags = false(NTa,Nccond); chCond = 1;
 counter2 = 1;
 for ccond = consideredConditions
@@ -87,6 +87,16 @@ for ccond = consideredConditions
     if all(excludeFlag)
         continue
     end
+        timeLapse, fs, fsRoll, [], {vf_corrected});
+    vStack = squeeze(vStack); 
+    % No movement before nor after
+    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+    % No movement before but only after the trigger
+    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) < 0.9;
+    % No movement before
+    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85;
+    % No exclusion
+    excludeFlag = false(size(vStack,2),1);
     plotEEGchannels(vStack(:, ~excludeFlag)', '', diff(timeLapse),...
         fsRoll, 1, abs(timeLapse(1)));
     vFigs(vcount) = figure; 
