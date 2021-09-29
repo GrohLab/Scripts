@@ -33,6 +33,7 @@ silentUnits = clusterSpikeRate < 0.1;
 bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
 badsIdx = badsIdx | silentUnits;
+clInfo = getClusterInfo([dataDir, '\cluster_info.tsv']);
 if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
     clInfo = addvars(clInfo,~badsIdx,'After','id',...
         'NewVariableNames','ActiveUnit');
