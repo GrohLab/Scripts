@@ -132,7 +132,7 @@ for conscondSig = 1:length(CondSigs)
     end
 end
 if pwrMissing
-    fprintf('Could not find all laser intensities - consider renaming condsig files')
+    fprintf('Could not find all laser intensities - consider renaming condsig files \n')
 end
     
 

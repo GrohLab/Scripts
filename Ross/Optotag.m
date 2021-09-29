@@ -22,8 +22,8 @@ depth = depth + jitter; % adding small jitter for visualisation
 depth = -1*depth;
 
 % Removing and highlighting dodgy units from plot
-lowestLat = latencyCutoffs(1);
-lowestSD = sdCutoffs(1);
+lowestLat = 2; %latencyCutoffs(1);
+lowestSD = 0.2; %sdCutoffs(1);
 dodgyMean = ID(find(mn<lowestLat));
 dodgySD = ID(find(sd<lowestSD));
 fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
@@ -61,6 +61,7 @@ explode = [0, 1];
 % labels = {['Tagged Fraction = ',num2str(tg), '%'], ' '};
 pie(x, explode)
 ax = gca;
+ax.FontName = 'Arial';
 if sum(tagged) > 0
     ax.Children(2).FaceColor = [0, 0.5, 1];
     ax.Children(4).FaceColor = [0.5 0.5 0.5];
@@ -108,13 +109,14 @@ ylim([0,round(round(max(sd))+5,-1)]);
 %yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
 xlim([0 tm*1e3]);
 xticks(0:5:tm*1e3);
-xlabel('Latency_{(ms)}');
-ylabel('StdDev_{(ms)}', 'Interpreter', 'tex')
+xlabel('First-Spike Latency [ms]');
+ylabel('StdDev [ms]', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
 ax = gca;
 hold on
 laser = plot([0:pulseWidth], (ax.YLim(2))*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
 ax = gca;
+ax.FontName = 'Arial';
 ax.FontSize = 20;
 % ax.FontName = 'Times New Roman';
 % Create rectangle
@@ -147,13 +149,14 @@ ylim([round(round(min(depth),-2)/2,-2)*2-200,0]);
 yticks([round(round(min(depth),-2)/2,-2)*2-200:200:0]);
 xlim([0 tm*1e3]);
 xticks(0:5:tm*1e3);
-xlabel('Latency_{(ms)}');
-ylabel('Depth_{(\mum)}', 'Interpreter', 'tex')
+xlabel('First-Spike Latency [ms]');
+ylabel('Unit Depth [\mum]', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
 ax = gca;
 hold on
 laser = plot([0:pulseWidth], ax.YLim(2)*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
 ax = gca;
+ax.FontName = 'Arial';
 ax.FontSize = 20;
 % ax.FontName = 'Times New Roman';
 % Create rectangle
@@ -187,10 +190,11 @@ xlim([0 tm*1e3]);
 xticks(0:5:tm*1e3);
 yMax = max([max(h.BinCounts), max(j.BinCounts)]);
 ylim([0, round(yMax + 5, -1)]);
-xlabel('Latency_{(ms)}');
-ylabel('Frequency_{(no. of units)}', 'Interpreter', 'tex')
+xlabel('First-Spike Latency [ms]');
+ylabel('Frequency [no. of units]', 'Interpreter', 'tex')
 % ax.XTickLabelRotation = -45;
 ax = gca;
+ax.FontName = 'Arial';
 laserLngth = linspace(0, pulseWidth + 0.5);
 hold on
 laser = plot(laserLngth, (ax.YLim(2))*ones(length(laserLngth),1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
@@ -209,6 +213,11 @@ lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
 lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
 lgd.FontSize = 8;
 
+idxTagged = ismember(clInfo.id, TaggedIDs);
+if ~any(ismember(clInfo.Properties.VariableNames,'Tagged'))
+    clInfo = addvars(clInfo,idxTagged,'After','ActiveUnit',...
+        'NewVariableNames','Tagged');
+end
 
 end
 
