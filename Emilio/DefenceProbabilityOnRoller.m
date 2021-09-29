@@ -1,7 +1,7 @@
 % No previous movement before nor after the stimulus
-% excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
 % Previous movement before 
-excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
+% excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
 Na = sum(delayFlags & ~excludeFlag(:));
 rngRollSpeed = cell(Nccond,1);
 for ccond = 1:Nccond
@@ -25,6 +25,7 @@ lgnd = legend(consCondNames); set(lgnd, "Box", "off", "Location", "best")
 ylabel("Trial proportion / Movement probability")
 xlabel("Speed threshold \theta [cm/s]")
 title("Trial proportion with elicited movement")
+%% Save?
 sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
 if strcmpi(sveFigAns, "Yes")
     saveFigure(probFig, fullfile(figureDir, 'Movement probability'), 1, 1)
@@ -58,6 +59,7 @@ xticklabels(consCondNames); ylim([0,(yHeight >= 1)*1.1 + (yHeight < 1)*1]);
 set(get(barFig,"Children"), "Box", "off", "Color", "none")
 title(sprintf('Movement probability \\theta:%.1f cm/s', thetaSpeed(thS)))
 ylabel("Trial proportion / Movement probability")
+%% Save?
 sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
 if strcmpi(sveFigAns, "Yes")
     saveFigure(barFig, fullfile(figureDir,...
