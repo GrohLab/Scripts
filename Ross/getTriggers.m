@@ -364,7 +364,7 @@ for a = 1:mostTriggers
     Triggers.(Trigs(a).name) = [];
     for i = 1:length(Trigs(a).info)
         if isempty(Trigs(a).info{i})
-            offset = Trigs(mchInd).offset(i);
+            offset = Trigs(mchInd).offset(i); % Check this, what if no mech stims?
             Triggers.(Trigs(a).name) = [Triggers.(Trigs(a).name); zeros(offset,1)];
         else
             
