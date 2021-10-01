@@ -1,19 +1,17 @@
 name = 'Corrected_H3_ChanMap';
 load('Z:\Ross\ProbeFiles\Adaptor-Amplifier_Mapping.mat')
-intan_ordered_channelmap = NaN(64,1);
+
 depths = flip([0:20:1275]');
 
-
+intan_ordered_channelmap = NaN(64,1);
+intan_ordered_depths = NaN(64,1);
 for pin = 0:63
     ind = find(rhdInput == pin);
     intan_ordered_channelmap(pin+1) = electrodes_depth_ordered_H3(ind);
+    intan_ordered_depths(pin+1) = depths(ind);
 end
 
-intan_ordered_depths = NaN(64,1);
-for pin = 0:63
-    depthInd = find(rhdInput == pin);
-    intan_ordered_depths(pin+1) = depths(depthInd);
-end
+
 
 chanMap = [1:64]';
 chanMap0ind = chanMap-1;
