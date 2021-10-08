@@ -42,8 +42,10 @@ for fg = 1:3
     dr = plottedData{fg,2}(firstL6,:);
     dpth = [depths(firstL6), depths(firstL6)];
     plot(dr, dpth, 'LineStyle', '-', 'Color', [0, 0.5, 1, 0.5], 'LineWidth', 10);
-    leg = legend;
-    leg.String = [{'Group 1'}, {'Group 2'}, {'L6'}];
+    if fg == 3
+        leg = legend;
+        leg.String = [{'Group 1'}, {'Group 2'}, {'L6'}];
+    end
     
     
     
@@ -71,6 +73,10 @@ for fg = 1:3
     % ax.XLim = [-50, 50];
     % ax.XTick = [-50:10:50];
     plot(zeros(length(ID)), linspace(ax.YLim(1),ax.YLim(2), length(ID)), 'LineStyle', '-', 'Color', 'k');
-    leg.String(4:end) = [];
-    leg.String(4:end) = [];
+    if fg == 3
+        leg.String(4:end) = [];
+        leg.String(4:end) = [];
+        leg.Box = 'off';
+        legend('Location', 'southeastoutside');
+    end
 end
