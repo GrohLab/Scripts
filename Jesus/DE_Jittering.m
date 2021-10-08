@@ -34,7 +34,7 @@ bads = union(bads,find(silentUnits));
 goods = setdiff(1:size(sortedData,1),bads);
 badsIdx = badsIdx | silentUnits;
 if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
-    clInfo = addvars(clInfo,~badsIdx,'After','id',...
+    clInfo = addvars(clInfo,~badsIdx,'After',1,...
         'NewVariableNames','ActiveUnit');
     writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'), 1);
 end
