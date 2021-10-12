@@ -47,7 +47,7 @@ Na = sum(delayFlags,1);
 %% RANSAC line estimation
 n = 1;
 [rmdl, inln] = boot_fit_poly([pts(:,1), pts(:,2)-0.5], n, (n+1)/size(pts,1),...
-    2^17, 0.5);
+    2^17, 0.56);
 %% RANSAC correction
 Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name,...
     'Triggers', Conditions(x).Triggers +...
@@ -56,7 +56,7 @@ Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name,...
 
 %% RANSAC threshold estimation
 n = 1; xpts = [0;pts(end,1)];
-for cth = 0.2:0.1:0.9
+for cth = 0.5:0.01:0.6
     [rmdl, inln] = boot_fit_poly(pts, n, (n+1)/size(pts,1), 2^17, cth);
     if islogical(inln)
         figure; gscatter(pts(:,1), pts(:,2), inln); title(sprintf('%.4f',cth))
@@ -73,15 +73,15 @@ Conditions_corrected = arrayfun(@(x) struct('name', Conditions(x).name, 'Trigger
 %% Producing the final figures
 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
 miinOpts = {"Color", 'k', "LineWidth", 2};
-vMean = zeros(length(stTx), 3); vcount = 1;
-vFigs = gobjects(4, 1); 
+vMean = zeros(length(stTx), Nccond); vcount = 1;
+vFigs = gobjects(Nccond+1, 1); 
 for ccond = consideredConditions
     [~, vStack] = getStacks(false, Conditions_corrected(ccond).Triggers, 'on',...
         timeLapse, fs, fsRoll, [], {vf_corrected}); vStack = squeeze(vStack);
     % No movement before nor after
-    % excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+    excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
     % Movement before
-    excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
+    % excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
     % No exclusion
     % excludeFlag = false(size(vStack,2),1);
     % No movement before but only after the trigger
@@ -107,7 +107,7 @@ arrayfun(@(x) saveFigure(vFigs(x), fullfile(figureDir,...
     sprintf('RollerSpeed_%s VW%.1f - %.1f s (no movement)',...
     Conditions(x+2).name, timeLapse)),1, 1), (1:3)');
 vFigs(4) = figure; plot(stTx, vMean); 
-lgnd = legend(arrayfun(@(x) Conditions(x).name, (3:5)', fnOpts{:}));
+lgnd = legend(arrayfun(@(x) Conditions(x).name, consideredConditions, fnOpts{:}));
 set(lgnd, "Box", "off", "Location", "best")
 set(gca, "Box", "off", "Color", "none")
 xlabel("Time [s]"); ylabel("Roller speed [cm/s]")

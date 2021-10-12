@@ -4,9 +4,11 @@ excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
 % excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
 Na = sum(delayFlags & ~excludeFlag(:));
 rngRollSpeed = cell(Nccond,1);
+responseWindow = [-0.2, 1];
+responseFlags = stTx >= responseWindow(1) & stTx <= responseWindow(2);
 for ccond = 1:Nccond
     rngRollSpeed{ccond} =...
-        max(abs(vStack(~spontFlag, delayFlags(:, ccond) & ~excludeFlag(:))))';
+        max(abs(vStack(responseFlags, delayFlags(:, ccond) & ~excludeFlag(:))))';
 end
 % Maximum number of trials
 maxNt = max(cellfun(@numel, rngRollSpeed));
