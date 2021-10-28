@@ -287,6 +287,74 @@ Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
+
+%% Pie charts for different cell populations. 
+% Responsive and unresponsive cells, significantly potentiated or depressed
+% and unmodulated.
+fnOpts = {"UniformOutput", false};
+hsOpts = {"BinLimits", [-1,1], "NumBins", 32,...
+    "Normalization", "probability", "EdgeColor", "none", "DisplayName"};
+axOpts = {"Box", "off", "Color", "none"}; %#ok<CLARRSTR>
+evFr = cellfun(@(x) mean(x,2)./diff(responseWindow), Counts(:,2),fnOpts{:});
+evFr = cat(2, evFr{:});
+getMI = @(x) diff(x, 1, 2)./sum(x, 2);
+MIevok = getMI(evFr); 
+Nrn = sum(wruIdx); Ntn = size(wruIdx,1); 
+signMod = Results(1).Activity(2).Pvalues < 0.05;
+potFlag = MIevok > 0;
+Nrsn = sum(wruIdx & signMod); Nrsp = sum(wruIdx & signMod & potFlag);
+% All spikes in a cell format
+if size(spkSubs,1) < size(gclID,1)
+    spkSubs = cat(1, {round(sortedData{goods(1),2}*fs)}, spkSubs);
+end
+NaCount = 1;
+% Experiment firing rate and ISI per considered condition
+spFr = zeros(Ncl, size(consideredConditions,2), 'single');
+econdIsi = cell(Ncl, size(consideredConditions,2));
+econdSpks = econdIsi;
+trainDuration = 1;
+for ccond = consideredConditions
+    itiSub = mean(diff(Conditions(ccond).Triggers(:,1)));
+    consTime = [Conditions(ccond).Triggers(1,1) - round(itiSub/2),...
+        Conditions(ccond).Triggers(Na(NaCount),2) + round(itiSub/2)]...
+        ./fs;
+    [spFr(:,NaCount),~, econdSpks(:,NaCount), econdIsi(:,NaCount)] =...
+        getSpontFireFreq(spkSubs, Conditions(ccond).Triggers,...
+        consTime, fs, trainDuration + delta_t + responseWindow(1));
+    NaCount = NaCount + 1;
+end
+
+clrMap = lines(2); clrMap([3,4],:) = [0.65;0.8].*ones(2,3);
+MIspon = getMI(spFr); SNr = evFr./spFr;
+% Responsive and non responsive clusters
+respFig = figure("Color", "w"); 
+pie([Ntn-Nrn, Nrn], [0, 1], {'Unresponsive', 'Responsive'});
+pObj = findobj(respFig, "Type", "Patch"); 
+arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
+arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x+2,:)), 1:length(pObj))
+set(respFig, axOpts{:}); 
+saveFigure(respFig, fullfile(figureDir,...
+    sprintf("Whisker responsive proportion pie RW%.1f - %.1f ms (%dC, %dR)",...
+    responseWindow*1e3, [Ntn-Nrn, Nrn])), 1, 1);
+% Potentiated, depressed and unmodulated clusters pie
+potFig = figure("Color", "w");
+pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
+    'Potentiated', 'Depressed'}); set(potFig, axOpts{:})
+pObj = findobj(potFig, "Type", "Patch"); 
+arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
+arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
+saveFigure(potFig, fullfile(figureDir,...
+    sprintf("Modulation proportions pie RW%.1f - %.1f ms (%dR, %dP, %dD)",...
+    responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp)), 1, 1)
+% Modulation index histogram
+MIFig = figure; histogram(MIspon, hsOpts{:}, "Control"); hold on; 
+histogram(MIevok, hsOpts{:}, "AfterInduction"); set(gca, axOpts{:});
+title("Modulation index distribution"); xlabel("MI"); 
+ylabel("Cluster proportion"); lgnd = legend("show"); 
+set(lgnd, "Box", "off", "Location", "best")
+saveFigure(MIFig, fullfile(figureDir,...
+    "Modulation index dist evoked & after induction"), 1, 1)
+
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
     ' ''responding'' clusters?'], 'Waveforms', 'Yes', 'No', 'No');
@@ -688,9 +756,11 @@ if strcmpi(ccrAns,'Yes')
     corrsFile = fullfile(dataDir,sprintf('%s_%.2f ms_ccorr.mat', expName,...
         consTime*1e3));
     if ~exist(corrsFile,'file')
-        spkSubs = cat(1, {round(sortedData{goods(1),2}*fs)},spkSubs);
+        if size(spkSubs,1) < size(goods,1)
+            spkSubs = cat(1, {round(sortedData{goods(1),2}*fs)},spkSubs);
+        end
         corrs = neuroCorr(spkSubs, consTime, 1, fs);
-        save(corrsFile,'corrs','consTime','fs');
+        save(corrsFile,'corrs','consTime','fs','-v7.3');
     else
         load(corrsFile, 'corrs')
     end
@@ -731,5 +801,6 @@ corrTmWin = [1, 25]*1e-3;
 %     cqVals(ccl,:) = (quartCut' - il(2,:))./il(1,:);
 % end
 % cqDiff = diff(cqVals(:,[1,4]),1,2);
+
 
 
