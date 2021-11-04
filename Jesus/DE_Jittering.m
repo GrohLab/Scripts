@@ -332,14 +332,13 @@ pie([Ntn-Nrn, Nrn], [0, 1], {'Unresponsive', 'Responsive'});
 pObj = findobj(respFig, "Type", "Patch"); 
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
 arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x+2,:)), 1:length(pObj))
-set(respFig, axOpts{:}); 
 saveFigure(respFig, fullfile(figureDir,...
     sprintf("Whisker responsive proportion pie RW%.1f - %.1f ms (%dC, %dR)",...
     responseWindow*1e3, [Ntn-Nrn, Nrn])), 1, 1);
 % Potentiated, depressed and unmodulated clusters pie
 potFig = figure("Color", "w");
 pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
-    'Potentiated', 'Depressed'}); set(potFig, axOpts{:})
+    'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
 pObj = findobj(potFig, "Type", "Patch"); 
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
 arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
