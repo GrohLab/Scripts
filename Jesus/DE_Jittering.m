@@ -347,8 +347,8 @@ saveFigure(potFig, fullfile(figureDir,...
     sprintf("Modulation proportions pie RW%.1f - %.1f ms (%dR, %dP, %dD)",...
     responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp)), 1, 1)
 % Modulation index histogram
-MIFig = figure; histogram(MIspon, hsOpts{:}, "Control"); hold on; 
-histogram(MIevok, hsOpts{:}, "AfterInduction"); set(gca, axOpts{:});
+MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on; 
+histogram(MIevok, hsOpts{:}, "Evoked"); set(gca, axOpts{:});
 title("Modulation index distribution"); xlabel("MI"); 
 ylabel("Cluster proportion"); lgnd = legend("show"); 
 set(lgnd, "Box", "off", "Location", "best")
