@@ -323,9 +323,9 @@ for ccond = consideredConditions
         consTime, fs, trainDuration + delta_t + responseWindow(1));
     NaCount = NaCount + 1;
 end
-
-clrMap = lines(2); clrMap([3,4],:) = [0.65;0.8].*ones(2,3);
 MIspon = getMI(spFr); SNr = evFr./spFr;
+%% Plot proportional pies
+clrMap = lines(2); clrMap([3,4],:) = [0.65;0.8].*ones(2,3);
 % Responsive and non responsive clusters
 respFig = figure("Color", "w"); 
 pie([Ntn-Nrn, Nrn], [0, 1], {'Unresponsive', 'Responsive'});
