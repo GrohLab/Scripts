@@ -291,10 +291,10 @@ fprintf('- %s\n',gclID{wruIdx})
 %% Cluster population proportions 
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
-fnOpts = {"UniformOutput", false};
-hsOpts = {"BinLimits", [-1,1], "NumBins", 32,...
-    "Normalization", "probability", "EdgeColor", "none", "DisplayName"};
-axOpts = {"Box", "off", "Color", "none"}; %#ok<CLARRSTR>
+fnOpts = {'UniformOutput', false};
+hsOpts = {'BinLimits', [-1,1], 'NumBins', 32,...
+    'Normalization', 'probability', 'EdgeColor', 'none', 'DisplayName'};
+axOpts = {'Box', 'off', 'Color', 'none'};
 evFr = cellfun(@(x) mean(x,2)./diff(responseWindow), Counts(:,2),fnOpts{:});
 evFr = cat(2, evFr{:});
 getMI = @(x) diff(x, 1, 2)./sum(x, 2);
