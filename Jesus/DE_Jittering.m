@@ -288,7 +288,7 @@ Nwru = nnz(wruIdx);
 fprintf('%d whisker responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 
-%% Pie charts for different cell populations. 
+%% Cluster population proportions 
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
 fnOpts = {"UniformOutput", false};
@@ -342,9 +342,10 @@ pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
 pObj = findobj(potFig, "Type", "Patch"); 
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
 arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
-saveFigure(potFig, fullfile(figureDir,...
+modPropPieFigFileName = fullfile(figureDir,...
     sprintf("Modulation proportions pie RW%.1f - %.1f ms (%dR, %dP, %dD)",...
-    responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp)), 1, 1)
+    responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
+saveFigure(potFig, modPropPieFigFileName, 1)
 % Modulation index histogram
 MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on; 
 histogram(MIevok, hsOpts{:}, "Evoked"); set(gca, axOpts{:});
@@ -352,7 +353,7 @@ title("Modulation index distribution"); xlabel("MI");
 ylabel("Cluster proportion"); lgnd = legend("show"); 
 set(lgnd, "Box", "off", "Location", "best")
 saveFigure(MIFig, fullfile(figureDir,...
-    "Modulation index dist evoked & after induction"), 1, 1)
+    "Modulation index dist evoked & after induction"), 1)
 
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
@@ -549,7 +550,6 @@ end
 %% Log PSTH -- Generalise this part!!
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
-
 
 logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
     'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin,...
