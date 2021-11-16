@@ -19,7 +19,8 @@ Ncond = size(condFlags, 2);
 NewConditions = struct('name','Control','Triggers',...
     Conditions(1).Triggers(condFlags(:,1),:));
 if Ncond == 2
-    NewConditions(2) = Conditions(2); NewConditions(2).name = 'Induction';
+    NewConditions(2).name = 'Induction';
+    NewConditions(2).Triggers = Conditions(2).Triggers; 
     NewConditions(3) = struct('name','AfterInduction','Triggers',...
         Conditions(1).Triggers(condFlags(:,2),:));
     NewConditions(4) = Conditions(1);

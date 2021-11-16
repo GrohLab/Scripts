@@ -19,5 +19,5 @@ xcoords = ones(64,1);
 ycoords = intan_ordered_depths;
 kcoords = ones(64,1);
 connected = true(64,1);
-fs = 3.003003003003003e+04;
+fs = 1/33.3e-6;
 save('Z:\Ross\ProbeFiles\Corrected_H3_ChanMap.mat','chanMap','chanMap0ind','xcoords','ycoords','kcoords','name','connected', 'fs');
