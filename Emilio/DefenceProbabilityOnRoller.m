@@ -1,5 +1,11 @@
+fnOpts = {'UniformOutput', false};
+en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
+Nt = size(vStack, 1);
+[ms, bs] = lineariz([1, Nt], timeLapse(2), timeLapse(1));
+stTx = (1:Nt)'*ms + bs;
 % No previous movement before nor after the stimulus
-excludeFlag = rms(vStack(spontFlag,:)) > 0.85 | rms(vStack) > 0.9;
+rmsTh = 0.85;
+excludeFlag = rms(vStack(spontFlag,:)) > rmsTh | rms(vStack) > 0.9;
 % Previous movement before 
 % excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
 Na = sum(delayFlags & ~excludeFlag(:));
@@ -17,7 +23,7 @@ speedsMat = cellfun(@(x) cat(1, x, nan(maxNt - size(x,1),1)),...
     rngRollSpeed, fnOpts{:}); speedsMat = cat(2, speedsMat{:});
 speedsMat = speedsMat * en2cm;
 % Cutting on different thresholds for all trials
-thetaSpeed = 0.2:0.2:6;
+thetaSpeed = 0.1:0.1:3;
 moveFlag = speedsMat > reshape(thetaSpeed,1,1,[]);
 probMove = sum(moveFlag)./Na; probMove = squeeze(probMove);
 probFig = figure; plot(thetaSpeed, probMove'); ylim([0,1])
@@ -29,11 +35,19 @@ xlabel("Speed threshold \theta [cm/s]")
 title("Trial proportion with elicited movement")
 %% Save?
 sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
+probFigName = ...
+    sprintf('Movement probability EX%.2f RW%.1f - %.1f s',...
+    rmsTh, responseWindow);
 if strcmpi(sveFigAns, "Yes")
-    saveFigure(probFig, fullfile(figureDir, 'Movement probability'), 1, 1)
+    saveFigure(probFig, fullfile(figureDir, probFigName), 1)
 end
 %% Bar plotting
-condSubs = [1:7]; thS = 20;
+condSubs = listdlg("ListString", arrayfun(@(x) x.name, Conditions, fnOpts{:}),...
+    "SelectionMode", "multiple");
+thS = listdlg("ListString", string(thetaSpeed'), "SelectionMode", "single");
+if isempty(condSubs) || isempty(thS)
+    return
+end
 % Table with the successful trials in the first column.
 tbl = [probMove(condSubs, thS).*Na(condSubs)',...
     abs(probMove(condSubs, thS).*Na(condSubs)' - Na(condSubs)')];
@@ -66,11 +80,11 @@ title(sprintf('Movement probability \\theta:%.1f cm/s', thetaSpeed(thS)))
 ylabel("Trial proportion / Movement probability")
 %% Save?
 sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
+strFormat = 'Movement probability bar TH%.1f cmps EX%.2f RW%.1f - %.1f s';
+barFigName = sprintf(strFormat, thetaSpeed(thS), rmsTh, timeLapse);
 if strcmpi(sveFigAns, "Yes")
-    saveFigure(barFig, fullfile(figureDir,...
-        sprintf('Movement probability bar TH%.1f cmps', thetaSpeed(thS))),...
-        1, 1)
+    saveFigure(barFig, fullfile(figureDir, barFigName), 1)
 end
 
 %%
-xticklabels({'P+L','P','L'})
+% xticklabels({'P+L','P','L'})
