@@ -20,7 +20,7 @@ end
 
 binSamples = fs*binSize;
 nBins = round(numSamples/binSamples);
-nUnits = length(spkSubs);
+nUnits = length(ID);
 counts = zeros(nBins, nUnits);
 
 for unitNo = 1:nUnits   % unit by unit

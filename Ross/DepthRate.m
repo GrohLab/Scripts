@@ -18,6 +18,11 @@ plottedData = [{'Mech'}, {[zeros(length(c),1), c]};...
 
 
 %% Plotting
+
+red = [0.75, 0, 0];
+green = [0, 0.75, 0];
+blue = [0.25, 0.5, 1];
+
 figure('Color', 'White');
 firstLater = find(ismember(ID,Later), 1, 'first');
 firstLatest = find(ismember(ID,Latest), 1, 'first');
@@ -33,15 +38,15 @@ for fg = 1:3
     % Plotting the first of each group for the legend
     dr = plottedData{fg,2}(firstLater,:);
     dpth = [depths(firstLater), depths(firstLater)];
-    plot(dr, dpth, 'LineStyle', '-', 'Color', [1, 0, 0, 0.5], 'LineWidth', 10);
+    plot(dr, dpth, 'LineStyle', '-', 'Color', [red, 0.5], 'LineWidth', 10);
     
     dr = plottedData{fg,2}(firstLatest,:);
     dpth = [depths(firstLatest), depths(firstLatest)];
-    plot(dr, dpth, 'LineStyle', '-', 'Color', [0, 1, 0, 0.5], 'LineWidth', 10);
+    plot(dr, dpth, 'LineStyle', '-', 'Color', [green, 0.5], 'LineWidth', 10);
     
     dr = plottedData{fg,2}(firstL6,:);
     dpth = [depths(firstL6), depths(firstL6)];
-    plot(dr, dpth, 'LineStyle', '-', 'Color', [0, 0.5, 1, 0.5], 'LineWidth', 10);
+    plot(dr, dpth, 'LineStyle', '-', 'Color', [blue, 0.5], 'LineWidth', 10);
     if fg == 3
         leg = legend;
         leg.String = [{'Group 1'}, {'Group 2'}, {'L6'}];
@@ -55,12 +60,13 @@ for fg = 1:3
     for unit = 1:length(ID)
         dr = plottedData{fg,2}(unit,:);
         dpth = [depths(unit), depths(unit)];
-        if ismember(ID{unit}, L6) & unit ~= firstL6
-            plot(dr, dpth, 'LineStyle', '-', 'Color', [0, 0.5, 1, 0.5], 'LineWidth', 10);
-        elseif ismember(ID{unit}, Later) & unit ~= firstLater
-            plot(dr, dpth, 'LineStyle', '-', 'Color', [1, 0, 0, 0.5], 'LineWidth', 10);
+        
+        if ismember(ID{unit}, Later) & unit ~= firstLater
+            plot(dr, dpth, 'LineStyle', '-', 'Color', [red, 0.5], 'LineWidth', 10);
         elseif ismember(ID{unit}, Latest) & unit ~= firstLatest
-            plot(dr, dpth, 'LineStyle', '-', 'Color', [0, 1, 0, 0.5], 'LineWidth', 10);
+            plot(dr, dpth, 'LineStyle', '-', 'Color',[green, 0.5], 'LineWidth', 10);
+        elseif ismember(ID{unit}, L6) & unit ~= firstL6
+            plot(dr, dpth, 'LineStyle', '-', 'Color', [blue 0.5], 'LineWidth', 10);
         end
     end
     ax = gca;
@@ -68,7 +74,7 @@ for fg = 1:3
     ax.YLabel.String = 'Depth [\mum]';
     ax.XLabel.String = '\DeltaRate [Hz]';
     ax.FontName = 'Arial';
-    ax.FontSize = 20;
+    ax.FontSize = 10;
     ax.YLim = [-1600, 0];
     % ax.XLim = [-50, 50];
     % ax.XTick = [-50:10:50];

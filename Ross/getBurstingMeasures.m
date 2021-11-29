@@ -48,6 +48,7 @@ if length(Bursts) == 0
     nBursts = 0;
     burstSpkFreq = zeros(25,1);
     burstCF = 0;
+    eventRatio = 0;
 else
     nBursts = length(Bursts);
     

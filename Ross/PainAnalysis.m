@@ -352,8 +352,6 @@ for shankNo = 1:nShanks
         
         ax = gca;
         ax.FontSize = 14;
-        ax = gca;
-        ax.FontSize = 14;
     end
     
     % configureFigureToPDF(SpontaneousBox);

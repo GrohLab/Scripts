@@ -4,7 +4,7 @@ inds = find(ismember(clWaveforms(:,1), ID));
 for a = 1:length(ID)
     fig = figure('color', 'white');
     ind = inds(a);
-    [bartho, peak2Ind] = getBarthoMeasure((mean(clWaveforms{ind,2},2)), fs);
+    [bartho, peak2Ind] = getBarthoMeasure(mean(clWaveforms{ind,2},2), fs);
     plot(mean(clWaveforms{ind,2},2), 'Color', 'b');
     fig = gcf;
     ax = fig(1).Children;
@@ -13,8 +13,8 @@ for a = 1:length(ID)
     
     trough = min(mean(clWaveforms{ind,2},2));
     troughInd = find(ismember(mean(clWaveforms{ind,2},2), trough));
-%     peak2 = max(mean(clWaveforms{ind,2}(troughInd:end,:),2));
-%     peak2Ind = find(ismember(mean(clWaveforms{ind,2},2), peak2));
+     peak2 = max(mean(clWaveforms{ind,2}(troughInd:end,:),2));
+     peak2Ind = find(ismember(mean(clWaveforms{ind,2},2), peak2));
     hold on
     plot(peak2Ind*ones(100), linspace(trough, peak2, 100),...
         'LineStyle', '--', 'Color', 'k');

@@ -46,7 +46,7 @@ latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
-% tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2) & depths > -800;
+ %tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2) & depth < -700;
 taggedInd = spkInd(tagged);
 TaggedIDs = sortedData(taggedInd,1);
 nontagged = ~tagged & ~nan;

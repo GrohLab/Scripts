@@ -18,7 +18,6 @@
     
     
 minMech = 10;
-minLaser = 10;
 %% Finding and rearranging smrx files
 iOk = -1;
 impStr = 'Rhd';
@@ -56,12 +55,7 @@ end
 
 % Merging order
 fileOrder = (1:Nf)';
-fO = num2cell(fileOrder);
-for i = 1: length(fO)
-    fO{i} = num2str(fO{i});
-end
-
-defInput = fO;
+defInput = num2cell(num2str(fileOrder));
 answr = inputdlg(cellSmrxFiles,'File order',[1, 60],defInput);
 nFileOrder = str2double(answr);
 nSmrxFiles = smrxFiles;
@@ -74,7 +68,7 @@ else
 end
 clearvars nSmrxFiles nFileOrder
 %% getting ConditionSignals
-for i = 1:length(answr)
+for i = 1:length(str2num(cell2mat(answr)))
     getConditionSignalsBF(fopen([dataDir, '\', smrxFiles(i).name]));
     CondSigs(i).name = smrxFiles(i).name(1:end-5);
     CondSigs(i).Sig = load([dataDir, '\', CondSigs(i).name, '_CondSig.mat']);
@@ -133,7 +127,7 @@ for conscondSig = 1:length(CondSigs)
     end
 end
 if pwrMissing
-    fprintf('Could not find all laser intensities - consider renaming condsig files \n')
+    fprintf('Could not find all laser intensities - consider renaming condsig files')
 end
     
 
@@ -179,25 +173,15 @@ end
 %% Starting the Conditions Struct
 
 %% Splitting conditions by laser frequency
-
-% Need to make a spont condition if both minMech and min Laser are below
-% threshold.
-
-
-
 cc = 3;
 offset = 0;
 condHasFreq = [];
 trigHasFreq = [];
 condHasMech =[];
-stimFrequencies = cell(length(Trigs(laserInd).Triggers),1);
-pulseLength = cell(length(Trigs(laserInd).Triggers),1);
 for a = 1:length(Trigs(laserInd).Triggers)
-    if length(Trigs(mchInd).Triggers{1,a}) < minMech
-                condHasMech = [condHasMech; cc];
-    end
+    
     trig = Trigs(laserInd).Triggers{1,a};
-    if length(Trigs(laserInd).Triggers{1,a}) < minLaser
+    if isempty(trig)
         offset = offset + Trigs(laserInd).offset(a);
     else
         pulseInds = diff(trig') >= 0.1*fs;
@@ -207,59 +191,46 @@ for a = 1:length(Trigs(laserInd).Triggers)
                 fprintf('Have you got continuous pulses of different lengths?.\n')
                 fprintf('Time to alter the script to sort these.\n')
             end
-            pulseLength{a} = round(mean(diff(pulsedTriggers')/fs));
-            gaps = sort(unique(round(diff(trig(:,1)),-2))/fs,'ascend');
-            minIntervalInd = find(abs(diff([pulseLength{a}*ones(length(gaps),1), gaps]')) < 0.5);
-            if ~isempty(minIntervalInd)
-                minIntervalInd = minIntervalInd(1);
-                minInt = gaps(minIntervalInd);
-                
-                stimFrequencies{a} = sort(round(1./gaps(1:minIntervalInd-1)), 'ascend');
-            end
+            pulseLength = round(mean(diff(pulsedTriggers')/fs));
+            gaps = sort(unique(round(diff(trig(:,1)),-3))/fs,'ascend');
+            minIntervalInd = find(abs(diff([pulseLength*ones(length(gaps),1), gaps]')) < 0.5);
+            minInt = gaps(minIntervalInd);
+            
+            stimFrequencies = sort(round(1./gaps(1:minIntervalInd-1)), 'ascend');
         else
-            %gaps = sort(unique(round(diff(trig(:,1)),-3))/fs,'ascend'); % What if a condition has no pulses? e.g. Opto-tagging
-            gaps = sort(unique(diff(trig(:,1)))/fs,'ascend');
-            stimFrequencies{a} = round(1/gaps(1)); % assumption here that condition without continuous pulse has only one condition!
+            gaps = sort(unique(round(diff(trig(:,1)),-3))/fs,'ascend'); % What if a condition has no pulses? e.g. Opto-tagging
+            stimFrequencies = round(1/gaps(1));
             
         end
         
-        for i = 1:length(stimFrequencies{a})
-            stimInd = [diff(trig(:,1))> 0.9*fs/stimFrequencies{a}(i) & diff(trig(:,1)) < 1.1*fs/stimFrequencies{a}(i); false];
+        for i = 1:length(stimFrequencies)
+            stimInd = diff(trig(:,1))> 0.9*fs/stimFrequencies(i) & diff(trig(:,1)) < 1.1*fs/stimFrequencies(i);
             shiftInd = [false; stimInd(1:end-1)];
             combInd = stimInd | shiftInd; % come back to this, if last condition to be ran is not continuous pulse , then it might shave off the final trigger
-            Conditions(cc).name = ['Laser_', num2str(stimFrequencies{a}(i)), 'Hz_' num2str(Power{a}), '_AllTriggers'];
+            Conditions(cc).name = ['Laser_', num2str(stimFrequencies(i)), 'Hz_' num2str(Power{a}), '_AllTriggers'];
             Conditions(cc).Triggers = trig(combInd,:) + offset;
             condHasFreq = [condHasFreq, cc];
             trigHasFreq = [trigHasFreq, a];
+            if ~isempty(Trigs(mchInd).Triggers{1,a})
+                condHasMech = [condHasMech; cc];
+            end
             cc = cc + 1;
         end
         if ~isempty(pulsedTriggers)
-            Conditions(cc).name = ['Laser_', num2str(pulseLength{a}), 'sec_pulse_' num2str(Power{a}), '_AllTriggers']; % Change how this is calculated to better assess trigger allocation[
+            Conditions(cc).name = ['Laser_', num2str(pulseLength), 'sec_pulse_' num2str(Power{a}), '_AllTriggers']; % Change how this is calculated to better assess trigger allocation[
             Conditions(cc).Triggers = pulsedTriggers + offset;
-            minInt = pulseLength{a}*1.1;
-            cc = cc + 1;
+            minInt = pulseLength*1.1;
+            if ~isempty(Trigs(mchInd).Triggers{1,a})
+                condHasMech = [condHasMech; cc];
+            end
         end
-        
+        cc = cc + 1;
         offset = offset + Trigs(laserInd).offset(a);
     end
     
 end
 Conditions(1).name = 'Laser_AllTriggers';
 Conditions(1).Triggers = sort(cat(1, Conditions.Triggers),'ascend');
-
-% Neatening up Conditions
-emptycells = [];
-for e = 1:length(Conditions)
-    if isempty(Conditions(e).name)
-        emptycells = [emptycells; e];
-    end
-end
-emptycells = sort(emptycells, 'descend');
-for e = 1:length(emptycells)-1
-    emptyInd = emptycells(e);
- Conditions(emptyInd) = [];
-end
-cc = length(Conditions)+1;
 %% Getting laser conditions by block
 if ~isempty(condHasFreq)
     blockStart = cc;
@@ -287,7 +258,7 @@ end
 offset = 0;
 mechStart = cc;
 trigHasFreq = unique(trigHasFreq);
-c = 0;
+
 for a = 1:length(Trigs(mchInd).Triggers)
     if length(Trigs(mchInd).Triggers{1,a}) < minMech % assuming no smrx recording will purposefully contain fewer than minMech TTL pulses
         offset = offset + Trigs(mchInd).offset(a);
@@ -297,22 +268,33 @@ for a = 1:length(Trigs(mchInd).Triggers)
         trig = Trigs(mchInd).Triggers{1,a} + offset;
         offset = offset + Trigs(mchInd).offset(a);
         firstLaser = [];
+        if ~ismember(a, trigHasFreq) % what if laser freq is last recording?
+            nMechConds = length(pulseLength) + 1;
+            for i = 1:nMechConds-1
+                firstLaser = [firstLaser; Conditions(2 + i).Triggers(1,1)];
+            end
+        else
+            nMechConds = length(stimFrequencies) + length(pulseLength) + 1;
+            for i = 1:nMechConds-1
+                firstLaser = [firstLaser; Conditions(1 + i).Triggers(1,1)];
+            end
+        end
+        
+        sortedFirsts = sort(firstLaser, 'ascend');
         
         
-        nMechConds = length(stimFrequencies{a}) + length(pulseLength{a}) + 1;
-         
-        for i = 1:nMechConds-1
-            c = c + 1;
-            ccond = condHasMech(c);
-            
-            laserPairing = Conditions(ccond).name;
+        for i = 1:length(sortedFirsts)
+            if ~isempty(stimFrequencies)
+                ind = find(ismember(firstLaser, sortedFirsts(i))) + 2;
+            else
+                ind = find(ismember(firstLaser, sortedFirsts(i))) + 1;
+            end
+            laserPairing = Conditions(ind).name;
             HzInd = strfind(laserPairing, 'Hz');
-            if HzInd ~= false
+            if HzInd == true
                 Hz = laserPairing(HzInd-2:HzInd-1);
                 if contains(Hz, '_') || contains(Hz, ' ')
                     Hz = [Hz(2:end), 'Hz'];
-                else
-                    Hz = [Hz, 'Hz'];
                 end
             else
                 HzInd = strfind(laserPairing, 'sec');
@@ -326,13 +308,11 @@ for a = 1:length(Trigs(mchInd).Triggers)
             Conditions(cc).Triggers = trig(1+i:nMechConds:end,:);
             cc = cc + 1;
         end
-        
-     
         Conditions(cc).name = ['Mech_Control_', num2str(Power{a})];
         Conditions(cc).Triggers = trig(1:nMechConds:end,:);
         cc = cc + 1;
     end
- end
+end
 if length(Conditions)>= mechStart
     mechEnd = cc;
     Conditions(cc).name = 'Mech_All';
@@ -347,15 +327,15 @@ end
 
 if length(Conditions)>= mechStart
     nComparisons = (mechEnd-mechStart)/nMechConds;
-    lInd = condHasMech(condHasMech >= blockStart); % Need to sort out condHasMEch!
+    lInd = condHasMech(condHasMech >= blockStart);
     mInd = mechStart;
     for a = 1:nComparisons % change to mechEnd so it doesn't do something weird if LaserFreq is last recording
-        las = round((Conditions(lInd(a)).Triggers(:,1)),-6);
-        mech = round((Conditions(mInd).Triggers(:,1)),-6);
-        controlInd = ~ismembertol(las, mech);
+        las = round((Conditions(lInd(a)).Triggers),-3);
+        mech = round((Conditions(mInd).Triggers),-3);
+        controlInd = ~ismember(las, mech);
         Conditions(cc).name = ['Laser_Control', Conditions(mInd).name(11:end)];
-        Conditions(cc).Triggers(:,1) = Conditions(lInd(a)).Triggers(controlInd,1);
-        Conditions(cc).Triggers(:,2) = Conditions(lInd(a)).Triggers(controlInd,2);
+        Conditions(cc).Triggers(:,1) = Conditions(lInd(a)).Triggers(controlInd(:,1),1);
+        Conditions(cc).Triggers(:,2) = Conditions(lInd(a)).Triggers(controlInd(:,2),2);
         mInd = mInd + nMechConds;
         cc = cc + 1;
     end
@@ -371,7 +351,7 @@ for a = 1:mostTriggers
     Triggers.(Trigs(a).name) = [];
     for i = 1:length(Trigs(a).info)
         if isempty(Trigs(a).info{i})
-            offset = Trigs(mchInd).offset(i); % Check this, what if no mech stims?
+            offset = Trigs(mchInd).offset(i);
             Triggers.(Trigs(a).name) = [Triggers.(Trigs(a).name); zeros(offset,1)];
         else
             

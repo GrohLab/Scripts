@@ -1,6 +1,6 @@
 %% Prep Variables
-mrControl = clInfo.Mech_Control_4mW_Rate_Evoked-clInfo.Mech_Control_4mW_Rate_Spont;
-mrLaser = clInfo.Mech_Laser_5sec_4mW_Rate_Evoked-clInfo.Mech_Laser_5sec_4mW_Rate_Spont;
+mrControl = clInfo.Mech_Control_4mW_Mech_Rate_Evoked-clInfo.Mech_Control_4mW_preMech_Rate_Evoked;
+mrLaser = clInfo.Mech_Laser_5sec_4mW_Rate_Evoked-clInfo.Mech_Laser_5sec_4mW_preMech_Rate_Evoked;
 data = table(clInfo.id, clInfo.abs_depth, mrControl, mrLaser);
 mrInd = ismember(data.Var1, clInfo.id(clInfo.Mech_Control_4mW_R==true));
 data = data(find(mrInd),:);

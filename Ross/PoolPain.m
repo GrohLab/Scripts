@@ -62,3 +62,5 @@ for exp = 1:nExpts
     Obj.Experiments(exp).(ObjNames{tsv}) = getClusterInfo([indx.folder, '\', indx.name]);
 end
 
+
+%%
