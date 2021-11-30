@@ -12,7 +12,8 @@ end
 name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Latency vs Depth: ', name];
-Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs);
+tm = 5e-2;
+Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 Dpth = -1*Dpth;
