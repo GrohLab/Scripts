@@ -68,7 +68,7 @@ hold off
 legend
 lgd = legend;
 for sub = 1:nkm
-    lgd.String{sub} = ['Group ', num2str(sub), ' mn +/- SD'];
+    lgd.String{sub} = ['Group ', num2str(sub), ' mean latency +/- SD'];
 end
 
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
