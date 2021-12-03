@@ -27,7 +27,7 @@ jitter = randi(20,size(depth));
 depth = depth + jitter; % adding small jitter for visualisation
 depth = -1*depth;
 kmat = [mn, sd, depth];
-km = kmeans(kmat, nkm, 'Replicates', 40);
+km = kmeans(kmat, nkm, 'Replicates', 50);
 TaggedIDs = cell(nkm,1);
  
 % % Removing and highlighting dodgy units from plot
