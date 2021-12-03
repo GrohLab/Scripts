@@ -529,15 +529,19 @@ for ccond = 1:Nccond
         filtStr);
     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
-    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
-    stims = stims - median(stims,2);
-    for cs = 1:size(stims,1)
-        if abs(log10(var(stims(cs,:),[],2))) < 13
-            [m,b] = lineariz(stims(cs,:),1,0);
-            stims(cs,:) = m*stims(cs,:) + b;
-        else
-            stims(cs,:) = zeros(1,Nt);
+    if exist('cst', 'var') && ~isempty(cst)
+        stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+        stims = stims - median(stims,2);
+        for cs = 1:size(stims,1)
+            if abs(log10(var(stims(cs,:),[],2))) < 13
+                [m,b] = lineariz(stims(cs,:),1,0);
+                stims(cs,:) = m*stims(cs,:) + b;
+            else
+                stims(cs,:) = zeros(1,Nt);
+            end
         end
+    else
+        stims = zeros(1, Nt);
     end
     psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
         sweeps, timeLapse, binSz, [consCondNames(ccond); pclID(ordSubs)],...
