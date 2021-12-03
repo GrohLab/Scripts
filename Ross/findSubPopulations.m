@@ -27,29 +27,31 @@ jitter = randi(20,size(depth));
 depth = depth + jitter; % adding small jitter for visualisation
 depth = -1*depth;
 kmat = [mn, sd, depth];
-km = kmeans(kmat, nkm, 'Replicates', 50);
-TaggedIDs = cell(nkm,1);
- 
-% % Removing and highlighting dodgy units from plot
-% lowestLat = 2; 
-% lowestSD = 0.2;
-% dodgyMean = ID(find(mn<lowestLat));
-% dodgySD = ID(find(sd<lowestSD));
-% fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
-%     '\n and have been removed from the plot: \n']);
-% for a = 1:length(dodgyMean)
-%     fprintf([num2str(dodgyMean{a}), '\n']);
-% end
-% fprintf(['\n The following units have standard devations lower than ', num2str(lowestSD), 'ms '...
-%     '\n and have been removed from the plot: \n']);
-% for a = 1:length(dodgySD)
-%     fprintf([num2str(dodgySD{a}), '\n']);
-% end
-% 
-% mn(mn<lowestLat) = NaN;
-% sd(sd<lowestSD) = NaN;
-% nan = isnan(mn) | isnan(sd);
 
+ 
+% Removing and highlighting dodgy units from plot
+lowestLat = 2; 
+lowestSD = 0.2;
+dodgyMean = ID(find(mn<lowestLat));
+dodgySD = ID(find(sd<lowestSD));
+fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
+    '\n and have been removed from the plot: \n']);
+for a = 1:length(dodgyMean)
+    fprintf([num2str(dodgyMean{a}), '\n']);
+end
+fprintf(['\n The following units have standard devations lower than ', num2str(lowestSD), 'ms '...
+    '\n and have been removed from the plot: \n']);
+for a = 1:length(dodgySD)
+    fprintf([num2str(dodgySD{a}), '\n']);
+end
+
+mn(mn<lowestLat) = NaN;
+sd(sd<lowestSD) = NaN;
+nan = isnan(mn) | isnan(sd);
+
+
+km = kmeans(kmat(~nan,:), nkm, 'Replicates', 50);
+TaggedIDs = cell(nkm,1);
 
 colours = [0,0,0; 1,0,0; 0,1,0; 0,0,1; 1,1,0; 1,0,1];
 
