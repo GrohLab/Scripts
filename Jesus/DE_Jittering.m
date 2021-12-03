@@ -337,6 +337,7 @@ propPieFileName = fullfile(figureDir,...
     responseWindow*1e3, [Ntn-Nrn, Nrn]));
 saveFigure(respFig, propPieFileName, 1);
 % Potentiated, depressed and unmodulated clusters pie
+if cchCond > 1
 potFig = figure("Color", "w");
 pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
     'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
@@ -355,7 +356,7 @@ ylabel("Cluster proportion"); lgnd = legend("show");
 set(lgnd, "Box", "off", "Location", "best")
 saveFigure(MIFig, fullfile(figureDir,...
     "Modulation index dist evoked & after induction"), 1)
-
+end
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
     ' ''responding'' clusters?'], 'Waveforms', 'Yes', 'No', 'No');
