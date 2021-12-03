@@ -285,7 +285,7 @@ end
 wruIdx = all(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 
-fprintf('%d whisker responding clusters:\n', Nwru);
+fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 
 %% Cluster population proportions 
