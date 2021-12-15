@@ -579,7 +579,6 @@ if strcmpi(rasAns,'Yes')
         'PromptString', 'Select clusters',...
         'SelectionMode', 'multiple');
     if ~iOk
-        
         return
     end
     % Color of the rectangle
@@ -665,7 +664,7 @@ if strcmpi(rasAns,'Yes')
         timeLapse*1e3);
     rasFigPath = fullfile(figureDir, rasFigName);
     arrayfun(@(x) set(x,'Color','none'), ax); 
-    saveFigure(rasFig, rasFigPath);
+    saveFigure(rasFig, rasFigPath, 1);
     clearvars ax rasFig
 end
 %% Response speed characterization
