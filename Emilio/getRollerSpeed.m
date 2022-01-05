@@ -33,3 +33,36 @@ figure; plot(rollTx(1:end-1), [v, vf]);
 %% Trigger times
 % The point of this section is to equalize the triggers from the arduino
 % with the trigger signals recorded from the Intan board.
+expDate.Format = dateFormStr; atTimes = tTimes{:}.*us;
+% Similar strategy as with the video but without addin 10 seconds.
+fID = fopen(fullfile(dataDir,...
+    "TriggerSignals" + string(expDate) + ".bin"), "r");
+trig = fread(fID, [2, Inf], 'uint16=>int32'); [~] = fclose(fID);
+trig = median(trig, 2) - trig; %trig = int16(trig);
+figure; plot(trig'); 
+% Sampling frequency of the intan board: 30 kHz. We also extract the
+% trigger onsets of each pulse using the StepWaveform object.
+fs = 3e4; pObj = StepWaveform(trig(1,:), fs);
+pSubs = pObj.subTriggers; itTimes = pSubs./fs;
+% Moving all arduino times from their arbitrary time back to zero.
+atTimes = atTimes - rollTx(1);
+% Removing repeated values from the trigger times.
+atTimes([false;diff(atTimes(:,1)) < 1],:) = [];
+% If the arduino trigger times are different from the intan, we need to
+% fix it.
+if size(itTimes,1) ~= size(atTimes)
+    % Oh no... they are different. we can exclude the intan extra times.
+    % But if you really feel up for it, you can estimate the time of
+    % arduino. I can search for it in my MATLAB history.
+    fprintf(1, 'Hm... What should we do?');
+end
+% If RollerSpeed.mat doesn't exist in the experiment folder, then create
+% it.
+rsfName = fullfile(dataDir, "RollerSpeed" + string(expDate) + ".mat");
+if ~exist(rsfName, 'file')
+    save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx")
+end
+%% Trigger average of the roller speed.
+timeSpan = [-1, 2];
+[~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeSpan, rollFs,...
+    rollFs, [], {vf});
