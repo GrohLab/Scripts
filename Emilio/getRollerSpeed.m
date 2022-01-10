@@ -63,6 +63,7 @@ if size(itTimes,1) ~= size(atTimes)
     % But if you really feel up for it, you can estimate the time of
     % arduino. I can search for it in my MATLAB history.
     fprintf(1, 'Hm... What should we do?');
+    return
 end
 % If RollerSpeed.mat doesn't exist in the experiment folder, then create
 % it.
