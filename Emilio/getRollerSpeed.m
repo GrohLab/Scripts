@@ -71,6 +71,16 @@ rsfName = fullfile(dataDir, "RollerSpeed" + string(expDate) + ".mat");
 if ~exist(rsfName, 'file')
     save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx")
 end
+%% Figure time! 
+fFig = figure(); 
+plot(rollTx(1:end-1) - rollTx(1), vf, "DisplayName", "Roller velocity (speed)")
+hold on; stem(itTimes(:,1), ones(size(itTimes, 1), 1), "DisplayName", "Intan triggers")
+stem(atTimes, -ones(size(atTimes, 1), 1), "DisplayName", "Arduino triggers")
+lgnd = legend("show"); set(lgnd, "Box", "off", "Location", "best")
+title("Roller velocity and triggers"); xlabel("Time [s]"); 
+ylabel("Roller velocity [encoder step per second]")
+set(gca, "Box", "off", "Color", "none")
+saveFigure(fFig, fullfile(dataDir, "Roller velocity and triggers"), 1);
 %% Trigger average of the roller speed.
 timeSpan = [-1, 2];
 [~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeSpan, rollFs,...
