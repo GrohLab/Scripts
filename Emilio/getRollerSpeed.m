@@ -2,10 +2,18 @@
 % column is the position and the second the time in microseconds, a cell
 % array with the trigger times (tTimes), and the corrected values from the
 % arduino rollTrigTable
+% Microseconds
 us = 1e-6;
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211209\Roller_position2021-12-09T18_35_15.csv";
+% cell- and arrayfun auxiliary variable.
+fnOpts = {'UniformOutput', false};
+% Encoder to centimeters per second.
+en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
+%% Choosing the file
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211207\1.6bar\Roller_position2021-12-07T18_42_05.csv";
+% rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
+%     "Choose directory to work with");
 [rp, tTimes, rollTrigTable] = readRollerPositionsFile(rfName);
-%% Roller speed
+%% Reading and preprocessing roller speed
 % Get the folder and file name of the experiment to get the video frame
 % rate to re-sample the position signal.
 [dataDir, rollBaseName] = fileparts(rfName);
@@ -28,8 +36,9 @@ title("Roller position")
 v = diff(rx); 
 [b, a] = butter(10, (2*18)/rollFs, "low");
 vf = filtfilt(b, a, v);
+%TODO: Beautify figure with butter and flies, or fries.
 figure; plot(rollTx(1:end-1), [v, vf]);
-%% Trigger times
+%% Getting trigger times
 % The point of this section is to equalize the triggers from the arduino
 % with the trigger signals recorded from the Intan board.
 expDate.Format = dateFormStr; atTimes = tTimes{:}.*us;
