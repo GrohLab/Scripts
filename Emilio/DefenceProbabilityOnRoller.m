@@ -1,14 +1,25 @@
 fnOpts = {'UniformOutput', false};
-en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
-Nt = size(vStack, 1);
-[ms, bs] = lineariz([1, Nt], timeLapse(2), timeLapse(1));
-stTx = (1:Nt)'*ms + bs;
+en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
+[Nts, NTa] = size(vStack);
+[ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
+% Stack time axis --> st T x
+stTx = (1:Nts)'*ms + bs;
+% Spontaneous logical flag.
+spontFlag = stTx < 0;
 % No previous movement before nor after the stimulus
 rmsTh = 0.85;
+% Logical Flag to exclude trials with 'too much movement' before or after
+% the trigger.
 excludeFlag = rms(vStack(spontFlag,:)) > rmsTh | rms(vStack) > 0.9;
 % Previous movement before 
 % excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
+
+delayFlags = true(NTa,1); Nccond = 1;
+% Number of triggers (Number of alignment points) Na excluding the
+% indicated trials.
 Na = sum(delayFlags & ~excludeFlag(:));
+
+% Loop to get the maximum value of the roller velocity.
 rngRollSpeed = cell(Nccond,1);
 responseWindow = [0, 0.4];
 responseFlags = stTx >= responseWindow(1) & stTx <= responseWindow(2);
