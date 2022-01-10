@@ -82,6 +82,63 @@ ylabel("Roller velocity [encoder step per second]")
 set(gca, "Box", "off", "Color", "none")
 saveFigure(fFig, fullfile(dataDir, "Roller velocity and triggers"), 1);
 %% Trigger average of the roller speed.
-timeSpan = [-1, 2];
-[~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeSpan, rollFs,...
-    rollFs, [], {vf});
+timeLapse = [-1, 2];
+[~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeLapse, rollFs,...
+    rollFs, [], vf); vStack = squeeze(vStack);
+plotEEGchannels(vStack', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
+
+[Nts, NTa] = size(vStack);
+[ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
+% Stack time axis --> st T x
+stTx = (1:Nts)'*ms + bs;
+% Spontaneous logical flag.
+spontFlag = stTx < 0;
+% No previous movement before nor after the stimulus
+rmsTh = 0.85;
+% Logical Flag to exclude trials with 'too much movement' before or after
+% the trigger.
+excludeFlag = rms(vStack(spontFlag,:)) > rmsTh | rms(vStack) > 0.9;
+% Previous movement before 
+% excludeFlag = rms(vStack(spontFlag,:)) < 0.85;
+
+delayFlags = true(NTa,1); Nccond = 1;
+% Number of triggers (Number of alignment points) Na excluding the
+% indicated trials.
+Na = sum(delayFlags & ~excludeFlag(:));
+
+% Loop to get the maximum value of the roller velocity.
+rngRollSpeed = cell(Nccond,1);
+responseWindow = [0, 0.4];
+responseFlags = stTx >= responseWindow(1) & stTx <= responseWindow(2);
+for ccond = 1:Nccond
+    rngRollSpeed{ccond} =...
+        max(abs(vStack(responseFlags, delayFlags(:, ccond) & ~excludeFlag(:))))';
+end
+% Maximum number of trials
+maxNt = max(cellfun(@numel, rngRollSpeed));
+% Placing the trial's maximum speed in a matrix
+speedsMat = cellfun(@(x) cat(1, x, nan(maxNt - size(x,1),1)),...
+    rngRollSpeed, fnOpts{:}); speedsMat = cat(2, speedsMat{:});
+speedsMat = speedsMat * en2cm;
+% Cutting on different thresholds for all trials
+thetaSpeed = 0.1:0.1:3;
+moveFlag = speedsMat > thetaSpeed;
+probMove = sum(moveFlag)./Na; probMove = squeeze(probMove);
+probFig = figure; plot(thetaSpeed, probMove'); ylim([0,1])
+set(gca, "Box", "off", "Color", "none")
+generalProb = nnz(moveFlag)./numel(moveFlag);
+puffIntensity = strsplit(string(dataDir), "\");
+puffIntensity = puffIntensity(end);
+lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
+ylabel("Trial proportion / Movement probability")
+xlabel("Speed threshold \theta [cm/s]")
+title(sprintf("Trial proportion with elicited movement\n(General prob: %.2f)",...
+    generalProb))
+%% Save?
+sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
+probFigName = ...
+    sprintf('Movement probability EX%.2f RW%.1f - %.1f s',...
+    rmsTh, responseWindow);
+if strcmpi(sveFigAns, "Yes")
+    saveFigure(probFig, fullfile(dataDir, probFigName), 1)
+end
