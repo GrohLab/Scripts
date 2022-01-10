@@ -27,8 +27,7 @@ title("Roller position")
 % to locate the small movements of the mouse.
 v = diff(rx); 
 [b, a] = butter(10, (2*18)/rollFs, "low");
-vf = filtfilt(b, a, rs);
-%TODO: Beautify figure with butter and flies.
+vf = filtfilt(b, a, v);
 figure; plot(rollTx(1:end-1), [v, vf]);
 %% Trigger times
 % The point of this section is to equalize the triggers from the arduino
