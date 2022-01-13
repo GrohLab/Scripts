@@ -75,7 +75,7 @@ atTimes = atTimes - rollTx(1);
 atTimes([false;diff(atTimes(:,1)) < 1],:) = [];
 % If the arduino trigger times are different from the intan, we need to
 % fix it.
-if size(itTimes,1) ~= size(atTimes)
+if size(itTimes,1) ~= size(atTimes,1)
     % Oh no... they are different. we can exclude the intan extra times.
     % But if you really feel up for it, you can estimate the time of
     % arduino. I can search for it in my MATLAB history.
