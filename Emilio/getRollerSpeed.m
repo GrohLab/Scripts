@@ -7,7 +7,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211207\1.6bar\Roller_position2021-12-07T18_42_05.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211209\2.2bar\Roller_position2021-12-09T18_44_00.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 [rp, tTimes, rollTrigTable] = readRollerPositionsFile(rfName);
