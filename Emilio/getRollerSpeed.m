@@ -21,7 +21,23 @@ dateFormStr = 'yyyy-MM-dd''T''HH_mm_ss';
 expDate = datetime(expDate, 'InputFormat', dateFormStr);
 vidDate = expDate + seconds(10); vidDate.Format = dateFormStr;
 vfName = fullfile(dataDir, "roller" + string(vidDate) + ".avi");
-vidObj = VideoReader(vfName); fr = vidObj.FrameRate;
+try
+    vidObj = VideoReader(vfName);
+catch
+    vfName = dir(fullfile(dataDir, "*.avi"));
+    if numel(vfName) > 1
+        sel = listdlg("ListString", arrayfun(@(x) x.name, vfName,...
+            'UniformOutput', false), "SelectionMode", "multiple");
+        if isempty(sel)
+            fprintf(1, 'Cancelling...\n')
+            return
+        end
+        vfName = fullfile(vfName(sel).folder, vfName(sel).name);
+    else
+        vfName = fullfile(vfName.folder, vfName.name);
+    end
+end
+fr = vidObj.FrameRate;
 % Computing a regular-interval time array in seconds to interpolate in
 % between the asynchronous roller position values.
 rollFs = fr; rollTx = (rp(1,2)*us:1/rollFs:rp(end,2)*us)';
