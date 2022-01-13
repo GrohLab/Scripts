@@ -159,3 +159,30 @@ probFigName = ...
 if strcmpi(sveFigAns, "Yes")
     saveFigure(probFig, fullfile(dataDir, probFigName), 1)
 end
+%% DeepLabCuts - whisker movements as a reaction. 
+[~, vfNameBase] = fileparts(vfName);
+dlcffName = dir(fullfile(dataDir, string(vfNameBase)) + "*filtered.csv");
+dlcffName = fullfile(dataDir, dlcffName.name);
+dlcTable = readDLCData(dlcffName);
+[a_bodyParts, refStruct] = getBehaviourSignals(dlcTable);
+% Left whiskers
+lw = mean(a_bodyParts{:,{'lw1', 'lw2', 'lw3', 'lw4'}},2);
+lw = lw - mean(lw);
+% Right whiskers
+rw = mean(a_bodyParts{:,{'rw1', 'rw2', 'rw3', 'rw4'}},2);
+rw = rw - mean(rw);
+% Nose signal
+nose = a_bodyParts{:,"nose"} - mean(a_bodyParts{:,"nose"});
+% Trigger cut
+sNames = ["LeftWhiskers","RightWhiskers","Nose"];
+[~, dlcStack] = getStacks(false, round(itTimes * fr), 'on', timeLapse,...
+    fr, fr, [], lw, rw, nose);
+for cbp = 1:size(dlcStack,1)
+    plotEEGchannels(squeeze(dlcStack(cbp,:,:))', [], diff(timeLapse),...
+        fr, 1, -timeLapse(1));
+    title(sNames(cbp))
+    figure; plot(stTx, squeeze(dlcStack(cbp,:,:)), "LineWidth", 0.5,...
+        "Color", 0.75*ones(3,1)); hold on;
+    plot(stTx, mean(dlcStack(cbp, :, :), 3), "LineWidth", 2, "Color", "k")
+    title(sNames(cbp))
+end
