@@ -6,8 +6,6 @@
 us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
-% Encoder to centimeters per second.
-en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
 %% Choosing the file
 rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211207\1.6bar\Roller_position2021-12-07T18_42_05.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
@@ -27,6 +25,9 @@ vidObj = VideoReader(vfName); fr = vidObj.FrameRate;
 % Computing a regular-interval time array in seconds to interpolate in
 % between the asynchronous roller position values.
 rollFs = fr; rollTx = (rp(1,2)*us:1/rollFs:rp(end,2)*us)';
+% Encoder to centimeters per second.
+en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
+% Roller time axis
 rx = interp1(rp(:,2)*us, rp(:,1), rollTx, 'pchip');
 %TODO: Beautify this figure
 figure; plot(rp(:,2)*us, rp(:,1), rollTx, rx);
