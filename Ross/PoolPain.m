@@ -1,6 +1,9 @@
 % PoolPain is a script that takes in all the experiments to be analysed
 % together and will then analyse them ala DE_Jittering/PAIN scripts
 
+% It is recommended to analyse eache experiment individually to assess
+% whether each experiment worked and should be included
+
 
 %% Choose a Directory to save info to
 pooledDataDir = uigetdir('Z:\',...
@@ -45,7 +48,7 @@ for exp = 1:nExpts
     mouseIDfind = strfind(files{2}.name, 'm');
     mouseIDfind = mouseIDfind(1);
     find_ = strfind(files{2}.name, '_');
-    find_ = find_(1)-1;
+    find_ = find_(1);
     mouseID{exp} = files{2}.name(mouseIDfind:find_);
     
     
@@ -287,6 +290,8 @@ for cExp = 1:nExpts
         return
     end
     
+    cchCond = flip(cchCond); % Flip the conditions to get Control on x-axis later
+    
     % Select the onset or the offset of a trigger
     fprintf(1,'Condition(s):\n')
     fprintf('- ''%s''\n', Conditions(auxSubs(cchCond)).name)
@@ -299,7 +304,7 @@ for cExp = 1:nExpts
     end
     % Subscript to indicate the conditions with all whisker stimulations,
     % whisker control, laser control, and the combination whisker and laser.
-    consideredConditions = auxSubs(cchCond);
+    consideredConditions = cchCond;
     Nccond = length(consideredConditions);
     
     % Select the onset or the offset of a trigger
@@ -489,6 +494,29 @@ for cExp = 1:nExpts
         cStack = cat(1, cStack, auxCStack);
     end
 end
+
+%% Homogenising the condition names
+
+controlFlag = false(Nccond,1);
+mechFlag = false(Nccond,1);
+lasFlag = false(Nccond,1);
+
+for ccond = 1:Nccond
+    controlFlag(ccond,1) = ~isempty(strfind(consCondNames{1, ccond}, 'Control'));
+    mechFlag(ccond,1) = ~isempty(strfind(consCondNames{1, ccond}, 'Mech'));
+    lasFlag(ccond,1) = ~isempty(strfind(consCondNames{1, ccond}, 'Laser'));
+end
+
+if sum(mechFlag & controlFlag) > 0
+    consCondNames{mechFlag&controlFlag} = 'Mech_Control';
+end
+if sum(mechFlag & lasFlag) > 0
+    consCondNames{mechFlag&lasFlag} = 'Mech_Laser';
+end
+if sum(lasFlag & controlFlag) > 0
+    consCondNames{lasFlag&controlFlag} = 'Laser_Control';
+end
+
 %%
 if ~any(ismember(All_Units.Properties.VariableNames,'ActiveUnit'))
     try
@@ -497,20 +525,379 @@ if ~any(ismember(All_Units.Properties.VariableNames,'ActiveUnit'))
     catch
         All_Units = addvars(All_Units,false(size(All_Units,1),1),'After','id',...
             'NewVariableNames','ActiveUnit');
-        All_Units{sortedData(activeUnits,1),'ActiveUnit'} = true;
+        All_Units{sortedData(activeUnits==1,1),'ActiveUnit'} = true;
         fprintf(1,'Not all clusters are curated!\n')
         fprintf(1,'%s\n',dataDir)
     end
     try
-        writeClusterInfo(All_Units,fullfile(dataDir,'cluster_info.tsv'),true);
+        writeClusterInfo(All_Units,fullfile(pooledDataDir,'All_Units.tsv'),true);
     catch
         fprintf(1,'Unable to write cluster info for %s\n',pooledDataDir)
     end
 end
 
-gclID = All_Units{All_Units.ActiveUnit == 1,'id'};
+gclID = All_Units{All_Units.ActiveUnit == true,'id'};
 Ncl = numel(gclID);
 Ne = size(discStack, 1);
+
+
+%% Optotagging and Separating Populations
+
+
+
+rng('default');
+
+for cExp = 1:nExpts
+    dataDir = Analysis.Experiments(cExp).Directory;
+    sortedData = Analysis.Experiments(cExp).all_channels.sortedData;
+    fs = Analysis.Experiments(cExp).all_channels.fs;
+    Conditions = Analysis.Experiments(cExp).analysis.Conditions;
+    Triggers = Analysis.Experiments(cExp).analysis.Triggers;
+    clInfo = Analysis.Experiments(cExp).cluster_info;
+    
+    clInd = ismember(clInfo.id, gclID);
+    Depths = table(clInfo.id(clInd), clInfo.abs_depth(clInd));
+    Depths = sortrows(Depths,'Var2','ascend');
+    ID = Depths{:,1};
+    depth = Depths.Var2;
+    spkInd = [];
+    for i = 1:length(ID)
+        spkInd = [spkInd; find(ismember(sortedData(:,1), ID(i)))];
+    end
+    
+    tm = 5e-2;
+    
+    
+    
+    
+    
+    condNames = arrayfun(@(x) x.name,Conditions,'UniformOutput',false);
+    condGuess = contains(condNames, 'whiskerall', 'IgnoreCase', true);
+    % Choose the conditions to create the stack upon
+    [tCond, iOk] = listdlg('ListString',condNames,'SelectionMode','single',...
+        'PromptString',...
+        'which conditions would you like to use for the opto-tagging?',...
+        'InitialValue', find(condGuess), 'ListSize', [350, numel(condNames)*16]);
+    if ~iOk
+        fprintf(1,'Cancelling...\n')
+        return
+    end
+    
+    TriggerTimes = Conditions(tCond).Triggers;
+    [Latencies, Fidelities] = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
+    if cExp == 1
+        mn = (cellfun(@mean, Latencies)*1e3);
+        sd = (cellfun(@std, Latencies)*1e3);
+        jitter = randi(20,size(depth));
+        depth = depth + jitter; % adding small jitter for visualisation
+        depths = -1*depth;
+        depthID = ID;
+        spkInds = spkInd;
+        
+    else
+        mn = [mn; (cellfun(@mean, Latencies)*1e3)];
+        sd = [sd; (cellfun(@std, Latencies)*1e3)];
+        jitter = randi(20,size(depth));
+        depthID = [depthID; ID];
+        jitter = randi(20,size(depth));
+        depth = depth + jitter; % adding small jitter for visualisation
+        depths = [depths; -1*depth];
+        offset = length(spkInds);
+        spkInds = [spkInds; spkInd + offset];
+    end
+    
+    
+end
+
+% Optotagging
+
+
+% Time lapse, bin size, and spontaneous and response windows
+promptStrings = {'Tagged Latencies between [s]:','Tagged Standard Devs between [s]'};
+defInputs = {'2, 9', '0.2, 4'};
+answ = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
+if isempty(answ)
+    fprintf(1,'Cancelling...\n')
+    return
+else
+    latencyCutoffs = str2num(answ{1}); %#ok<*ST2NM>
+    if numel(latencyCutoffs) ~= 2
+        timeLapse = str2num(inputdlg('Please provide both the min and the max latency [s]:',...
+            'Time window',[1, 30], '-0.1, 0.1'));
+        if isnan(timeLapse) || isempty(timeLapse)
+            fprintf(1,'Cancelling... \n')
+            return
+        end
+    end
+    sdCutoffs = str2num(answ{2});
+end
+fprintf(1,'Tagged Latencies between: %.2f - %.2f ms\n',timeLapse(1)*1e3, timeLapse(2)*1e3)
+fprintf(1,'Tagged Standard Deviations between: %.2f - %.2f ms\n',responseWindow(1)*1e3, responseWindow(2)*1e3)
+
+
+
+
+% Removing and highlighting dodgy units from plot
+lowestLat = latencyCutoffs(1);
+lowestSD = sdCutoffs(1);
+dodgyMean = ID(find(mn<lowestLat));
+dodgySD = ID(find(sd<lowestSD));
+fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
+    '\n and have been removed from the plot: \n']);
+for a = 1:length(dodgyMean)
+    fprintf([num2str(dodgyMean{a}), '\n']);
+end
+fprintf(['\n The following units have standard devations lower than ', num2str(lowestSD), 'ms '...
+    '\n and have been removed from the plot: \n']);
+for a = 1:length(dodgySD)
+    fprintf([num2str(dodgySD{a}), '\n']);
+end
+
+mn(mn<lowestLat) = NaN;
+sd(sd<lowestSD) = NaN;
+nan = isnan(mn) | isnan(sd);
+fd = cell2mat(Fidelities);
+
+latencyCutoffs = sort(latencyCutoffs, 'ascend');
+sdCutoffs = sort(sdCutoffs, 'ascend');
+
+tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
+
+TaggedIDs = depthID(tagged);
+taggedInd = spkInds(tagged);
+%     TaggedIDs = sortedData(taggedInd,1);
+nontagged = ~tagged & ~nan;
+
+minDepth = min(depths(tagged));
+maxDepth = max(depths(tagged));
+
+name = 'Pooled Optotagging';
+fig = figure('Name', name, 'Color', 'White');
+
+subplot(3,2,2)
+x = [sum(nontagged), sum(tagged)];
+explode = [0, 1];
+% labels = {['Tagged Fraction = ',num2str(tg), '%'], ' '};
+pie(x, explode)
+ax = gca;
+ax.FontName = 'Arial';
+if sum(tagged) > 0
+    ax.Children(2).FaceColor = [0, 0.5, 1];
+    ax.Children(4).FaceColor = [0.5 0.5 0.5];
+else
+    ax.Children(2).FaceColor = [0.5 0.5 0.5];
+end
+ax.FontSize = 15;
+% ax.FontName = 'Times New Roman';
+
+% Formatting (text is in weird place if there are no tagged cells)
+
+if sum(tagged) == 0
+    lgd = legend;
+    lgd.String{1} = ['Untagged'];
+    text(-5,1.0,['Selection Criteria:'],'FontSize', 15 );
+    text(-5,0.75,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-5,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-5,-0.25,'Opto-tagged Units Displayed:', 'FontSize', 15);
+    text(-5,-0.5,['Depths between ' num2str(minDepth), ' and ',num2str(maxDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
+    lgd.String{2} = ['Opto-tagged'];
+    lgd.Location = 'northoutside';
+    %lgd.Box = 'off';
+    
+else
+    lgd = legend;
+    lgd.String{1} = ['Untagged'];
+    text(-6,1.5,['Selection Criteria:'],'FontSize', 15 );
+    text(-6,1,['Mean Latencies between ' num2str(latencyCutoffs(1)), ' and ',num2str(latencyCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-6,0.50,['Standard Deviations between ' num2str(sdCutoffs(1)), ' and ',num2str(sdCutoffs(2)), 'ms'], 'FontSize', 10);
+    text(-6,-0.5,'Opto-tagged Units Displayed:', 'FontSize', 15);
+    text(-6,-1,['Depths between ' num2str(maxDepth), ' and ',num2str(minDepth), '\mum'], 'Interpreter', 'tex', 'FontSize', 10);
+    lgd.String{2} = ['Opto-tagged'];
+    lgd.Location = 'northoutside';
+    %lgd.Box = 'off';
+end
+subplot(3,2,4)
+
+scatter(mn(~tagged),sd(~tagged), 5, [0.5, 0.5, 0.5], '*') % scatter(mn(~tagged),sd(~tagged), 1+4*fd(~tagged), [0.5, 0.5, 0.5], '*')
+hold on
+scatter(mn(tagged),sd(tagged),5, [0, 0.5, 1], '*') % scatter(mn(tagged),sd(tagged),1+4*fd(tagged), [0, 0.5, 1], '*')
+hold off
+pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
+% title(name, 'Interpreter', 'none');
+ylim([0,round(round(max(sd))+5,-1)]);
+%yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
+xlabel('First-Spike Latency [ms]');
+ylabel('StdDev [ms]', 'Interpreter', 'tex')
+% ax.XTickLabelRotation = -45;
+ax = gca;
+hold on
+laser = plot([0:pulseWidth], (ax.YLim(2))*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
+ax = gca;
+ax.FontName = 'Arial';
+ax.FontSize = 20;
+% ax.FontName = 'Times New Roman';
+% Create rectangle
+%lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
+
+lgd = legend;
+lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
+lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
+lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
+
+% rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
+% 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
+
+rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+lgd.FontSize = 8;
+
+
+subplot(1,2,1)
+
+errorbar(mn(~tagged),depths(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0.5,0.5,0.5]);
+hold on
+errorbar(mn(tagged),depths(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0,0.5,1]);
+hold off
+
+
+pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
+% title(name, 'Interpreter', 'none');
+ylim([round(round(min(depths),-2)/2,-2)*2-200,0]);
+yticks([round(round(min(depths),-2)/2,-2)*2-200:200:0]);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
+xlabel('First-Spike Latency [ms]');
+ylabel('Unit Depth [\mum]', 'Interpreter', 'tex')
+% ax.XTickLabelRotation = -45;
+ax = gca;
+hold on
+laser = plot([0:pulseWidth], ax.YLim(2)*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
+ax = gca;
+ax.FontName = 'Arial';
+ax.FontSize = 20;
+% ax.FontName = 'Times New Roman';
+% Create rectangle
+% lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
+
+lgd = legend;
+lgd.String{1} = (['Unit Mean +/- SD (n=', num2str(sum(nontagged)), ')']);
+lgd.String{2} = (['Opto-tagged Units (n=', num2str(sum(tagged)), ')']);
+lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
+% rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
+% 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
+
+rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+lgd.FontSize = 8;
+
+subplot(3,2,6)
+
+h = histogram(round(mn(~tagged)));
+h.FaceColor = [0.5, 0.5, 0.5];
+hold on
+j = histogram(round(mn(tagged)));
+j.FaceColor = [0, 0.5, 1];
+hold off
+
+pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
+% title(name, 'Interpreter', 'none');
+% ylim([0,sum(mode(round(mn)+5))]);
+%yticks([round(round(min(Dpth),-2)/2,-2)*2-200:200:0]);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
+yMax = max([max(h.BinCounts), max(j.BinCounts)]);
+ylim([0, round(yMax + 5, -1)]);
+xlabel('First-Spike Latency [ms]');
+ylabel('Frequency [no. of units]', 'Interpreter', 'tex')
+% ax.XTickLabelRotation = -45;
+ax = gca;
+ax.FontName = 'Arial';
+laserLngth = linspace(0, pulseWidth + 0.5);
+hold on
+laser = plot(laserLngth, (ax.YLim(2))*ones(length(laserLngth),1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
+ax.FontSize = 20;
+% ax.FontName = 'Times New Roman';
+% Create rectangle
+%lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
+
+
+rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth + 0.5, ax.YLim(2) - ax.YLim(1)], ...
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+
+lgd = legend;
+lgd.String{1} = ['Units (n=', num2str(sum(nontagged)), ')'];
+lgd.String{2} = ['Opto-tagged Units (n=', num2str(sum(tagged)), ')'];
+lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
+lgd.FontSize = 8;
+
+idxTagged = ismember(All_Units.id, TaggedIDs);
+if ~any(ismember(All_Units.Properties.VariableNames,'Tagged'))
+    All_Units = addvars(All_Units,idxTagged,'After','ActiveUnit',...
+        'NewVariableNames','Tagged');
+end
+
+
+
+%% Finding subpopulations (run Optotagging section first)
+nkm = 3;
+rng('default');
+
+name = 'Pooled Subpopulations';
+
+kmat = [mn, sd, depths];
+
+km = kmeans(kmat(~nan,:), nkm, 'Replicates', 50);
+GroupIDs = cell(nkm,1);
+
+colours = [0,0,0; 1,0,0; 0,1,0; 0,0,1; 1,1,0; 1,0,1];
+
+fig = figure('Name', name, 'Color', 'White');
+
+
+for sub = 1:nkm
+    GroupIDs{sub,1} = sub;
+    GroupIDs{sub,2} = depthID(km==sub);
+    errorbar(mn(km == sub),depths(km == sub),sd(km == sub), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', colours(sub,:), 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor', colours(sub,:));
+    hold on
+end
+hold off
+
+
+legend
+lgd = legend;
+for sub = 1:nkm
+    lgd.String{sub} = ['Group ', num2str(sub), ' mean latency +/- SD'];
+end
+
+pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
+% title(name, 'Interpreter', 'none');
+ylim([round(round(min(depths),-2)/2,-2)*2-200,0]);
+yticks([round(round(min(depths),-2)/2,-2)*2-200:200:0]);
+xlim([0 tm*1e3]);
+xticks(0:5:tm*1e3);
+xlabel('First-Spike Latency [ms]');
+ylabel('Unit Depth [\mum]', 'Interpreter', 'tex')
+
+ax = gca;
+hold on
+laser = plot([0:pulseWidth], ax.YLim(2)*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
+ax = gca;
+ax.FontName = 'Arial';
+ax.FontSize = 20;
+lgd.String{sub+1} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
+
+% rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
+% 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
+
+rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+lgd.FontSize = 8;
+
+
+
+
 
 
 %% Population analysis
@@ -522,7 +909,7 @@ if length(mouseID) > 1
         chExps = [chExps, mouseID{expNo}, '_'];
     end
 end
-
+chExps = chExps(1:end-1);
 [~,expName] = fileparts(pooledDataDir);
 dataDir = pooledDataDir;
 % Statistical tests
@@ -590,22 +977,22 @@ sfrAx = axes('Parent',sfrFig,'NextPlot','add');
 yeqxLine = line(sfrAx, [0;min(xyLims)], [0;min(xyLims)], yeqxOpts{:});
 scPts = scatter(sfrAx, pfr(:,1), pfr(:,2), scatOpts{:});
 text(sfrAx, double(pfr(:,1)), double(pfr(:,2)), gclID, 'FontSize', 9)
-axis(sfrAx,[0,xyLims(1),0,xyLims(2)],'square'); grid(sfrAx,'on'); 
+axis(sfrAx,[0,xyLims(1),0,xyLims(2)],'square'); grid(sfrAx,'on');
 grid(sfrAx, 'minor'); ptLine = line(sfrAx,[0;xyLims(1)],...
     [0;xyLims(1)]*sfrMdl(1) + sfrMdl(2), ptOpts{:});
 legend(sfrAx, [yeqxLine, ptLine]);
-xlabel(sprintf('%s_{fr} [Hz]',Conditions(cchCond(1)).name));
-ylabel(sprintf('%s_{fr} [Hz]',Conditions(cchCond(2)).name));
+xlabel(consCondNames{1});
+ylabel(consCondNames{2});
 ttlString = sprintf('Spontaneous firing rate %s vs. %s', ...
-        Conditions(cchCond).name); ttlFile = cat(2, ttlString, ...
-        chExps);
+    Conditions(cchCond).name); ttlFile = cat(2, ttlString, ...
+    chExps);
 structAns = inputdlg('What structure are you looking at?','Structure');
 if ~isempty(structAns)
     ttlString = cat(2,ttlString, sprintf(' (%s)', structAns{:}));
     ttlFile = cat(2, ttlFile, sprintf(' (%s)', structAns{:}));
-    structString = structAns{:}; 
+    structString = structAns{:};
 end
-title(sfrAx, ttlString); 
+title(sfrAx, ttlString);
 savefig(sfrFig, fullfile(figureDir, [ttlFile, '.fig'])); clearvars sfr*;
 %% Spontaneous modulation distribution
 % Proportion or ratio between conditions and number of bins (Nlb)
@@ -625,7 +1012,7 @@ sdAx.XAxis.Scale = "log"; xticklabels(sdAx, xticks(sdAx))
 grid(sdAx, 'on'); [~, ~, qVals, ~] =...
     exponentialSpread(binCounts, binCents, binCents([1,end]));
 % Depicting the area under first, second & third, and fourth quartile
-qVals10 = double(10.^[binCents(1), qVals([1,2,5,6]), binCents(Nlb)]); 
+qVals10 = double(10.^[binCents(1), qVals([1,2,5,6]), binCents(Nlb)]);
 binCents10 = double(10.^binCents); binCtsQV = interp1(binCents10,...
     binCounts, qVals10);
 sdaOpts = {"FaceAlpha", 0.6, "EdgeColor", "none", "FaceColor"};
@@ -637,7 +1024,7 @@ for cq = 1:length(qVals10)-1
 end
 % Median , mean, and mode markers
 [~, mxQSub] = max(binCounts); mLabels = ["Median","Mean","Mode"];
-triM = 10.^[qVals(3), nanmean(logData), binCents(mxQSub)]; 
+triM = 10.^[qVals(3), nanmean(logData), binCents(mxQSub)];
 triBCts = interp1(binCents10, binCounts, triM); mCMap = flip(hsv(3),1);
 for cm = 1:length(triM)
     line(sdAx, repmat(triM(cm),2,1), [0; triBCts(cm)],...
@@ -645,7 +1032,7 @@ for cm = 1:length(triM)
 end
 triMLines = get(sdAx, 'Children');
 ttlString = sprintf('Proportional change distribution %s & %s',...
-    Conditions(flip(cchCond)).name);
+    consCondNames{1:2});
 ttlFile = cat(2, ttlString, sprintf(' %d', chExps));
 if exist('structString','var')
     ttlString = cat(2, ttlString, sprintf(' (%s)', structString));
@@ -653,11 +1040,11 @@ if exist('structString','var')
 end
 lgnd = legend(sdAx, triMLines(1:length(triM))); title(sdAx, ttlString)
 lgnd.Box = 'off'; lgnd.Location = 'best';
-xlabel(sdAx, sprintf('%s multiplier to get %s fr', Conditions(cchCond).name))
+xlabel(sdAx, sprintf('%s multiplier to get %s fr', consCondNames{1:2}))
 ylabel(sdAx, "Population proportion"); saveFigure(sdFig,...
     fullfile(figureDir, ttlFile),1)
 %% Modulation index
-frNbin = 32; 
+frNbin = 32;
 
 evFr = cellfun(@(x) mean(x,2)./diff(responseWindow), Counts(:,2),...
     'UniformOutput', 0); evFr = cat(2, evFr{:}); SNr = evFr./pfr;
@@ -671,7 +1058,7 @@ end
 mdOpts = {figureDir, chExps, structString};
 
 [MIh(:,1), ~, ~, MIspon] = modulationDist(pfr, frNbin,...
-    'Spontaneous modulation index', mdOpts{:}); 
+    'Spontaneous modulation index', mdOpts{:});
 [MIh(:,2), ~, ~, MIevok] = modulationDist(evFr, frNbin,...
     'Evoked modulation index', mdOpts{:});
 ttls = "SNR modulation"; ttls(2) = ttls(1) + " responsive";
@@ -679,13 +1066,13 @@ ttls(3) = ttls(1) + " non-responsive"; ci = 1; SNR = zeros(frNbin, 3);
 ttls = ttls.cellstr;
 for cr = [true(size(H,1),1), any(H,2), ~any(H,2)]
     [SNR(:,ci),~,~,MIsnr] = modulationDist(SNr(cr,:), frNbin,...
-        ttls{ci}, mdOpts{:}); 
+        ttls{ci}, mdOpts{:});
     ci = ci + 1;
 end
 % sfrBPAx = axes('Parent', sfrFig, 'Position', [0.13, 0.8, 0.775, 0.2],...
 %     'Box','off', 'Color', 'none');
 % boxplot(sfrBPAx, MI, 'Orientation', 'horizontal', 'Symbol', '.',...
-%     'Notch', 'on'); sfrBPAx.Visible = 'off'; 
+%     'Notch', 'on'); sfrBPAx.Visible = 'off';
 % linkaxes([sfrAx, sfrBPAx], 'x');
 %% Add the response to the table
 try
@@ -705,7 +1092,7 @@ stackTx = (0:Nt-1)/fs + timeLapse(1) + 2.5e-3;
 
 [~,cnd] = find(delayFlags);
 [~, tmOrdSubs] = sort(trigTms, 'ascend');
-cnd = cnd(tmOrdSubs(1:length(cnd))); 
+cnd = cnd(tmOrdSubs(1:length(cnd)));
 trialAx = minutes(seconds(trigTms(tmOrdSubs)));
 % Modulation: distance from the y=x line.
 try
@@ -715,7 +1102,7 @@ catch
     All_Units = addvars(All_Units, zeros(size(All_Units,1),1),...
         'NewVariableNames', 'Modulation');
     All_Units{All_Units.ActiveUnit==1,'Modulation'} =... Thalamus
-       Results(1).Activity(2).Direction;
+        Results(1).Activity(2).Direction;
     %clInfoTotal{clInfoTotal.ActiveUnit==1,'Modulation'} =... Cortex with laser
     %    Results.Activity(1).Direction;
     modFlags = sign(All_Units{All_Units.ActiveUnit &...
@@ -834,7 +1221,7 @@ for pfp = fws
             ctMu = 1;
         end
         aiMu = mean(popMeanResp(pfp, (NaCs(2)+1):NaCs(3), [cmod,1]*[2;-1]));
-        if ~aiMu 
+        if ~aiMu
             aiMu = 1;
         end
         yyaxis(ax(cmod), 'right')
@@ -856,13 +1243,13 @@ for pfp = fws
     ylabel(ax(cmod), 'Spikes / Time window [Hz]'); xlabel(ax(cmod),...
         sprintf('(%.1f - %.1f [ms]) Trial_{%d trials} [min]',...
         focusPeriods(pfp,:)*1e3, trialBin))
-%     linkaxes(ax,'xy')
+    %     linkaxes(ax,'xy')
     tdFigName = string(...
         sprintf('Temporal dynamics exps %sFW%.1f-%.1f ms TB %d trials (f, prop, lines & bars)',...
         sprintf('%d ', chExps), focusPeriods(pfp,:)*1e3, trialBin));
-%     if ~isempty(dirNames) && exist('subFoldSel','var')
-%         tdFigName = tdFigName + " sf-" + dirNames{subFoldSel};
-%     end
+    %     if ~isempty(dirNames) && exist('subFoldSel','var')
+    %         tdFigName = tdFigName + " sf-" + dirNames{subFoldSel};
+    %     end
     tempFigName = fullfile(figureDir, tdFigName);
     saveFigure(tdFig, tempFigName);
 end
@@ -895,12 +1282,12 @@ for cmod = 1:size(popMeanFreq,3)
         trSubs = trEdges(1):trialBin:trEdges(2);
         clrSheetSq = squeeze(clrSheet(:,muTrSubs,cmod,:));
         surf(trialAx(trSubs), 1e3*focusPeriods(:,1), popMeanFreq(:,...
-            muTrSubs, cmod), clrSheetSq, srfOp{:}, 'Parent', ax); 
+            muTrSubs, cmod), clrSheetSq, srfOp{:}, 'Parent', ax);
     end
     cbOut = colorbar('Parent', summFig); cbOut.Label.String = ...
-        'Response [Hz]';box(ax,'off'); grid(ax,'on'); 
+        'Response [Hz]';box(ax,'off'); grid(ax,'on');
     xlim(ax, trialAx([NaCum(1)+1, NaCum(Nccond+1)])); ylim(ax,...
-        focusPeriods([1,end],1)*1e3); xlabel(ax, 'Trial time [min]'); 
+        focusPeriods([1,end],1)*1e3); xlabel(ax, 'Trial time [min]');
     ylabel(ax, 'Within-trial time [ms]'); zlabel(ax,...
         'Spike / within-trial window [Hz]'); title(ax, sprintf(...
         '%s clusters', capitalizeFirst(modLey(cmod))))
@@ -935,7 +1322,7 @@ respLey = ["responsive";"non-responsive"];
 respIdx = any(H,2);
 % respIdx = H(:,1); % Control only
 % respIdx = H(:,2); % After-induction only
-% % Responsive and TRN 
+% % Responsive and TRN
 % respIdx = any(H,2) &...
 %     string(clInfoTotal{clInfoTotal.ActiveUnit == 1, 'Region'}) == 'TRN';
 
@@ -943,7 +1330,7 @@ respIdx = any(H,2);
 isiFigs = gobjects(6,1);
 % Combinatorial loop
 for cr = 1:2 % Responsive and non-responsive
-    riveFlag = xor(respIdx, cr-1); % 0 passes, 1 negates    
+    riveFlag = xor(respIdx, cr-1); % 0 passes, 1 negates
     for cmod = 0:2 % depressed - non-modulalted - potentiated
         lc = [cr-1,cmod+1] * [3;1];
         modFlag = modCat == num2str(cmod);
@@ -965,13 +1352,13 @@ for cr = 1:2 % Responsive and non-responsive
         end
         ax = axes('Parent', isiFigs(lc));
         semilogx(ax, lgStTmAx, cumsum(htotal)); ylim(ax,[0,1]);
-        ax.NextPlot = 'add'; ax.ColorOrderIndex = 1; 
+        ax.NextPlot = 'add'; ax.ColorOrderIndex = 1;
         semilogx(ax, lgStTmAx, cumsum(htotal) + totalErr,'LineStyle',':')
         ax.ColorOrderIndex = 1; semilogx(ax, lgStTmAx, cumsum(htotal) -...
             totalErr,'LineStyle',':')
-        xlim(ax,10.^logSpkHD); box(ax,'off'); grid('on'); 
-        xticklabels(ax, xticks(ax)*1e3); 
-        xlabel(ax,'Inter-spike interval [ms]'); 
+        xlim(ax,10.^logSpkHD); box(ax,'off'); grid('on');
+        xticklabels(ax, xticks(ax)*1e3);
+        xlabel(ax,'Inter-spike interval [ms]');
         ylabel('Cumulative probability');
         title(ax, "Cumulative ISI: "+respLey(cr)+" & "+modLey(cmod+1))
         lgnd = legend(ax, condLey); set(lgnd, 'Location','best', 'Box', 'off');
@@ -1094,7 +1481,7 @@ for cmod = 1:2 % Potentiated and depressed clusters
         ISIpc = arrayfun(@(x) cat(2, ISI{x,:}), (1:size(ISI,1))',...
             'UniformOutput', 0);
         hisi = cellfun(@(x) histcounts(log10(x), logSpkEdges), ISIpc,...
-            'UniformOutput', 0); 
+            'UniformOutput', 0);
         hisi = cellfun(@(x) x/sum(x), hisi, 'UniformOutput', 0);
         hisi = cat(1,hisi{:});
         hisi = mean(hisi,1,'omitnan'); hisi = hisi./sum(hisi);
@@ -1140,7 +1527,7 @@ ordSubs = 1:nnz(filterIdx(2:Ncl+1));
 pclID = gclID(filterIdx(2:Ncl+1));
 if strcmp(dans, 'Yes')
     if ~exist('clInfoTotal','var')
-        All_Units = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+        All_Units = getClusterInfo(fullfile(dataDir,'All_Units.tsv'));
     end
     % varClass = varfun(@class,clInfo,'OutputFormat','cell');
     [ordSel, iOk] = listdlg('ListString', All_Units.Properties.VariableNames,...
@@ -1166,7 +1553,7 @@ end
 PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
 for ccond = 1:Nccond
     figFileName = sprintf('%s %s %sVW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
-        expName, Conditions(consideredConditions(ccond)).name,...
+        expName, consCondNames{ccond},...
         sprintf('%d ', chExps), timeLapse*1e3,...
         binSz*1e3, responseWindow*1e3, spontaneousWindow*1e3, onOffStr,...
         orderedStr, filtStr);
@@ -1183,7 +1570,7 @@ for ccond = 1:Nccond
         end
     end
     figs = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig, sweeps,...
-        timeLapse, binSz, [{Conditions(consideredConditions(ccond)).name};...
+        timeLapse, binSz, [consCondNames(ccond);...
         pclID(ordSubs)], strrep(expName,'_','\_'));
     configureFigureToPDF(figs);
     figs.Children(end).YLabel.String = [figs.Children(end).YLabel.String,...
@@ -1229,11 +1616,11 @@ for cmod = 1:2
                     PSTH_aux = PSTH_aux./sum(PSTH_aux);
                     plot(axp(cax), txfocus, PSTH_aux, plotOpts{1:4})
                     yyaxis(axp(cax), 'right'); plot(axp(cax), txfocus,...
-                        cumsum(PSTH_aux), plotOpts{:}) 
+                        cumsum(PSTH_aux), plotOpts{:})
                     ylim(axp(cax), [0,1]); ylabel(axp(cax),...
                         'Cumulative probability'); set(axp(cax).YAxis(2),...
                         'Color',0.2*ones(3,1))
-                    yyaxis(axp(cax), 'left'); 
+                    yyaxis(axp(cax), 'left');
                 case 3 % Plot the cumulative sum for the mean spikes; page 2
                     plot(axp(cax), txfocus, ...
                         cumsum(PSTH_all(focusIdx, ccond, 2)), plotOpts{1:4})
@@ -1243,7 +1630,7 @@ for cmod = 1:2
         ylabel(axp(cax), yaxsLbls{cax})
         if cax == 3
             xlabel(axp(cax), sprintf('Time_{%.2f ms} [s]', binSz*1e3))
-            lgnd = legend(axp(cax), 'show'); 
+            lgnd = legend(axp(cax), 'show');
             set(lgnd, 'Location', 'best', 'Box', 'off')
         end
     end
@@ -1254,7 +1641,7 @@ for cmod = 1:2
     bar(axp(4), txfocus(PSTH_diff(focusIdx) <= 0), PSTH_diff(PSTH_diff <= 0 & focusIdx'),...
         'FaceColor', [204, 51, 0]/255, 'DisplayName', 'Depression');
     axp(4).Box = 'off'; ylabel(axp(4), '%'); title(axp(4), 'Percentage of change')
-    xticks(axp(4),''); linkaxes(axp, 'x'); lgnd = legend(axp(4),'show'); 
+    xticks(axp(4),''); linkaxes(axp, 'x'); lgnd = legend(axp(4),'show');
     lgnd.Box = 'off'; lgnd.Location = 'best';  psthFig.Visible = 'on';
     %psthFig = configureFigureToPDF(psthFig);
     psthFigFileName = sprintf('%s %sPSTH %sRW%.2f-%.2f ms FW%.2f-%.2f ms %s clusters',...
@@ -1263,7 +1650,7 @@ for cmod = 1:2
     psthFigFileName = fullfile(figureDir,psthFigFileName);
     arrayfun(@(x) set(x, 'Color', 'none'), axp)
     if numel(chExps) == 1 && ~isempty(dirNames)
-       psthFigFileName = string(psthFigFileName) + " sf-" + dirNames{subFoldSel};
+        psthFigFileName = string(psthFigFileName) + " sf-" + dirNames{subFoldSel};
     end
     saveFigure(psthFig, string(psthFigFileName))
 end
@@ -1283,7 +1670,7 @@ end
 % mg = mg(wx>=0,:); ph = ph(wx>=0,:); wx = wx(wx>=0); [~, mxWxSub] = max(mg);
 % wcp = getWaveformCriticalPoints(mg, size(ft,1)/fs);
 % pwc = cellfun(@(x) x(1), wcp(:,1)); mxW = wx(mxWxSub);
-% 
+%
 % tcp = getWaveformCriticalPoints(pwf_n, fs);
 % featWf = getWaveformFeatures(pwf_n, fs);
 % params = emforgmm(log(featWf(:,1)), 3, 1e-7, 0);
@@ -1294,7 +1681,7 @@ end
 % probCriticPts = cellfun(@(x) x + logDomain(1), probCriticPts,...
 %     'UniformOutput', 0); logThresh = probCriticPts{1,1}(2);
 % time_wf = log(featWf(:,1)) > logThresh;
-% 
+%
 % [m, b] = lineariz(pwc, 1, -1); pwc_n = pwc*m + b;
 % params_freq = emforgmm(pwc_n, 3, 1e-7, 0); wDomain = (-1.05:0.01:1.05)';
 % p_wx = genP_x(params_freq, wDomain);
@@ -1312,28 +1699,28 @@ end
 % % wFeat = whitenPoints(featWf);
 %% Adaptation
 if diff(timeLapse) > 0.5
-dt = 1/8;
-onst = (0:7)'*dt;
-ofst = (0:7)'*dt + 0.05;
-onrpWins = [onst+5e-3, onst+3e-2];
-ofrpWins = [ofst+5e-3, ofst+3e-2];
-onrpIdx = txpsth >= onrpWins(:,1) & txpsth <= onrpWins(:,2);
-ofrpIdx = txpsth >= ofrpWins(:,1) & txpsth <= ofrpWins(:,2);
-ptsOn = zeros(size(onrpIdx,1),size(PSTH_prob,2),2); % time, magnitude
-ptsOf = ptsOn;
-for ccond = 1:size(PSTH_prob,2)
-    for crw = 1:size(onst,1)
-        [mg, tmSub] = max(PSTH_prob(onrpIdx(crw,:),ccond));
-        tmWinSub = find(onrpIdx(crw,:));
-        ptsOn(crw, ccond, 1) = txpsth(tmWinSub(tmSub));
-        ptsOn(crw, ccond, 2) = mg;
-        [mg, tmSub] = max(PSTH_prob(ofrpIdx(crw,:),ccond));
-        tmWinSub = find(ofrpIdx(crw,:));
-        ptsOf(crw, ccond, 1) = txpsth(tmWinSub(tmSub));
-        ptsOf(crw, ccond, 2) = mg;
+    dt = 1/8;
+    onst = (0:7)'*dt;
+    ofst = (0:7)'*dt + 0.05;
+    onrpWins = [onst+5e-3, onst+3e-2];
+    ofrpWins = [ofst+5e-3, ofst+3e-2];
+    onrpIdx = txpsth >= onrpWins(:,1) & txpsth <= onrpWins(:,2);
+    ofrpIdx = txpsth >= ofrpWins(:,1) & txpsth <= ofrpWins(:,2);
+    ptsOn = zeros(size(onrpIdx,1),size(PSTH_prob,2),2); % time, magnitude
+    ptsOf = ptsOn;
+    for ccond = 1:size(PSTH_prob,2)
+        for crw = 1:size(onst,1)
+            [mg, tmSub] = max(PSTH_prob(onrpIdx(crw,:),ccond));
+            tmWinSub = find(onrpIdx(crw,:));
+            ptsOn(crw, ccond, 1) = txpsth(tmWinSub(tmSub));
+            ptsOn(crw, ccond, 2) = mg;
+            [mg, tmSub] = max(PSTH_prob(ofrpIdx(crw,:),ccond));
+            tmWinSub = find(ofrpIdx(crw,:));
+            ptsOf(crw, ccond, 1) = txpsth(tmWinSub(tmSub));
+            ptsOf(crw, ccond, 2) = mg;
+        end
     end
-end
-
+    
 else
     
 end
