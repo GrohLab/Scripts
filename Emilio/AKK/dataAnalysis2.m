@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211207\2.8bar\Roller_position2021-12-07T19_21_35.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211206\1.8bar\Roller_position2021-12-06T18_46_05.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 
@@ -103,8 +103,16 @@ set(gca, "Box", "off", "Color", "none")
 saveFigure(fFig, fullfile(dataDir, "Roller velocity and triggers"), 1);
 %% Trigger average of the roller speed.
 timeLapse = [-1, 2];
+responseWindow = [0, 0.4]; % will stay the same right? Yes
+
 [~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeLapse, rollFs,...
     rollFs, [], vf); vStack = squeeze(vStack);
+
+[Nts, NTa] = size(vStack);
+[ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
+
+% Stack time axis --> st T x
+stTx = (1:Nts)'*ms + bs;
 
 rmsTh1 = 0.85;
 rmsTh2 = 0.9;
@@ -117,7 +125,7 @@ plotEEGchannels(vStack', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
 
 %Plot General Probability
 probFig = figure; 
-plot(thetaSpeed, probMove'); 
+plot(thetaSpeed, probMatSpeed'); 
 ylim([0,1])
 set(gca, "Box", "off", "Color", "none")
 %generalProb = nnz(moveFlag)./numel(moveFlag);
@@ -127,12 +135,12 @@ lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
 ylabel("Trial proportion / Movement probability")
 xlabel("Speed threshold \theta [cm/s]")
 title(sprintf("Trial proportion with elicited movement\n(General prob: %.2f)",...
-    generalProb))
+    genProbSpeed))
 %% Save?
 sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
 probFigName = ...
     sprintf('Movement probability EX%.2f RW%.1f - %.1f s',...
-    rmsTh, responseWindow);
+    rmsTh1, responseWindow);
 if strcmpi(sveFigAns, "Yes")
     saveFigure(probFig, fullfile(dataDir, probFigName), 1)
 end
@@ -141,7 +149,7 @@ end
 % it.
 rsfName = fullfile(dataDir, "RollerSpeed" + string(expDate) + ".mat");
 if ~exist(rsfName, 'file')
-    save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx", "generalProb")
+    save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx", "genProbSpeed")
 end
 %% DeepLabCuts - whisker movements as a reaction. 
 [~, vfNameBase] = fileparts(vfName);
@@ -167,19 +175,19 @@ lwstack = squeeze(dlcStack(1,:,:));
 rwstack = squeeze(dlcStack(2,:,:));
 nosestack = squeeze(dlcStack(3,:,:));
 
-thetaAnglWh = 1:10:300;
-thetaAnglNose = 1:10:80;
+thetaAnglWh = 0.5:0.5:40;
+thetaAnglNose = 0.2:0.2:10;
 rmsTh3 = 0.85;
 rmsTh4 = 6;
 
-[genProbLW, probMatLW] = getGeneralProb(lwstack, thetaAnglWh, en2cm, ...
+[genProbLW, probMatLW] = getGeneralProb(lwstack, thetaAnglWh, 1, ...
     rmsTh3, rmsTh4);
-[genProbRW, probMatRW] = getGeneralProb(rwstack, thetaAnglWh, en2cm, ...
+[genProbRW, probMatRW] = getGeneralProb(rwstack, thetaAnglWh, 1, ...
     rmsTh3, rmsTh4);
-[genProbNose, probMatNose] = getGeneralProb(nosestack, thetaAnglNose, en2cm, ...
+[genProbNose, probMatNose] = getGeneralProb(nosestack, thetaAnglNose, 1, ...
     rmsTh3, rmsTh4);
 
-% Loop to get the maximum angle of the different bodyparts.
+%% Loop to get the maximum angle of the different bodyparts.
 
 angllw = cell(Nccond,1);
 anglrw = cell(Nccond,1);
@@ -239,7 +247,7 @@ generalAnglProbLW = nnz(anglFlagLW)./numel(anglFlagLW);
 generalAnglProbRW = nnz(anglFlagRW)./numel(anglFlagRW);
 generalAnglProbNose = nnz(anglFlagNose)./numel(anglFlagNose);
 
-
+%% EEG-like plots for the nose and the two whisker-sets
 efig = 1:size(dlcStack,1);
 for cbp = 1:size(dlcStack,1)
     plotEEGchannels(squeeze(dlcStack(cbp,:,:))', [], diff(timeLapse),...
