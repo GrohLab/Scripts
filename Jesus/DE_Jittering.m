@@ -337,25 +337,25 @@ propPieFileName = fullfile(figureDir,...
     responseWindow*1e3, [Ntn-Nrn, Nrn]));
 saveFigure(respFig, propPieFileName, 1);
 % Potentiated, depressed and unmodulated clusters pie
-if cchCond > 1
-potFig = figure("Color", "w");
-pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
-    'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
-pObj = findobj(potFig, "Type", "Patch"); 
-arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
-arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
-modPropPieFigFileName = fullfile(figureDir,...
-    sprintf("Modulation proportions pie RW%.1f - %.1f ms (%dR, %dP, %dD)",...
-    responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
-saveFigure(potFig, modPropPieFigFileName, 1)
-% Modulation index histogram
-MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on; 
-histogram(MIevok, hsOpts{:}, "Evoked"); set(gca, axOpts{:});
-title("Modulation index distribution"); xlabel("MI"); 
-ylabel("Cluster proportion"); lgnd = legend("show"); 
-set(lgnd, "Box", "off", "Location", "best")
-saveFigure(MIFig, fullfile(figureDir,...
-    "Modulation index dist evoked & after induction"), 1)
+if cchCond == 2
+    potFig = figure("Color", "w");
+    pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
+        'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
+    pObj = findobj(potFig, "Type", "Patch");
+    arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
+    arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
+    modPropPieFigFileName = fullfile(figureDir,...
+        sprintf("Modulation proportions pie RW%.1f - %.1f ms (%dR, %dP, %dD)",...
+        responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
+    saveFigure(potFig, modPropPieFigFileName, 1)
+    % Modulation index histogram
+    MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on;
+    histogram(MIevok, hsOpts{:}, "Evoked"); set(gca, axOpts{:});
+    title("Modulation index distribution"); xlabel("MI");
+    ylabel("Cluster proportion"); lgnd = legend("show");
+    set(lgnd, "Box", "off", "Location", "best")
+    saveFigure(MIFig, fullfile(figureDir,...
+        "Modulation index dist evoked & after induction"), 1)
 end
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
