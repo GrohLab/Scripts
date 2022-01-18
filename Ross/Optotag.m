@@ -13,7 +13,7 @@ name = ConditionName;
 name(strfind(name, '_')) = ' ';
 name = ['Optotagging: ', name];
 tm = 5e-2;
-Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
+[Latencies, Fidelities] = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
 rng('default');
@@ -22,8 +22,8 @@ depth = depth + jitter; % adding small jitter for visualisation
 depth = -1*depth;
 
 % Removing and highlighting dodgy units from plot
-lowestLat = 2; %latencyCutoffs(1);
-lowestSD = 0.2; %sdCutoffs(1);
+lowestLat = 0.5; %latencyCutoffs(1);
+lowestSD = 0; %sdCutoffs(1);
 dodgyMean = ID(find(mn<lowestLat));
 dodgySD = ID(find(sd<lowestSD));
 fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
@@ -40,13 +40,13 @@ end
 mn(mn<lowestLat) = NaN;
 sd(sd<lowestSD) = NaN;
 nan = isnan(mn) | isnan(sd);
-
+fd = cell2mat(Fidelities);
 
 latencyCutoffs = sort(latencyCutoffs, 'ascend');
 sdCutoffs = sort(sdCutoffs, 'ascend');
 
 tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2);
- %tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2) & depth < -700;
+%tagged = latencyCutoffs(1) <= mn & mn <= latencyCutoffs(2) & sdCutoffs(1) <= sd & sd <= sdCutoffs(2) & depth > -500 & depth < -300;
 taggedInd = spkInd(tagged);
 TaggedIDs = sortedData(taggedInd,1);
 nontagged = ~tagged & ~nan;
@@ -100,9 +100,9 @@ else
 end
 subplot(3,2,4)
 
-scatter(mn(~tagged),sd(~tagged), tm*1e3, [0.5, 0.5, 0.5], '*')
+scatter(mn(~tagged),sd(~tagged), 1+4*fd(~tagged), [0.5, 0.5, 0.5], '*')
 hold on
-scatter(mn(tagged),sd(tagged), tm*1e3, [0, 0.5, 1], '*')
+scatter(mn(tagged),sd(tagged),1+4*fd(tagged), [0, 0.5, 1], '*')
 hold off
 pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
 % title(name, 'Interpreter', 'none');
