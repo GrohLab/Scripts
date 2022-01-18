@@ -51,7 +51,7 @@ moveMat = cellfun(@(x) cat(1, x, nan(maxNt - size(x,1),1)),...
     cellMax, fnOpts{:}); 
 moveMat = cat(2, moveMat{:});
 
-%just for speed: ?
+%just for speed: yes
 moveMat = moveMat * en2cm;
 
 % Cutting on different thresholds for all trials
