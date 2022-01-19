@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211206\1.8bar\Roller_position2021-12-06T18_46_05.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211207\2.8bar\Roller_position2021-12-07T19_21_35.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 
@@ -101,57 +101,27 @@ title("Roller velocity and triggers"); xlabel("Time [s]");
 ylabel("Roller velocity [encoder step per second]")
 set(gca, "Box", "off", "Color", "none")
 saveFigure(fFig, fullfile(dataDir, "Roller velocity and triggers"), 1);
-%% Trigger average of the roller speed.
+%% Trigger average of behaviour signals.
 timeLapse = [-1, 2];
 responseWindow = [0, 0.4]; % will stay the same right? Yes
 
 [~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeLapse, rollFs,...
-    rollFs, [], vf);
+    rollFs, [], vf*en2cm);
+
+% Exclude trials with spontaneous running, which will affect the face
+% movements.
+spontRmsTh = 0.85; 
+excludeFlag = rms(stack(spontFlag,:)) > spontRmsTh;
+
+%Plot EEG channels
+plotEEGchannels(squeeze(vStack)', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
 
 [~, Nts, NTa] = size(vStack);
 [ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
-
 % Stack time axis --> st T x
 stTx = (1:Nts)'*ms + bs;
 
-rmsTh1 = 0.85;
-rmsTh2 = 0.9;
-thetaSpeed = 0.1:0.1:3;
-[genProbSpeed, probMatSpeed] = getGeneralProb(vStack, thetaSpeed, en2cm, ...
-    rmsTh1, rmsTh2 );
-
-%Plot EEG channels
-plotEEGchannels(vStack', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
-
-%Plot General Probability
-probFig = figure; 
-plot(thetaSpeed, probMatSpeed'); 
-ylim([0,1])
-set(gca, "Box", "off", "Color", "none")
-%generalProb = nnz(moveFlag)./numel(moveFlag);
-puffIntensity = strsplit(string(dataDir), "\");
-puffIntensity = puffIntensity(end);
-lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
-ylabel("Trial proportion / Movement probability")
-xlabel("Speed threshold \theta [cm/s]")
-title(sprintf("Trial proportion with elicited movement\n(General prob: %.2f)",...
-    genProbSpeed))
-%% Save?
-sveFigAns = questdlg("Save figure?", "Save", "Yes", "No", "Yes");
-probFigName = ...
-    sprintf('Movement probability EX%.2f RW%.1f - %.1f s',...
-    rmsTh1, responseWindow);
-if strcmpi(sveFigAns, "Yes")
-    saveFigure(probFig, fullfile(dataDir, probFigName), 1)
-end
-
-% If RollerSpeed.mat doesn't exist in the experiment folder, then create
-% it.
-rsfName = fullfile(dataDir, "RollerSpeed" + string(expDate) + ".mat");
-if ~exist(rsfName, 'file')
-    save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx", "genProbSpeed")
-end
-%% DeepLabCuts - whisker movements as a reaction. 
+% DeepLabCut part
 [~, vfNameBase] = fileparts(vfName);
 dlcffName = dir(fullfile(dataDir, string(vfNameBase)) + "*filtered.csv");
 dlcffName = fullfile(dataDir, dlcffName.name);
@@ -167,85 +137,9 @@ rw = rw - mean(rw);
 nose = a_bodyParts{:,"nose"} - mean(a_bodyParts{:,"nose"});
 
 % Trigger cut
-sNames = ["LeftWhiskers","RightWhiskers","Nose"];
+sNames = ["LeftWhiskers", "RightWhiskers", "Nose", "RollerSpeed"];
 [~, dlcStack] = getStacks(false, round(itTimes * fr), 'on', timeLapse,...
     fr, fr, [], lw, rw, nose);
-
-lwstack = squeeze(dlcStack(1,:,:));
-rwstack = squeeze(dlcStack(2,:,:));
-nosestack = squeeze(dlcStack(3,:,:));
-
-thetaAnglWh = 0.5:0.5:40;
-thetaAnglNose = 0.2:0.2:10;
-rmsTh3 = 0.85;
-rmsTh4 = 6;
-
-[genProbLW, probMatLW] = getGeneralProb(lwstack, thetaAnglWh, 1, ...
-    rmsTh3, rmsTh4);
-[genProbRW, probMatRW] = getGeneralProb(rwstack, thetaAnglWh, 1, ...
-    rmsTh3, rmsTh4);
-[genProbNose, probMatNose] = getGeneralProb(nosestack, thetaAnglNose, 1, ...
-    rmsTh3, rmsTh4);
-
-%% Loop to get the maximum angle of the different bodyparts.
-
-angllw = cell(Nccond,1);
-anglrw = cell(Nccond,1);
-anglnose = cell(Nccond,1);
-% responseWindow = [0, 0.4];
-% just takes the samples from 0 to 0.4
-% responseFlags = stTx >= responseWindow(1) & stTx <= responseWindow(2);
-
-for ccond = 1:Nccond
-  angllw{ccond} =...
-         max(abs(lwstack(responseFlags, delayFlags(:, ccond) & ~excludeFlag(:))))';
-end
-
-for ccond = 1:Nccond
-  anglrw{ccond} =...
-         max(abs(rwstack(responseFlags, delayFlags(:, ccond) & ~excludeFlag(:))))';
-end
-
-for ccond = 1:Nccond
-  anglnose{ccond} =...
-         max(abs(nosestack(responseFlags, delayFlags(:, ccond) & ~excludeFlag(:))))';
-end
-
-% Maximum number of trials
-maxNt = max(cellfun(@numel, angllw));
-% Placing the trial's maximum angle in a matrix
-anglMatLW = cellfun(@(x) cat(1, x, nan(maxNt - size(x,1),1)),...
-    angllw, fnOpts{:});
-anglMatRW = cellfun(@(x) cat(1, x, nan(maxNt - size(x,1),1)),...
-    anglrw, fnOpts{:});
-anglMatNose = cellfun(@(x) cat(1, x, nan(maxNt - size(x,1),1)),...
-    anglnose, fnOpts{:});
-
-anglMatLW = cat(2, anglMatLW{:});
-anglMatRW = cat(2, anglMatRW{:});
-anglMatNose = cat(2, anglMatNose{:});
-
-anglMatLW = anglMatLW * en2cm;
-anglMatRW = anglMatRW * en2cm;
-anglMatNose = anglMatNose * en2cm;
-
-% Cutting on different thresholds for all trials
-
-anglFlagLW = anglMatLW > thetaAnglWh;
-anglFlagRW = anglMatRW > thetaAnglWh;
-anglFlagNose = anglMatNose > thetaAnglNose;
-
-probAnglLW = sum(anglFlagLW)./Na;
-probAnglRW = sum(anglFlagRW)./Na;
-probAnglNose = sum(anglFlagNose)./Na;
-
-probAnglLW = squeeze(probAnglLW);
-probAnglRW = squeeze(probAnglRW);
-probAnglNose = squeeze(probAnglNose);
-
-generalAnglProbLW = nnz(anglFlagLW)./numel(anglFlagLW);
-generalAnglProbRW = nnz(anglFlagRW)./numel(anglFlagRW);
-generalAnglProbNose = nnz(anglFlagNose)./numel(anglFlagNose);
 
 %% EEG-like plots for the nose and the two whisker-sets
 efig = 1:size(dlcStack,1);
@@ -260,6 +154,60 @@ for cbp = 1:size(dlcStack,1)
     title(sNames(cbp))
     lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
     
-    figname = ['SumOfSignals', num2str(sNames(cbp)), '.emf'];
+    figname = ['SumOfSignals', num2str(sNames(cbp))];
     saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
 end
+%%
+% Behaviour stack for calculating the probability once for all signals
+behStack = dlcStack; behStack(4,:,:) = vStack;
+% Deletion of the excluded 
+behStack(:,:,excludeFlag) = [];
+% Getting the maximum value for all signals within the response window
+mvpt = getMaxAbsPerTrial(behStack, responseWindow, stTx);
+% Compare the max value against a set of thresholds
+thSet = {0.5:0.5:40,... Left whiskers
+    0.5:0.5:40,... Right whiskers
+    0.2:0.2:10,... Nose
+    0.1:0.1:3}; % Roller speed
+moveFlags = compareMaxWithThresh(mvpt, thSet);
+% Getting the 'general probability' of movement (Area Under the Curve)
+genProb = getAUC(moveFlags);
+% Plotting the threshold progression 
+probFigs = plotThetaProgress(moveFlags, thSet, sNames);
+xlArray = [repmat("Angle [°]",1,3), "Speed [cm/s]"];
+% xlArray = insertBefore(xlArray, "[", "\\theta ");
+puffIntensity = strsplit(string(dataDir), "\");
+puffIntensity = puffIntensity(end);
+ttlString = sprintf("Trials crossing \\theta (%s)", puffIntensity);
+arrayfun(@(x) xlabel(probFigs(x).CurrentAxes, xlArray(x)), 1:size(probFigs,1))
+arrayfun(@(x) title(probFigs(x).CurrentAxes, ttlString),...
+    1:size(probFigs,1))
+arrayfun(@(x) saveFigure(probFigs(x), fullfile(dataDir, sNames(x) +...
+    sprintf(" trial crossing (%s)", puffIntensity)), 1),...
+    1:size(probFigs,1))
+%% Save?
+% If RollerSpeed.mat doesn't exist in the experiment folder, then create
+% it.
+rsfName = fullfile(dataDir, "BehaviourData" + string(expDate) + ".mat");
+if ~exist(rsfName, 'file')
+    save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx",...
+        "genProb", "thSet", "moveFlags", "mvpt", "behStack", "stTx")
+end
+
+%% EEG-like plots for the nose and the two whisker-sets
+efig = 1:size(dlcStack,1);
+for cbp = 1:size(dlcStack,1)
+    plotEEGchannels(squeeze(dlcStack(cbp,:,:))', [], diff(timeLapse),...
+        fr, 1, -timeLapse(1));
+    title(sNames(cbp))
+    efig(cbp) = figure(); 
+    plot(stTx, squeeze(dlcStack(cbp,:,:)), "LineWidth", 0.5,...
+        "Color", 0.75*ones(3,1)); hold on;
+    plot(stTx, mean(dlcStack(cbp, :, :), 3), "LineWidth", 2, "Color", "k")
+    title(sNames(cbp))
+    lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
+    
+    figname = ['SumOfSignals', num2str(sNames(cbp)), ' filtered'];
+    saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
+end
+
