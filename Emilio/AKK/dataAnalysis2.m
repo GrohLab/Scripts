@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211207\2.8bar\Roller_position2021-12-07T19_21_35.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT28\211209\0.0bar\Roller_position2021-12-09T19_11_48.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 
@@ -108,11 +108,6 @@ responseWindow = [0, 0.4]; % will stay the same right? Yes
 [~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeLapse, rollFs,...
     rollFs, [], vf*en2cm);
 
-% Exclude trials with spontaneous running, which will affect the face
-% movements.
-spontRmsTh = 0.85; 
-excludeFlag = rms(stack(spontFlag,:)) > spontRmsTh;
-
 %Plot EEG channels
 plotEEGchannels(squeeze(vStack)', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
 
@@ -120,6 +115,11 @@ plotEEGchannels(squeeze(vStack)', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
 [ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
 % Stack time axis --> st T x
 stTx = (1:Nts)'*ms + bs;
+
+% Exclude trials with spontaneous running, which will affect the face
+% movements.
+spontRmsTh = 0.85; 
+spontFlag = stTx < 0;
 
 % DeepLabCut part
 [~, vfNameBase] = fileparts(vfName);
@@ -141,13 +141,19 @@ sNames = ["LeftWhiskers", "RightWhiskers", "Nose", "RollerSpeed"];
 [~, dlcStack] = getStacks(false, round(itTimes * fr), 'on', timeLapse,...
     fr, fr, [], lw, rw, nose);
 
+puffIntensity = strsplit(string(dataDir), "\");
+puffIntensity = puffIntensity(end);
+
+%close all;
 %% EEG-like plots for the nose and the two whisker-sets
 efig = 1:size(dlcStack,1);
+
 for cbp = 1:size(dlcStack,1)
     plotEEGchannels(squeeze(dlcStack(cbp,:,:))', [], diff(timeLapse),...
         fr, 1, -timeLapse(1));
     title(sNames(cbp))
-    efig(cbp) = figure(); 
+    
+    efig(cbp) = figure();
     plot(stTx, squeeze(dlcStack(cbp,:,:)), "LineWidth", 0.5,...
         "Color", 0.75*ones(3,1)); hold on;
     plot(stTx, mean(dlcStack(cbp, :, :), 3), "LineWidth", 2, "Color", "k")
@@ -156,6 +162,7 @@ for cbp = 1:size(dlcStack,1)
     
     figname = ['SumOfSignals', num2str(sNames(cbp))];
     saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
+    
 end
 %%
 % Behaviour stack for calculating the probability once for all signals
@@ -176,8 +183,6 @@ genProb = getAUC(moveFlags);
 probFigs = plotThetaProgress(moveFlags, thSet, sNames);
 xlArray = [repmat("Angle [°]",1,3), "Speed [cm/s]"];
 % xlArray = insertBefore(xlArray, "[", "\\theta ");
-puffIntensity = strsplit(string(dataDir), "\");
-puffIntensity = puffIntensity(end);
 ttlString = sprintf("Trials crossing \\theta (%s)", puffIntensity);
 arrayfun(@(x) xlabel(probFigs(x).CurrentAxes, xlArray(x)), 1:size(probFigs,1))
 arrayfun(@(x) title(probFigs(x).CurrentAxes, ttlString),...
@@ -185,6 +190,8 @@ arrayfun(@(x) title(probFigs(x).CurrentAxes, ttlString),...
 arrayfun(@(x) saveFigure(probFigs(x), fullfile(dataDir, sNames(x) +...
     sprintf(" trial crossing (%s)", puffIntensity)), 1),...
     1:size(probFigs,1))
+
+close all;
 %% Save?
 % If RollerSpeed.mat doesn't exist in the experiment folder, then create
 % it.
@@ -211,3 +218,4 @@ for cbp = 1:size(dlcStack,1)
     saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
 end
 
+genProb
