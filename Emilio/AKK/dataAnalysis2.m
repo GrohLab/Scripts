@@ -106,9 +106,9 @@ timeLapse = [-1, 2];
 responseWindow = [0, 0.4]; % will stay the same right? Yes
 
 [~, vStack] = getStacks(false, atTimes * rollFs, 'on', timeLapse, rollFs,...
-    rollFs, [], vf); vStack = squeeze(vStack);
+    rollFs, [], vf);
 
-[Nts, NTa] = size(vStack);
+[~, Nts, NTa] = size(vStack);
 [ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
 
 % Stack time axis --> st T x
