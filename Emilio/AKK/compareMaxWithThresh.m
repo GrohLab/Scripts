@@ -18,7 +18,7 @@ if Ns ~= Nth
     return
 end
 
-moveFlag = arrayfun(@(x) mx(:,x) < thCell{x}, 1:Ns,...
+moveFlag = arrayfun(@(x) mx(:,x) > thCell{x}, 1:Ns,...
     "UniformOutput", false);
 
 end
