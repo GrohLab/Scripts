@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211206\0.2bar\Roller_position2021-12-06T17_53_22.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211206\1.0bar\Roller_position2021-12-06T18_23_06.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 
@@ -83,12 +83,29 @@ atTimes = atTimes - rollTx(1);
 atTimes([false;diff(atTimes(:,1)) < 1],:) = [];
 % If the arduino trigger times are different from the intan, we need to
 % fix it.
+%% Fixing the trigger times
 if size(itTimes,1) ~= size(atTimes,1)
-    % Oh no... they are different. we can exclude the intan extra times.
-    % But if you really feel up for it, you can estimate the time of
-    % arduino. I can search for it in my MATLAB history.
-    fprintf(1, 'Hm... What should we do?');
+    dm = distmatrix(itTimes(:,1), atTimes, 1); cip = 1;
+    tPairs = zeros(size(atTimes));
+    for cap = 1:size(dm,2)
+        fprintf(1, "Row: %d, Col: %d ", cip, cap)
+        [~, cerca] = min(abs(dm(cip:size(dm, 1), cap)));
+        fprintf(1, "Minimum found at %d\n", cip-1 + cerca)
+        tPairs(cap) = cip + cerca - 1;
+        if cip <= size(dm,1)
+            cip = cip + cerca;
+        else
+            fprintf(1, "Reached the last column!\n")
+        end
+    end
+    missArdTrig = setdiff(1:length(itTimes), tPairs);
+    mdl = fit_poly(itTimes(tPairs, 1)', atTimes', 1);
+    eaTrig = [itTimes(missArdTrig,1), ones(length(missArdTrig),1)] * mdl;
+    atTimes_new = zeros(size(itTimes,1),1);
+    atTimes_new(tPairs) = atTimes; atTimes_new(missArdTrig) = eaTrig;
+    atTimes = atTimes_new;
 end
+
 %% Figure time! 
 figure; plot(trig'); 
 
@@ -142,37 +159,19 @@ puffIntensity = strsplit(string(dataDir), "\");
 puffIntensity = puffIntensity(end);
 
 %close all;
-%% EEG-like plots for the nose and the two whisker-sets
-efig = 1:size(dlcStack,1);
-
-for cbp = 1:size(dlcStack,1)
-    plotEEGchannels(squeeze(dlcStack(cbp,:,:))', [], diff(timeLapse),...
-        fr, 1, -timeLapse(1));
-    title(sNames(cbp))
-    yticklabels(NTa:-1:1)
-    efig(cbp) = figure();
-    plot(stTx, squeeze(dlcStack(cbp,:,:)), "LineWidth", 0.5,...
-        "Color", 0.75*ones(3,1)); hold on;
-    plot(stTx, mean(dlcStack(cbp, :, :), 3), "LineWidth", 2, "Color", "k")
-    title(sNames(cbp))
-    lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
-    
-    figname = ['SumOfSignals', num2str(sNames(cbp))];
-    saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
-    
-end
 %% Behaviour stack for calculating the probability once for all signals
 behStack = dlcStack; behStack(4,:,:) = vStack;
 % Exclude trials with spontaneous running, which will affect the face
 % movements.
 sSigma = squeeze(std(behStack(:, spontFlag, :), [], 2));
 sigTh = [5; 5; 2; 2.5];
-excludeFlag = sSigma > sigTh;
+excludeFlag = sSigma > sigTh; 
+Net = sum(excludeFlag, 2);
 behStack = arrayfun(@(x) squeeze(behStack(x, :, :)), (1:size(behStack,1))',...
     fnOpts{:});
 thSet = {0.5:0.5:40,... Left whiskers
     0.5:0.5:40,... Right whiskers
-    0.2:0.2:10,... Nose
+    0.4:0.4:20,... Nose
     0.1:0.1:3}; % Roller speed
 Ns = length(behStack);
 behResults = cell(Ns, 2);
@@ -192,23 +191,24 @@ end
 probFigs = arrayfun(@(x) plotThetaProgress(behResults(x, 2), thSet(x), ...
     sNames(x)), 1:Ns);
 xlArray = [repmat("Angle [°]",1,3), "Speed [cm/s]"];
-% xlArray = insertBefore(xlArray, "[", "\\theta ");
 ttlString = sprintf("Trials crossing \\theta (%s)", puffIntensity);
 arrayfun(@(x) xlabel(probFigs(x).CurrentAxes, xlArray(x)), 1:Ns)
-arrayfun(@(x) title(probFigs(x).CurrentAxes, ttlString), 1:Ns)
+arrayfun(@(x) title(probFigs(x).CurrentAxes, [ttlString;...
+    "Excluded trials: "+ string(Net(x))+ " (\sigma:" + string(sigTh(x)) + ")"]),...
+    1:Ns)
+pfnStrFormat = " trial crossing PI%s TH%.1f - %.1f STH%.1f RW%.1f - %.1f s";
 arrayfun(@(x) saveFigure(probFigs(x), fullfile(dataDir, sNames(x) +...
-    sprintf(" trial crossing (%s)", puffIntensity)), 1), 1:Ns)
+    sprintf(pfnStrFormat, puffIntensity, thSet{x}([1,end]), sigTh(x),...
+    responseWindow)), 1), 1:Ns)
 
-%close all;
 %% Save?
 % If RollerSpeed.mat doesn't exist in the experiment folder, then create
 % it.
 rsfName = fullfile(dataDir, "BehaviourData" + string(expDate) + ".mat");
 if ~exist(rsfName, 'file')
     save(rsfName, "vf", "rollTx", "rollFs", "atTimes", "itTimes", "rx",...
-        "genProb", "thSet", "moveFlags", "mvpt", "behStack", "stTx")
+        "genProb", "thSet", "behResults", "behStack", "stTx")
 end
-
 %% EEG-like plots for the nose and the two whisker-sets
 efig = 1:size(dlcStack,1);
 for cbp = 1:size(dlcStack,1)
@@ -226,4 +226,4 @@ for cbp = 1:size(dlcStack,1)
     saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
 end
 
-fprintf(1, "General probability: %.3f\n", genProb)
+fprintf(1, "General probability: %.3f \n", genProb)
