@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT28\211209\0.0bar\Roller_position2021-12-09T19_11_48.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211206\0.2bar\Roller_position2021-12-06T17_53_22.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 
@@ -115,11 +115,8 @@ plotEEGchannels(squeeze(vStack)', [], diff(timeLapse), rollFs, 1, -timeLapse(1))
 [ms, bs] = lineariz([1, Nts], timeLapse(2), timeLapse(1));
 % Stack time axis --> st T x
 stTx = (1:Nts)'*ms + bs;
-
-% Exclude trials with spontaneous running, which will affect the face
-% movements.
-spontRmsTh = 0.85; 
 spontFlag = stTx < 0;
+
 
 % DeepLabCut part
 [~, vfNameBase] = fileparts(vfName);
@@ -152,7 +149,7 @@ for cbp = 1:size(dlcStack,1)
     plotEEGchannels(squeeze(dlcStack(cbp,:,:))', [], diff(timeLapse),...
         fr, 1, -timeLapse(1));
     title(sNames(cbp))
-    
+    yticklabels(NTa:-1:1)
     efig(cbp) = figure();
     plot(stTx, squeeze(dlcStack(cbp,:,:)), "LineWidth", 0.5,...
         "Color", 0.75*ones(3,1)); hold on;
@@ -164,34 +161,45 @@ for cbp = 1:size(dlcStack,1)
     saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
     
 end
-%%
-% Behaviour stack for calculating the probability once for all signals
+%% Behaviour stack for calculating the probability once for all signals
 behStack = dlcStack; behStack(4,:,:) = vStack;
-% Deletion of the excluded 
-behStack(:,:,excludeFlag) = [];
-% Getting the maximum value for all signals within the response window
-mvpt = getMaxAbsPerTrial(behStack, responseWindow, stTx);
-% Compare the max value against a set of thresholds
+% Exclude trials with spontaneous running, which will affect the face
+% movements.
+sSigma = squeeze(std(behStack(:, spontFlag, :), [], 2));
+sigTh = [5; 5; 2; 2.5];
+excludeFlag = sSigma > sigTh;
+behStack = arrayfun(@(x) squeeze(behStack(x, :, :)), (1:size(behStack,1))',...
+    fnOpts{:});
 thSet = {0.5:0.5:40,... Left whiskers
     0.5:0.5:40,... Right whiskers
     0.2:0.2:10,... Nose
     0.1:0.1:3}; % Roller speed
-moveFlags = compareMaxWithThresh(mvpt, thSet);
-% Getting the 'general probability' of movement (Area Under the Curve)
-genProb = getAUC(moveFlags);
-% Plotting the threshold progression 
-probFigs = plotThetaProgress(moveFlags, thSet, sNames);
+Ns = length(behStack);
+behResults = cell(Ns, 2);
+genProb = zeros(Ns, 1);
+for cs = 1:size(behStack,1)
+    % Getting the maximum value for all signals within the response window
+    mvpt = getMaxAbsPerTrial(behStack{cs}(:, ~excludeFlag(cs,:)),...
+        responseWindow, stTx);
+    % Compare the max value against a set of thresholds
+    moveFlags = compareMaxWithThresh(mvpt, thSet(cs));
+    behResults(cs,:) = {mvpt, moveFlags};
+    % Getting the 'general probability' of movement (Area Under the Curve)
+    genProb(cs) = getAUC(moveFlags);
+end
+%% Plotting the threshold progression
+% probFigs = plotThetaProgress(moveFlags, thSet, sNames);
+probFigs = arrayfun(@(x) plotThetaProgress(behResults(x, 2), thSet(x), ...
+    sNames(x)), 1:Ns);
 xlArray = [repmat("Angle [°]",1,3), "Speed [cm/s]"];
 % xlArray = insertBefore(xlArray, "[", "\\theta ");
 ttlString = sprintf("Trials crossing \\theta (%s)", puffIntensity);
-arrayfun(@(x) xlabel(probFigs(x).CurrentAxes, xlArray(x)), 1:size(probFigs,1))
-arrayfun(@(x) title(probFigs(x).CurrentAxes, ttlString),...
-    1:size(probFigs,1))
+arrayfun(@(x) xlabel(probFigs(x).CurrentAxes, xlArray(x)), 1:Ns)
+arrayfun(@(x) title(probFigs(x).CurrentAxes, ttlString), 1:Ns)
 arrayfun(@(x) saveFigure(probFigs(x), fullfile(dataDir, sNames(x) +...
-    sprintf(" trial crossing (%s)", puffIntensity)), 1),...
-    1:size(probFigs,1))
+    sprintf(" trial crossing (%s)", puffIntensity)), 1), 1:Ns)
 
-close all;
+%close all;
 %% Save?
 % If RollerSpeed.mat doesn't exist in the experiment folder, then create
 % it.
@@ -218,4 +226,4 @@ for cbp = 1:size(dlcStack,1)
     saveFigure(efig(cbp), fullfile(dataDir, figname), 1);
 end
 
-genProb
+fprintf(1, "General probability: %.3f\n", genProb)
