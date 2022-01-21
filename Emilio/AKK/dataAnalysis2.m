@@ -86,26 +86,44 @@ atTimes([false;diff(atTimes(:,1)) < 1],:) = [];
 %% Fixing the trigger times
 if size(itTimes,1) ~= size(atTimes,1)
     dm = distmatrix(itTimes(:,1), atTimes, 1); cip = 1;
-    tPairs = zeros(size(atTimes));
-    for cap = 1:size(dm,2)
-        fprintf(1, "Row: %d, Col: %d ", cip, cap)
-        [~, cerca] = min(abs(dm(cip:size(dm, 1), cap)));
-        fprintf(1, "Minimum found at %d\n", cip-1 + cerca)
-        tPairs(cap) = cip + cerca - 1;
-        if cip <= size(dm,1)
-            cip = cip + cerca;
-        else
-            fprintf(1, "Reached the last column!\n")
+    if size(itTimes,1) > size(atTimes,1)
+        tPairs = zeros(size(atTimes));
+        for cap = 1:size(dm,2)
+            fprintf(1, "Row: %d, Col: %d ", cip, cap)
+            [~, cerca] = min(abs(dm(cip:size(dm, 1), cap)));
+            fprintf(1, "Minimum found at %d\n", cip-1 + cerca)
+            tPairs(cap) = cip + cerca - 1;
+            if cip <= size(dm,1)
+                cip = cip + cerca;
+            else
+                fprintf(1, "Reached the last column!\n")
+            end
         end
+        missArdTrig = setdiff(1:length(itTimes), tPairs);
+        mdl = fit_poly(itTimes(tPairs, 1)', atTimes', 1);
+        eaTrig = [itTimes(missArdTrig,1), ones(length(missArdTrig),1)] * mdl;
+        atTimes_new = zeros(size(itTimes,1),1);
+        atTimes_new(tPairs) = atTimes; atTimes_new(missArdTrig) = eaTrig;
+        atTimes = atTimes_new;
+    elseif size(itTimes,1) < size(atTimes,1)
+        % More Arduino times than Intan seems like the first one always.
+        % Going with the flow.
+        tPairs = zeros(size(itTimes,1),1); cap = 1;
+        for cip = 1:size(dm,1)
+            fprintf(1, "Row: %d, Col: %d ", cip, cap)
+            [~, cerca] = min(abs(dm(cip, cap:size(dm, 2))));
+            fprintf(1, "Minimum found at %d\n", cap - 1 + cerca)
+            tPairs(cip) = cap + cerca - 1;
+            if cap <= size(dm,2)
+                cap = cap + cerca;
+            else
+                fprintf(1, "Reached the last row!\n")
+            end
+        end
+        extraArdTrig = setdiff(1:length(itTimes), tPairs);
+        atTimes(extraArdTrig) = [];
     end
-    missArdTrig = setdiff(1:length(itTimes), tPairs);
-    mdl = fit_poly(itTimes(tPairs, 1)', atTimes', 1);
-    eaTrig = [itTimes(missArdTrig,1), ones(length(missArdTrig),1)] * mdl;
-    atTimes_new = zeros(size(itTimes,1),1);
-    atTimes_new(tPairs) = atTimes; atTimes_new(missArdTrig) = eaTrig;
-    atTimes = atTimes_new;
 end
-
 %% Figure time! 
 figure; plot(trig'); 
 
