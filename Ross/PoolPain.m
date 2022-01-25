@@ -137,7 +137,7 @@ All_Units = Analysis.Experiments(1).cluster_info(:,[1,3:13]);
 for nClInfo = 2: nExpts
     
     
-    All_Units = [All_Units; Analysis.Experiments(exp).cluster_info(:,[1,3:13])];
+    All_Units = [All_Units; Analysis.Experiments(nClInfo).cluster_info(:,[1,3:13])];
 end
 
 %% User controlling variables
@@ -296,12 +296,12 @@ for cExp = 1:nExpts
     fprintf(1,'Condition(s):\n')
     fprintf('- ''%s''\n', Conditions(auxSubs(cchCond)).name)
     
-    ansFilt = questdlg('Would you like to filter for significance?','Filter',...
-        'Yes','No','Yes');
-    filtStr = 'unfiltered';
-    if strcmp(ansFilt,'Yes')
-        filtStr = 'filtered';
-    end
+%     ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+%         'Yes','No','Yes');
+%     filtStr = 'unfiltered';
+%     if strcmp(ansFilt,'Yes')
+%         filtStr = 'filtered';
+%     end
     % Subscript to indicate the conditions with all whisker stimulations,
     % whisker control, laser control, and the combination whisker and laser.
     consideredConditions = cchCond;
@@ -517,7 +517,7 @@ if sum(lasFlag & controlFlag) > 0
     consCondNames{lasFlag&controlFlag} = 'Laser_Control';
 end
 
-%%
+%% Creating the data table (All_Units)
 if ~any(ismember(All_Units.Properties.VariableNames,'ActiveUnit'))
     try
         All_Units = addvars(All_Units,activeUnits==1,'After','id',...
@@ -640,8 +640,8 @@ fprintf(1,'Tagged Standard Deviations between: %.2f - %.2f ms\n',responseWindow(
 % Removing and highlighting dodgy units from plot
 lowestLat = latencyCutoffs(1);
 lowestSD = sdCutoffs(1);
-dodgyMean = ID(find(mn<lowestLat));
-dodgySD = ID(find(sd<lowestSD));
+dodgyMean = depthID(find(mn<lowestLat));
+dodgySD = depthID(find(sd<lowestSD));
 fprintf(['\n The following units have mean latenices lower than ', num2str(lowestLat), 'ms '...
     '\n and have been removed from the plot: \n']);
 for a = 1:length(dodgyMean)
@@ -756,7 +756,7 @@ lgd.FontSize = 8;
 
 subplot(1,2,1)
 
-errorbar(mn(~tagged),depths(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0.5,0.5,0.5]);
+% errorbar(mn(~tagged),depths(~tagged),sd(~tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', [0.5, 0.5, 0.5], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0.5,0.5,0.5]);
 hold on
 errorbar(mn(tagged),depths(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color',[0, 0.5, 1], 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor',[0,0.5,1]);
 hold off
@@ -840,7 +840,7 @@ end
 
 
 
-%% Finding subpopulations (run Optotagging section first)
+%% Finding subpopulations with K means (run Optotagging section first)
 nkm = 3;
 rng('default');
 
@@ -898,6 +898,154 @@ lgd.FontSize = 8;
 
 
 
+%% Finding subpopulations with user-defined latencies and jitter (Run optotagging first)
+red = [0.75, 0, 0];
+green = [0, 0.75, 0];
+blue = [0.25, 0.5, 1];
+purple = [0.5,0,0.5];
+colours = [green; red; blue];
+
+name = 'Population Separations';
+
+
+tagged = mn > 2 & mn <= 9 & sd >=0.2 & sd <= 4; % Could make these a Nby2 matrix 2 assign groups based on latency, jitter, depth
+tagged = tagged & depths >-1500 & depths <-800;
+group1 = mn > 9 & mn <= 18 & sd >=0.5 & sd <= 10;
+group1 = group1 & depths >-650 & depths <-200;
+group2 = mn > 15 & mn <= 50 & sd >=0.2 & sd <= 50;
+group2 = group2 & depths <-700 & depths >-1000;
+
+other = ~tagged & ~group1 & ~group2;
+
+
+nTagged = sum(tagged);
+nGroup1 = sum(group1);
+nGroup2 = sum(group2);
+nOther = sum(other);
+
+% Plotting
+
+red = [0.75, 0, 0];
+green = [0, 0.75, 0];
+blue = [0.25, 0.5, 1];
+
+
+%Plotting the first data point of each group member for the legend
+firstGroup1 = find(group1, 1, 'first');
+firstGroup2 = find(group2, 1, 'first');
+firstL6 = find(tagged, 1, 'first');
+
+tagged(firstL6) = false;
+group1(firstGroup1) = false;
+group2(firstGroup2) = false;
+
+
+fig = figure('Name', name, 'Color', 'White');
+
+hold on
+
+errorbar(mn(firstGroup1),depths(firstGroup1),sd(firstGroup1), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', green, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', green);
+errorbar(mn(firstGroup2),depths(firstGroup2),sd(firstGroup2), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', red, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', red);
+errorbar(mn(firstL6),depths(firstL6),sd(firstL6), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', blue, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', blue);
+
+leg = legend;
+
+
+
+hold on
+
+errorbar(mn(group1),depths(group1),sd(group1), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', green, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', green);
+%errorbar(mn(laterRS),Dpth(laterRS),sd(laterRS), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', [1, 0, 0], 'MarkerSize', 6, 'LineWidth', 0.01, 'CapSize', 5); %, 'MarkerFaceColor', [1, 0, 0]);
+
+errorbar(mn(group2),depths(group2),sd(group2), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', red, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', red);
+%errorbar(mn(latestRS),Dpth(latestRS),sd(latestRS), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', [0, 1, 0], 'MarkerSize', 6, 'LineWidth', 0.01, 'CapSize', 5); %, 'MarkerFaceColor', [0, 1, 0]);
+
+errorbar(mn(tagged),depths(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', blue, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', blue);
+%errorbar(mn(taggedRS),Dpth(taggedRS),sd(taggedRS), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', [0.25, 0.5, 1], 'MarkerSize', 6, 'LineWidth', 0.01, 'CapSize', 5); %, 'MarkerFaceColor', [0.25, 0.5, 1]);
+
+leg.String(4:end) = [];
+leg.String(4:end-1) = [];
+leg.Box = 'off';
+legend('Location', 'southeast');
+
+
+pulseWidth = round(median(diff(TriggerTimes'/fs)')*1e3);
+% title(name, 'Interpreter', 'none');
+ylim([round(round(min(depths),-2)/2,-2)*2-200,0]);
+yticks([-2000:500:0]);
+xlim([0 50]);
+xticks(0:10:50);
+xlabel('Latency [ms]');
+ylabel('Depth [\mum]', 'Interpreter', 'tex')
+% ax.XTickLabelRotation = -45;
+ax = gca;
+hold on
+laser = plot([0:pulseWidth], ax.YLim(2)*ones(pulseWidth + 1,1), 'Color', [0 1 1 0.5], 'LineWidth', 3);
+leg = legend;
+leg.String = [{'L4 Mean +/- SD'}, {'L5 Mean +/- SD'}, {'Put L6 Mean +/- SD'},  {['Laser Pulse (',num2str(pulseWidth), 'ms)']}];
+leg.FontSize = 10;
+ax.FontName = 'Arial';
+ax.FontSize = 15;
+% ax.FontName = 'Times New Roman';
+% Create rectangle
+% lsText = text(3, ax.YLim(1)+45, 'Laser Pulse', 'FontSize', 10);
+
+% lgd = legend;
+% lgd.String{1} = (['Unit Mean +/- SD (n=', num2str(sum(nontagged)), ')']);
+% lgd.String{2} = (['Opto-tagged Units (n=', num2str(sum(tagged)), ')']);
+% lgd.String{3} = ['Laser Pulse (',num2str(pulseWidth), 'ms)'];
+% rectangle(ax, 'Position', [1, ax.YLim(2)-100, 4, 50], ...
+% 'LineStyle', 'none', 'FaceColor', [0 1 1 0.5])
+
+rectangle(ax, 'Position', [ax.XLim(1), ax.YLim(1), pulseWidth, ax.YLim(2) - ax.YLim(1)], ...
+    'LineStyle', 'none', 'FaceColor', [0 1 1 0.1])
+
+hold off
+
+
+Group1 = depthID(group1);
+Group2 = depthID(group2);
+L6 = depthID(tagged);
+
+
+
+
+
+% Pie Chart
+
+x = [nGroup1, nGroup2, nTagged, nOther];
+explode = ones(1,4);
+labels = [{'L4'}, {'L5'}, {'L6'}, {'Other'}];
+
+figure('Color', 'White');
+pie(x, explode)
+leg = legend;
+leg.String = labels;
+leg.Box = 'Off';
+leg.Location = 'eastoutside';
+leg.FontSize = 8;
+
+
+ax = gca;
+ax.Children(2).FaceColor = [1,1,1];
+ax.Children(4).FaceColor = blue;
+ax.Children(6).FaceColor = red;
+ax.Children(8).FaceColor = green;
+ax.FontName = 'Arial';
+
+for slice = 1:2:2*length(x)
+ax.Children(slice).FontName = 'Arial';
+ax.Children(1).FontSize = 10;
+end
+
+ax.Children(2).FaceColor = [1,1,1];
+ax.Children(4).FaceColor = blue;
+ax.Children(6).FaceColor = red;
+ax.Children(8).FaceColor = green;
+
+for slice = 2:2:2*length(x)
+    ax.Children(slice).EdgeColor = [1,1,1];
+end
 
 
 %% Population analysis
@@ -959,11 +1107,588 @@ Nwru = nnz(wruIdx);
 
 fprintf('%d whisker responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
-%% Filter responsive?
-filterIdx = true(Ne,1);
-if strcmpi(filtStr, 'filtered') && nnz(wruIdx)
-    filterIdx = [true; wruIdx];
+
+
+%% Getting cluster info and adding variables to table
+% clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
+% chanMap = readNPY(fullfile(dataDir,'channel_map.npy'));
+% chanPos = readNPY(fullfile(dataDir,'channel_positions.npy'));
+% [m,b] = lineariz(chanPos(:,1), 6, 1);
+% shank = m*chanPos(:,1) + b;
+% shank = round(shank);
+% shMap = containers.Map(chanMap, shank);
+% setShank = @(x) shMap(x);
+% clInfo.shank = arrayfun(setShank, clInfo.channel);
+% tb = size(clInfo);
+% sz = tb(1);
+% ActiveUnit = false(sz,1);
+% clInfo = addvars(clInfo,ActiveUnit,'NewVariableNames','ActiveUnit','After','id');
+% clInfo{gclID, 'ActiveUnit'} = true;
+
+window = diff(responseWindow);
+
+for a = 1: length(consCondNames)
+    All_Units{All_Units.ActiveUnit == true,[consCondNames{1,a}, '_Rate_Spont']} = mean(Counts{a,1}')'/window; %  '_', num2str(responseWindow(1)), '_to_', num2str(responseWindow(2)), 's',
+    All_Units{All_Units.ActiveUnit == true,[consCondNames{1,a}, '_Rate_Evoked']} = mean(Counts{a,2}')'/window; %  '_', num2str(responseWindow(1)), '_to_', num2str(responseWindow(2)), 's',
 end
+
+
+% Significant mechanical responses per condition
+b = length(consCondNames);
+for a = 1 : length(consCondNames)
+    All_Units{All_Units.ActiveUnit == true,[consCondNames{1,a}, '_R']} = Results(b).Activity(1).Pvalues < 0.05;
+    b = b + length(consCondNames) - a;
+end
+
+% Comparing Across Conditions (i.e. manipulation effect on spontaneous and evoked activity)
+% RAM: comment to explain what you are doing
+sZ = size(Counts);
+d = length(consCondNames);
+e = 1;
+f = length(consCondNames);
+for a = 1:length(consCondNames) - 1
+    for b = (a + 1): length(consCondNames)
+
+        for c = 1: sZ(1,2)
+            All_Units{All_Units.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+            %RAM example
+            %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
+            %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
+
+        end
+
+        e = e + 1;
+
+        if e == f
+            e = e + 1;
+        end
+    end
+    d = d - 1;
+    f = f + d;
+end
+writeClusterInfo(All_Units, fullfile(dataDir,'All_Units.tsv'));
+
+%% Filter question
+
+
+idxGroup1 = ismember(gclID, Group1);
+idxGroup2 = ismember(gclID, Group2);
+idxL6 = ismember(gclID, L6);
+ruIdx = [idxGroup1, idxGroup2, idxL6];
+nGroups = size(ruIdx, 2);
+filterIdx = true(Ne,1);
+ansFilt = questdlg('Would you like to filter for significance?','Filter',...
+    'Yes','No','Yes');
+filtStr = 'unfiltered';
+if strcmp(ansFilt,'Yes')
+    filterIdx = [true(1,nGroups); ruIdx];
+    filtStr = 'Filtered';
+end
+
+
+%% Violin Plots
+
+mechResponse = All_Units.Mech_Control_R;
+ruNames =  [{'L4'}, {'L5'}, {'L6'}];
+
+
+red = [0.75, 0, 0];
+green = [0, 0.75, 0];
+blue = [0.25, 0.5, 1];
+purple = [0.5,0,0.5];
+colours = [green; red; blue];
+% colours = [0,0,0];
+
+idxGroup1Tbl = ismember(All_Units.id, Group1);
+idxGroup2Tbl = ismember(All_Units.id, Group2);
+idxL6Tbl = ismember(All_Units.id, L6);
+
+ansFilt = questdlg('Would you like to filter for Mech Response?','Filter',...
+    'Yes','No','Yes');
+if strcmp(ansFilt,'Yes')
+   idxMat = [idxGroup1Tbl, idxGroup2Tbl, idxL6Tbl]  & mechResponse;
+else
+    idxMat = [idxGroup1Tbl, idxGroup2Tbl, idxL6Tbl] ;
+end
+
+% idxMat = mechResponse; % & clInfo.Mech_Laser_1Hz_15mW_Rate_Evoked < 60;
+matDims = size(idxMat);
+nGroups = matDims(2);
+
+% yMax = [max(clInfo.Laser_5sec_pulse_15mW_Block_Rate_Spont), max(clInfo.Laser_5sec_pulse_15mW_Block_Rate_Evoked)];
+
+yMin = 0;
+
+% Spontaneous vs Evoked
+for unitGroup = 1:nGroups
+    
+    
+    unitIds = idxMat(:,unitGroup)==true;
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = All_Units.Mech_Control_Rate_Spont(unitIds);
+    rts(:,2) = All_Units.Mech_Control_Rate_Evoked(unitIds);
+    [p, sig] = ranksum(rts(:,1), rts(:,2));
+    fprintf([ruNames{unitGroup}, ' baseline vs evoked p value: ', num2str(p), '\n']);
+    figure('Color', 'White', 'Name', [ruNames{unitGroup}, '_Baseline_vs_Evoked_Rates_ViolinPlot']);
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.5);
+    
+    
+    
+%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+%     
+%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    medControl = median(rts(:,1));
+    medLaser = median(rts(:,2));
+       
+    
+%     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+%     leg.Box = 'off';
+%     leg.Location = 'northeast';
+    
+    
+    
+    ax = gca;
+    ax.Title.String = ruNames{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 10;
+    xscale = max(abs(ax.XAxis.Limits));
+    yMax = ax.YAxis.Limits(2);
+    yMax = round(max(yMax)+5, -1);
+    
+    
+    plot([-xscale/5,0], [medControl, medControl], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    plot([0,xscale/5], [medLaser, medLaser], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    
+    plot(zeros(nUnits,1) - xscale/50, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    plot(zeros(nUnits,1) + xscale/50, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    
+    %leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
+    ax.XAxis.Limits = [-xscale, xscale];
+    ax.YAxis.Limits = [yMin, yMax];
+    ax.YLabel.String = 'Firing Rate [Hz]';
+    ax.XTick = [];
+    %     ax.Visible = 'off';
+end
+
+
+% Mech Control vs Mech Laser
+
+for unitGroup = 1:nGroups
+    
+    
+    unitIds = idxMat(:,unitGroup)==true;
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = All_Units.Mech_Control_Rate_Evoked(unitIds);
+    rts(:,2) = All_Units.Mech_Laser_Rate_Evoked(unitIds);
+    [p, sig] = ranksum(rts(:,1), rts(:,2));
+    fprintf([ruNames{unitGroup}, ' Mech Control vs Mech Laser p value: ', num2str(p), '\n']);
+    figure('Color', 'White', 'Name', [ruNames{unitGroup}, '_Evoked_Rates_ViolinPlot']);
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.5);
+    
+    
+    
+%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+%     
+%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    medControl = median(rts(:,1));
+    medLaser = median(rts(:,2));
+       
+    
+%     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+%     leg.Box = 'off';
+%     leg.Location = 'northeast';
+    
+    
+    
+    ax = gca;
+    ax.Title.String = ruNames{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 10;
+    xscale = max(abs(ax.XAxis.Limits));
+    yMax = ax.YAxis.Limits(2);
+    yMax = round(max(yMax)+5, -1);
+    
+    
+    plot([-xscale/5,0], [medControl, medControl], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    plot([0,xscale/5], [medLaser, medLaser], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    
+    plot(zeros(nUnits,1) - xscale/50, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    plot(zeros(nUnits,1) + xscale/50, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    
+    %leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
+    ax.XAxis.Limits = [-xscale, xscale];
+    ax.YAxis.Limits = [yMin, yMax];
+    ax.YLabel.String = 'Firing Rate [Hz]';
+    ax.XTick = [];
+    %     ax.Visible = 'off';
+end
+
+%% Firing Rates Violin Plots - One Plot
+
+
+%Baseline vs Evoked Rates
+
+% yMax = [max(All_Units.Mech_Control_Rate_Spont), max(All_Units.Mech_Control_Rate_Evoked)];
+% yMin = 0;
+ figure('Color', 'White', 'Name','Baseline_vs_Evoked_Rates_ViolinPlot');
+for unitGroup = 1:nGroups
+    
+    
+    unitIds = idxMat(:,unitGroup)==true;
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = All_Units.Mech_Control_Rate_Spont(unitIds);
+    rts(:,2) = All_Units.Mech_Control_Rate_Evoked(unitIds);
+    
+    subplot(nGroups,1,unitGroup)
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    
+    
+%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+%     
+%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    medControl = median(rts(:,1));
+    medLaser = median(rts(:,2));
+       
+    
+    leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+    leg.Box = 'off';
+    leg.Location = 'northeast';
+    
+    
+    
+    ax = gca;
+    ax.Title.String = ruNames{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 10;
+    xscale = max(abs(ax.XAxis.Limits));
+    
+    
+    
+    plot([-xscale/10,0], [medControl, medControl], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    plot([0,xscale/10], [medLaser, medLaser], 'LineStyle', '-', 'LineWidth', 1, 'Color', [0,0,1]);
+    
+    plot(zeros(nUnits,1) - xscale/50, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    plot(zeros(nUnits,1) + xscale/50, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    
+    leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
+    ax.XAxis.Limits = [-xscale, xscale];
+    %ax.YAxis.Limits = [yMin, yMax];
+    ax.YAxis.Limits(1) = 0;
+    ax.YLabel.String = 'Firing Rate [Hz]';
+    ax.XTick = [];
+    %     ax.Visible = 'off';
+end
+
+
+
+% Mech Control vs Mech Laser Rates
+
+
+%% Firing Rates Violin Plots - One Plot
+
+
+%Baseline vs Evoked Rates
+
+
+
+
+% yMax = [max(All_Units.Mech_Control_Rate_Spont), max(All_Units.Mech_Control_Rate_Evoked)];
+% yMin = 0;
+ figure('Color', 'White', 'Name','Mech_Control_vs_Mech+Laser_Rates_ViolinPlot');
+for unitGroup = 1:nGroups
+    
+    
+    unitIds = idxMat(:,unitGroup)==true;
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = All_Units.Mech_Control_Rate_Spont(unitIds);
+    rts(:,2) = All_Units.Mech_Control_Rate_Evoked(unitIds);
+    
+    subplot(nGroups,1,unitGroup)
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    
+    
+%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+%     
+%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    medControl = median(rts(:,1));
+    medLaser = median(rts(:,2));
+       
+    
+    leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+    leg.Box = 'off';
+    leg.Location = 'northeast';
+    
+    
+    
+    ax = gca;
+    ax.Title.String = ruNames{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 10;
+    xscale = max(abs(ax.XAxis.Limits));
+    
+    
+    
+    plot([-xscale/10,0], [medControl, medControl], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    plot([0,xscale/10], [medLaser, medLaser], 'LineStyle', '-', 'LineWidth', 1, 'Color', [0,0,1]);
+    
+    plot(zeros(nUnits,1) - xscale/50, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    plot(zeros(nUnits,1) + xscale/50, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    
+    leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
+    ax.XAxis.Limits = [-xscale, xscale];
+    %ax.YAxis.Limits = [yMin, yMax];
+    ax.YAxis.Limits(1) = 0;
+    ax.YLabel.String = 'Firing Rate [Hz]';
+    ax.XTick = [];
+    %     ax.Visible = 'off';
+end
+
+
+% Mech Control vs Mech Laser Rates
+
+
+% yMax = [max(All_Units.Mech_Control_Rate_Spont), max(All_Units.Mech_Control_Rate_Evoked)];
+% yMin = 0;
+ figure('Color', 'White', 'Name','Mech_Control_vs_Mech+Laser_Rates_ViolinPlot');
+for unitGroup = 1:nGroups
+    
+    
+    unitIds = idxMat(:,unitGroup)==true;
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = All_Units.Mech_Control_Rate_Evoked(unitIds);
+    rts(:,2) = All_Units.Mech_Laser_Rate_Evoked(unitIds);
+    
+    subplot(nGroups,1,unitGroup)
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,colours(unitGroup,:),'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    
+    
+%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+%     
+%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    medControl = median(rts(:,1));
+    medLaser = median(rts(:,2));
+       
+    
+    leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+    leg.Box = 'off';
+    leg.Location = 'northeast';
+    
+    
+    
+    ax = gca;
+    ax.Title.String = ruNames{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 10;
+    xscale = max(abs(ax.XAxis.Limits));
+    
+    
+    
+    plot([-xscale/10,0], [medControl, medControl], 'LineStyle', '-', 'LineWidth', 1, 'Color', colours(unitGroup,:));
+    plot([0,xscale/10], [medLaser, medLaser], 'LineStyle', '-', 'LineWidth', 1, 'Color', [0,0,1]);
+    
+    plot(zeros(nUnits,1) - xscale/50, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', colours(unitGroup,:), 'MarkerSize', 2);
+    
+    plot(zeros(nUnits,1) + xscale/50, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    
+    
+    leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
+    ax.XAxis.Limits = [-xscale, xscale];
+    %ax.YAxis.Limits = [yMin, yMax];
+    ax.YAxis.Limits(1) = 0;
+    ax.YLabel.String = 'Firing Rate [Hz]';
+    ax.XTick = [];
+    %     ax.Visible = 'off';
+end
+
+%% Relative Rates Violin Plots
+
+mechResponse = clInfo.Mech_Control_4mW_R;
+ids = [{'L6'}, {'S1'}, {'Vpl'}];
+idxMat = [idxTagged, idxNonTagged]; % & MechResponse;
+matDims = size(idxMat);
+figure('Name', 'Relative Firing Rate Violin Plots', 'Color', 'White');
+nGroups = matDims(2);
+
+yMax = [max(clInfo.Mech_Control_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Control_4mW_Rate_Spont_1_to_2s),...
+    max(clInfo.Mech_Laser_5sec_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Laser_5sec_4mW_Rate_Spont_1_to_2s)];
+yMax = max(yMax);
+yMin = [min(clInfo.Mech_Control_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Control_4mW_Rate_Spont_1_to_2s),...
+    min(clInfo.Mech_Laser_5sec_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Laser_5sec_4mW_Rate_Spont_1_to_2s)];
+yMin = min(yMin);
+
+
+for unitGroup = 1:nGroups
+    subplot(1, nGroups, unitGroup)
+    
+    unitIds = idxMat(:,unitGroup);
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = clInfo.Mech_Control_4mW_Rate_Evoked_1_to_2s(unitIds) - clInfo.Mech_Control_4mW_Rate_Spont_1_to_2s(unitIds);
+    rts(:,2) = clInfo.Mech_Laser_5sec_4mW_Rate_Evoked_1_to_2s(unitIds) - clInfo.Mech_Laser_5sec_4mW_Rate_Spont_1_to_2s(unitIds);
+    
+    subplot(1,2,unitGroup)
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    
+    
+    plot(zeros(nUnits,1) - 0.01, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', [1,0,0], 'MarkerSize', 5);
+    
+    plot(zeros(nUnits,1) + 0.01, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 5);
+    
+    
+    
+    legend('Mech Control','Mech Laser', 'Location','northwest');
+    
+    ax = gca;
+    ax.Title.String = ids{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 25;
+    ax.YAxis.Limits = [yMin, yMax];
+    
+end
+%% SNR Violin Plots
+
+
+mechResponse = clInfo.Mech_Control_4mW_R;
+ids = [{'L6'}, {'S1'}, {'Vpl'}];
+idxMat = [idxTagged, idxNonTagged]; % & MechResponse;
+matDims = size(idxMat);
+figure('Name', 'SNR Violin Plots', 'Color', 'White');
+nGroups = matDims(2);
+
+yMax = [max(clInfo.Mech_Control_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Control_4mW_Rate_Spont_0_to_1s),...
+    max(clInfo.Mech_Laser_5sec_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Laser_5sec_4mW_Rate_Spont_0_to_1s)];
+yMax = max(yMax);
+yMin = [min(clInfo.Mech_Control_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Control_4mW_Rate_Spont_0_to_1s),...
+    min(clInfo.Mech_Laser_5sec_4mW_Rate_Evoked_1_to_2s - clInfo.Mech_Laser_5sec_4mW_Rate_Spont_0_to_1s)];
+yMin = min(yMin);
+
+for unitGroup = 1:nGroups
+    subplot(1, nGroups, unitGroup)
+    
+    unitIds = idxMat(:,unitGroup);
+    nUnits = sum(unitIds);
+    rts = NaN(nUnits, 2);
+    rts(:,1) = clInfo.Mech_Control_4mW_Rate_Evoked_1_to_2s(unitIds) - clInfo.Mech_Control_4mW_Rate_Spont_0_to_1s(unitIds);
+    rts(:,2) = clInfo.Mech_Laser_5sec_4mW_Rate_Evoked_1_to_2s(unitIds) - clInfo.Mech_Laser_5sec_4mW_Rate_Spont_0_to_1s(unitIds);
+    
+    subplot(1,2,unitGroup)
+    hold on
+    
+    
+    [yCtr, xCtr] = ksdensity(rts(:,1),'Bandwidth',0.7);
+    patch(yCtr * -1,xCtr,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    [yCtr, xCtr] = ksdensity(rts(:,2),'Bandwidth',0.7);
+    patch(yCtr,xCtr,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.2);
+    
+    
+    
+    plot(zeros(nUnits,1) - 0.01, rts(:,1),...
+        'LineStyle','none', 'Marker', '*', 'Color', [1,0,0], 'MarkerSize', 5);
+    
+    plot(zeros(nUnits,1) + 0.01, rts(:,2),...
+        'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 5);
+    
+    
+    
+    
+    legend('Mech Control','Mech Laser', 'Location','northwest');
+    
+    ax = gca;
+    ax.Title.String = ids{unitGroup};
+    ax.FontName = 'Arial';
+    ax.FontSize = 25;
+    ax.YAxis.Limits = [yMin, yMax];
+    
+end
+
+
 %% Spontaneous firing rate with a bigger window
 mltpl = 10;
 sfrMdl = fit_poly(pfr(:,1), pfr(:,2), 1);
