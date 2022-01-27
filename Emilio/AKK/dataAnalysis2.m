@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 %% Choosing the file
-rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT27\211206\1.0bar\Roller_position2021-12-06T18_23_06.csv";
+rfName = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\WT28\211213\2.0bar\Roller_position2021-12-13T16_52_44.csv";
 % rfName = uigetdir("Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch3\",...
 %     "Choose directory to work with");
 
@@ -112,12 +112,16 @@ if size(itTimes,1) ~= size(atTimes,1)
         for cip = 1:size(dm,1)
             fprintf(1, "Row: %d, Col: %d ", cip, cap)
             [~, cerca] = min(abs(dm(cip, cap:size(dm, 2))));
-            fprintf(1, "Minimum found at %d\n", cap - 1 + cerca)
-            tPairs(cip) = cap + cerca - 1;
-            if cap <= size(dm,2)
-                cap = cap + cerca;
+            if nnz(cap - 1 + cerca)
+                fprintf(1, "Minimum found at %d\n", cap - 1 + cerca)
+                tPairs(cip) = cap + cerca - 1;
+                if cap <= size(dm,2)
+                    cap = cap + cerca;
+                else
+                    fprintf(1, "Reached the last row!\n")
+                end
             else
-                fprintf(1, "Reached the last row!\n")
+                break
             end
         end
         extraArdTrig = setdiff(1:length(itTimes), tPairs);
