@@ -1,4 +1,4 @@
-% function [Conditions, Triggers] = getTriggers(expName, dataDir, fs)
+function [Conditions, Triggers] = getTriggers(expName, dataDir, fs)
 
 %% Assumes that you do your mech (with/without laser) trials in one batch of recordings, ie. not laser (L), mech (M), L, M
     % e.g. LLLLLMMM is fine, as is MMMMMMMMMLL ...this script will
@@ -383,4 +383,4 @@ end
 %% Save
 save(fullfile(dataDir, [expName, '_analysis.mat']), 'Conditions', 'Triggers', '-v7.3');
 
-% end
+end
