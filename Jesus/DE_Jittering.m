@@ -522,6 +522,7 @@ end
 PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
 psthTx = (0:Nbn-1) * binSz + timeLapse(1);
 psthFigs = gobjects(Nccond,1);
+Ntc = size(cst,2);
 for ccond = 1:Nccond
     figFileName =...
         sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
@@ -538,11 +539,11 @@ for ccond = 1:Nccond
                 [m,b] = lineariz(stims(cs,:),1,0);
                 stims(cs,:) = m*stims(cs,:) + b;
             else
-                stims(cs,:) = zeros(1,Nt);
+                stims(cs,:) = zeros(1,Ntc);
             end
         end
     else
-        stims = zeros(1, Nt);
+        stims = zeros(1, Ntc);
     end
     psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
         sweeps, timeLapse, binSz, [consCondNames(ccond); pclID(ordSubs)],...
