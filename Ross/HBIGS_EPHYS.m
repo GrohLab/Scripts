@@ -54,7 +54,7 @@ cd C:\Users\NeuroNetz\Documents\GitHub\Kilosort2_5
 kilosort
 
 % probe file = 'Z:\Ross\ProbeFiles\' - Corrected_H3_ChanMap.mat
-% sampling frequency = 3.003003003003003e+04
+fs = 3.003003003003003e+04;
 
 
 
@@ -64,10 +64,10 @@ kilosort
 cd C:\Users\NeuroNetz\Documents\GitHub\Scripts\Ross
 
 % Experiment Name
-expName = 'Replace_this_text_with_your_experiment_name';
+expName = 'I_hope_this_works_please!';
 
 % Spike-sorted units and their spike times
-sortedData = importPhyFiles(dataDir, expName);
+sortedData = importPhyFiles('Z:\HBIGS\Pre-sorted', expName);
 
 %Unit/Cluster (same thing) information in a table.
 clInfo = getClusterInfo([dataDir, '\cluster_info.tsv']);
@@ -87,6 +87,7 @@ clInfo = getClusterInfo([dataDir, '\cluster_info.tsv']);
 load('Z:\PainData\Corrected_Channel_Map\L6\Cortex\20.8.21\KS2\m6_newChanMap_all_channels.mat');
 load('Z:\PainData\Corrected_Channel_Map\L6\Cortex\20.8.21\KS2\m6_analysis.mat');
 clInfo = getClusterInfo('Z:\PainData\Corrected_Channel_Map\L6\Cortex\20.8.21\KS2\cluster_info.tsv');
+expName = 'Replace_this_text_with_your_experiment_name';
 %% Creating a directory to put our figures in to.
 
 
@@ -218,7 +219,7 @@ end
     
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
     'Bin size [s]:'};
-defInputs = {'-2, 6', '0.1, 1.5', '0.01'};
+defInputs = {'-2, 6', '0.5, 2', '0.01'};
 answ = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
 if isempty(answ)
     fprintf(1,'Cancelling...\n');
@@ -1021,7 +1022,7 @@ for a = 1:length(pwrs)
     pwr = pwrs(a);
 
     pwrInd = Power == pwr;
-    clIDind =  gclID;
+    clIDind =  clInfo.id(clInfo.Mech_Control_4mW_R==true);
     lngth = length(clIDind);
     for a = 1:lngth
         rng('default');
@@ -1131,10 +1132,131 @@ for a = 1:length(pwrs)
         savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
     end
 end
-close all
+% close all
 
-%% 
+%% ISI analysis - 
 
+
+% Computing the Triggered ISIs
+
+
+% Getting the ActiveUnit ISIs from sortedData
+ind = ismember(gclID,(clInfo.id(clInfo.Mech_Control_4mW_R==true)));
+% gclID = clInfo.id(ind == true);
+% ind = ismember(sortedData(:,1), gclID(wruIdx,1));
+% ind = ismember(sortedData(:,1), gclID(wru));
+Ncl = sum(ind);
+spkSubs = cellfun(@(x) round(x.*fs), sortedData(ind,2),...
+    'UniformOutput', false);
+ISIVals = cellfun(@(x) [x(1)/fs; diff(x)/fs], spkSubs,...
+    'UniformOutput', 0);
+NnzvPcl = cellfun(@numel,ISIVals);
+Nnzv = sum(NnzvPcl);
+rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl,...
+    'UniformOutput', 0));
+cols = cell2mat(spkSubs);
+vals = cell2mat(ISIVals);
+ISIspar = sparse(rows, cols, vals);
+
+% Creating the TrigISIs Struct
+
+
+ConsConds = cchCond;
+nCond = length(ConsConds);
+% sortedData = sortedData(:,1);
+for chCond = 1:nCond
+    TrigISIs.name = Conditions(cchCond(chCond)).name;
+    TrigISIs.Vals(1).name = 'Spontaneous';
+    TrigISIs.Vals(2).name = 'Evoked';
+
+
+% Adding ISIs to TrigISIs
+spontaneousWindow = -flip(responseWindow);
+
+
+    
+    
+    % contains will give multiple units when looking for e.g. cl45
+%     spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
+    % spkSubs replaces round(sortedData{goods(1),2}*fs) for the rest of the
+    % clusters
+    % Subscript column vectors for the rest good clusters
+    for wIndex = 1:2
+        if wIndex == 1
+            Window = spontaneousWindow;
+        else
+            Window = responseWindow;
+        end
+        [~, isiStack] = getStacks(false,Conditions(cchCond(chCond)).Triggers, onOffStr,...
+            Window,fs,fs,[],ISIspar);
+        lInda = isiStack > 0; 
+        % timelapse becomes spontaneousWindow for pre-trigger, and responseWindow
+        % for post
+        TrigISIs.Vals(wIndex).TriggeredIsI = isiStack;
+        for histInd = 1: Ncl
+            figure('Visible','off');
+            hisi = histogram(log10(isiStack(histInd,:,:)), 'BinEdges', log10(0.0001):0.01:log10(10));
+            TrigISIs.Vals(wIndex).cts{histInd} = hisi.BinCounts;
+            TrigISIs.Vals(wIndex).bns{histInd} = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
+            
+            close gcf;
+        end
+    end
+
+% ISIs and CumISIs
+
+    for a = 1:length(TrigISIs.Vals(wIndex).cts)
+        TrigISIs.Vals(1).ISI{a} = TrigISIs.Vals(1).cts{a}./sum(TrigISIs.Vals(1).cts{a});
+        TrigISIs.Vals(2).ISI{a} = TrigISIs.Vals(2).cts{a}./sum(TrigISIs.Vals(2).cts{a});
+        TrigISIs.Vals(1).CumISI{a} = cumsum(TrigISIs.Vals(1).ISI{a});
+        TrigISIs.Vals(2).CumISI{a} = cumsum(TrigISIs.Vals(2).ISI{a});
+    end
+
+
+
+% Plotting the ISIs
+
+
+figure('Color', 'White', 'Name', [TrigISIs.name]);
+hold on
+for wIndex = 1:2
+    CondNames = {'Baseline', 'Evoked'};
+    clr = {[0.5, 0, 0], [0, 1, 1]};
+    IsiStack = zeros(length(TrigISIs.Vals(wIndex).ISI), length(TrigISIs.Vals(wIndex).ISI{1}));
+    cumIsiStack = zeros(length(TrigISIs.Vals(wIndex).CumISI), length(TrigISIs.Vals(wIndex).CumISI{1}));
+    for cInd = 1:length(TrigISIs.Vals(wIndex).CumISI)
+        IsiStack(cInd,:) =  TrigISIs.Vals(wIndex).ISI{cInd};
+        cumIsiStack(cInd,:) =  TrigISIs.Vals(wIndex).CumISI{cInd};
+    end
+    % Getting rid of NaNs
+    cumIsiStack(length(TrigISIs.Vals(wIndex).CumISI) + 1,:) = NaN;
+    IsiStack(length(TrigISIs.Vals(wIndex).ISI) + 1,:) = NaN;
+    cumIndNaN = (length(TrigISIs.Vals(wIndex).CumISI) + 1);
+    for nInd = 1:(length(TrigISIs.Vals(wIndex).CumISI))
+        if isnan(cumIsiStack(nInd,:)) == true
+            cumIndNaN = [cumIndNaN; nInd];
+        end
+    end
+    cumIndNaN = sort(cumIndNaN, 'descend');
+    cumIsiStack(cumIndNaN,:) =[];
+    IsiStack(cumIndNaN,:) = [];
+    stckSz = size(cumIsiStack);
+    ISIcum = sum(cumIsiStack)/stckSz(1);
+    % Only if the bin widths are constant!!!
+    plot(TrigISIs(1).Vals(1).bns{1}, ISIcum, 'Color', clr{wIndex})
+end
+legend(CondNames)
+ylabel('Cumulative Fraction');
+xlabel('ISI (msecs)');
+xlim([-4, 1]);
+xticks([-4:1])
+ylim([0, 1]);
+fig = gcf;
+ax = gca;
+ax.FontSize = 20;
+ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
+end
+%%
 % We've now come to the end of the tutorial script. Please feel free to try
 % uot other conditions, bin sizes, optotagging paramters etc. Just play
 % around with it until you get bored.
