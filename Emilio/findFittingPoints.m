@@ -135,5 +135,6 @@ und_Flag = arrayfun(@(x) contains(x.name, "_"), foldersInBatch);
 foldersInBatch(pointFlag | ~fileFlags | ~und_Flag) = [];
 for cf = foldersInBatch'
     dataDir = fullfile(cf.folder, cf.name);
-    [~] = readAndCorrectArdTrigs(dataDir);
+    fprintf(1, "Processing folder %s\n", dataDir)
+    readAndCorrectArdTrigs(dataDir);
 end
