@@ -1,4 +1,4 @@
-function [TaggedIDs, fig] = findSubPopulations(nkm, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
+function [GroupIDs, fig] = findSubPopulations(nkm, clInfo, clIDs, ConditionName, TriggerTimes, sortedData, samplingFrequency)
 
 % This function plots latency and jitter of latnecy against depth for each
 % unit and groups the units according to the measures by using k means
@@ -22,10 +22,6 @@ tm = 5e-2;
 Latencies = TriggerLatencies(sortedData(spkInd,2), TriggerTimes, fs, tm);
 mn = (cellfun(@mean, Latencies)*1e3);
 sd = (cellfun(@std, Latencies)*1e3);
-rng('default');
-jitter = randi(20,size(depth));
-depth = depth + jitter; % adding small jitter for visualisation
-depth = -1*depth;
 kmat = [mn, sd, depth];
 
  
@@ -51,7 +47,14 @@ nan = isnan(mn) | isnan(sd);
 
 
 km = kmeans(kmat(~nan,:), nkm, 'Replicates', 50);
-TaggedIDs = cell(nkm,1);
+GroupIDs = cell(nkm,1);
+
+rng('default');
+jitter = randi(20,size(depth));
+depth = depth + jitter; % adding small jitter for visualisation
+depth = -1*depth;
+kmat = [mn, sd, depth];
+
 
 colours = [0,0,0; 1,0,0; 0,1,0; 0,0,1; 1,1,0; 1,0,1];
 
@@ -59,8 +62,8 @@ fig = figure('Name', name, 'Color', 'White');
 
 
 for sub = 1:nkm
-    TaggedIDs{sub,1} = sub;
-    TaggedIDs{sub,2} = ID(km==sub);
+    GroupIDs{sub,1} = sub;
+    GroupIDs{sub,2} = ID(km==sub);
     errorbar(mn(km == sub),depth(km == sub),sd(km == sub), 'horizontal', 'LineStyle', 'none', 'Marker', 'd', 'Color', colours(sub,:), 'MarkerSize', 2.5, 'LineWidth', 0.01, 'CapSize', 0, 'MarkerFaceColor', colours(sub,:));
     hold on
 end
