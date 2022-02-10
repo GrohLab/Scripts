@@ -212,21 +212,12 @@ end
 fprintf(1,'Condition(s):\n')
 fprintf('- ''%s''\n', Conditions(auxSubs(cchCond)).name)
 
-
-% Subscript to indicate the conditions with all whisker stimulations,
-% whisker control, laser control, and the combination whisker and laser.
+% Subscript to indicate the conditions with all whisker stimulations, and
+% combinations
 allWhiskerStimulus = chCond;
-% allLaserStimulus = 2;
-% whiskerControl = 9;
-% laserControl = 8;
 consideredConditions = auxSubs(cchCond);
 
 Nccond = length(consideredConditions);
-
-% Adding all the triggers from the piezo and the laser in one array
-% allWhiskersPlusLaserControl = ...
-%     union(Conditions(allWhiskerStimulus).Triggers,...
-%     Conditions(laserControl).Triggers,'rows');
 %% Boolean flags 
 delayFlags = false(NTa,Nccond);
 counter2 = 1;
@@ -253,8 +244,8 @@ delta_t = diff(responseWindow);
 indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
 % Plotting statistical tests
-[Figs, Results] = scatterSignificance(Results, Counts,...
-    consCondNames, delta_t, sortedData(goods,1));
+[Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
+    delta_t, gclID);
 configureFigureToPDF(Figs);
 stFigBasename = fullfile(figureDir,[expName,' ']);
 stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
