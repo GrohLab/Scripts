@@ -133,8 +133,51 @@ fileFlags = [foldersInBatch.isdir]';
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), foldersInBatch);
 und_Flag = arrayfun(@(x) contains(x.name, "_"), foldersInBatch);
 foldersInBatch(pointFlag | ~fileFlags | ~und_Flag) = [];
+%% 
 for cf = foldersInBatch'
     dataDir = fullfile(cf.folder, cf.name);
     fprintf(1, "Processing folder %s\n", dataDir)
     readAndCorrectArdTrigs(dataDir);
+end
+%%
+pmFlags = arrayfun(@(x) ismember(Conditions(pFlag).Triggers(:,1),...
+    Conditions(x).Triggers(:,1)), mixSubs, fnOpts{:}); pmFlags = [pmFlags{:}];
+
+
+lmFlags = arrayfun(@(x) ismember(Conditions(lFlag).Triggers(:,1),...
+    Conditions(x).Triggers(:,1)), mixSubs, fnOpts{:}); lmFlags = [lmFlags{:}];
+for ctf = 1:Nat
+    atName = fullfile(atFiles(ctf).folder, atFiles(ctf).name);
+    % Loading only arduino triggers (atTimes and atNames)
+    auxVars = load(atName, "at*");
+    if isempty(auxVars)
+        fprintf(1, "Warning! Unable to load necessary variables")
+        fprintf(1, " from the condition file:\n%s\n", atFiles(ctf).name)
+        return
+    end
+    fieldnames(auxVars);
+end
+%%
+
+figure; subplot(2,3,1); imagesc(psthTx, [], wPSTH(find(anyH)+1,:)./max(wPSTH(find(anyH)+1,:),[],2));
+title("Whisker deflection"); yticks(1:sum(anyH));yticklabels(gclID(anyH))
+subplot(2,3,2); imagesc(psthTx, [], PSTH(anyH,:,1)./max(PSTH(anyH,:,1),[],2));
+title("L5-BC"); set(get(gca, "YAxis"), "Visible", "off")
+subplot(2,3,3); imagesc(psthTx, [], PSTH(anyH,:,2)./max(PSTH(anyH,:,2),[],2));
+title("L5-MC"); set(get(gca, "YAxis"), "Visible", "off")
+% Non-normalized
+subplot(2,3,4); imagesc(psthTx, [], wPSTH(find(anyH)+1,:));
+title("Whisker deflection"); yticks(1:sum(anyH));yticklabels(gclID(anyH))
+subplot(2,3,5); imagesc(psthTx, [], PSTH(anyH,:,1));
+title("L5-BC"); set(get(gca, "YAxis"), "Visible", "off")
+subplot(2,3,6); imagesc(psthTx, [], PSTH(anyH,:,2));
+title("L5-MC"); set(get(gca, "YAxis"), "Visible", "off")
+
+%% 
+for cif = 1:size(imFiles,1)
+    ifName = fullfile(imFiles(cif).folder, imFiles(cif).name);
+    [~, bName] = fileparts(ifName);
+    im = imread(ifName, "jpg");
+    imInv = 255 - im;
+    imwrite(imInv, fullfile(imFiles(cif).folder, string(bName) + "_Inv.jpg"))
 end
