@@ -328,7 +328,7 @@ propPieFileName = fullfile(figureDir,...
     responseWindow*1e3, [Ntn-Nrn, Nrn]));
 saveFigure(respFig, propPieFileName, 1);
 % Potentiated, depressed and unmodulated clusters pie
-if cchCond == 2
+if length(cchCond) == 2
     potFig = figure("Color", "w");
     pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
         'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
