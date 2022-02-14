@@ -37,7 +37,7 @@ for chCond = 1:nCond
 end
 
 %% Adding ISIs to TrigISIs
-spontWindow = -flip(respWindow);
+spontaneousWindow = -flip(responseWindow);
 
 for chCond = 1:nCond
     
@@ -49,9 +49,9 @@ for chCond = 1:nCond
     % Subscript column vectors for the rest good clusters
     for wIndex = 1:2
         if wIndex == 1
-            Window = spontWindow;
+            Window = spontaneousWindow;
         else
-            Window = respWindow;
+            Window = responseWindow;
         end
         [~, isiStack] = getStacks(false,ConsConds(chCond).Triggers, onOffStr,...
             Window,fs,fs,[],ISIspar);
@@ -61,7 +61,7 @@ for chCond = 1:nCond
         TrigISIs(chCond).Vals(wIndex).TriggeredIsI = isiStack;
         for histInd = 1: Ncl
             figure('Visible','off');
-            hisi = histogram(log10(isiStack(histInd,:,:)), 'BinEdges', log10(0.001):0.01:log10(10));
+            hisi = histogram(log10(isiStack(histInd,:,:)), 'BinEdges', log10(0.0001):0.01:log10(10));
             TrigISIs(chCond).Vals(wIndex).cts{histInd} = hisi.BinCounts;
             TrigISIs(chCond).Vals(wIndex).bns{histInd} = (hisi.BinEdges(1:end-1) + hisi.BinEdges(2:end))/2;
             
