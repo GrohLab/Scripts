@@ -1,4 +1,5 @@
 %% Prep Variables
+
 mrControl = clInfo.Mech_Control_4mW_Mech_Rate_Evoked-clInfo.Mech_Control_4mW_preMech_Rate_Evoked;
 mrLaser = clInfo.Mech_Laser_5sec_4mW_Rate_Evoked-clInfo.Mech_Laser_5sec_4mW_preMech_Rate_Evoked;
 data = table(clInfo.id, clInfo.abs_depth, mrControl, mrLaser);
@@ -9,6 +10,7 @@ ID = data.Var1;
 depths = data.Var2;
 c = data.Var3;
 l = data.Var4;
+rng('default');
 jitter = randi(20,size(depths));
 depths = -1*(depths + jitter);
 

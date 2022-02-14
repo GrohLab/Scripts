@@ -1,4 +1,4 @@
-function [Conditions, Triggers] = getTriggers(expName, dataDir, fs)
+% function [Conditions, Triggers] = getTriggers(expName, dataDir, fs)
 
 %% Assumes that you do your mech (with/without laser) trials in one batch of recordings, ie. not laser (L), mech (M), L, M
     % e.g. LLLLLMMM is fine, as is MMMMMMMMMLL ...this script will
@@ -193,7 +193,7 @@ condHasMech =[];
 stimFrequencies = cell(length(Trigs(laserInd).Triggers),1);
 pulseLength = cell(length(Trigs(laserInd).Triggers),1);
 for a = 1:length(Trigs(laserInd).Triggers)
-    if length(Trigs(mchInd).Triggers{1,a}) < minMech
+    if length(Trigs(mchInd).Triggers{1,a}) > minMech
                 condHasMech = [condHasMech; cc];
     end
     trig = Trigs(laserInd).Triggers{1,a};
@@ -383,4 +383,4 @@ end
 %% Save
 save(fullfile(dataDir, [expName, '_analysis.mat']), 'Conditions', 'Triggers', '-v7.3');
 
-end
+% end
