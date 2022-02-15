@@ -181,4 +181,38 @@ for cif = 1:size(imFiles,1)
     imInv = 255 - im;
     imwrite(imInv, fullfile(imFiles(cif).folder, string(bName) + "_Inv.jpg"))
 end
-%%
+%% Pooled anaesthetised experiments
+dataDir = 'Z:\Emilio\SuperiorColliculusExperiments\Anaesthetised';
+load(fullfile(dataDir, 'Opto-responses.mat'))
+fnOpts = {"UniformOutput", false}; H = logical(H);
+gclID = clInfo(clInfo.ActiveUnit == 1, :).Properties.RowNames;
+respWin = [3, 35]*1e-3;
+condNames = arrayfun(@(x) string(x.name), relativeSpkTmsStruct);
+concatCellRows = @(cmat) arrayfun(@(x) cat(2, cmat{x,:}),...
+    (1:size(cmat,1))', fnOpts{:});
+getSpikeCellMat = @(spkStruct) arrayfun(@(x) x.SpikeTimes,...
+    spkStruct, fnOpts{:});
+sqzSpks = cellfun(concatCellRows, getSpikeCellMat(relativeSpkTmsStruct),...
+    fnOpts{:});
+respSpks = cellfun(@(x) cellfun(@(y) y(y>=respWin(1)&y<=respWin(2)),...
+    x, fnOpts{:}), sqzSpks, fnOpts{:});
+stDv = cellfun(@(x) cellfun(@(y) std(y), x), respSpks, fnOpts{:});
+stDv = cat(2, stDv{:});
+[PSTH, bnEdgs] = cellfun(@(x) cellfun(@(y) histcounts(y,...
+    "BinLimits", respWin, "BinWidth", 5e-4), x, fnOpts{:}),...
+    respSpks, fnOpts{:}); bnEdgs = bnEdgs{1}{1}; 
+bnCnts = (bnEdgs(1:end-1)+bnEdgs(2:end))/2;
+PSTH = cellfun(@(x) cat(1, x{:}), PSTH, fnOpts{:});
+for ccond = 1:size(condNames, 2)
+    fig = figure; axs(1) = subplot(1,2,1); 
+    imagesc(bnCnts*1e3, [], PSTH{ccond}(H(:,ccond),:))
+    yticks(1:sum(H(:,ccond))); title(condNames(ccond))
+    yticklabels(cellfun(@(x) strrep(x, '_','\_'), gclID(H(:,ccond)),...
+        fnOpts{:})); xlabel("Time [ms]"); axs(2) = subplot(1,2,2); 
+    barh(stDv(H(:,ccond),ccond), "EdgeColor", "none"); xlabel("Time [ms]");
+    set(get(axs(2), "YAxis"), "Direction", "reverse", "Visible", "off")
+    xticklabels(xticks*1e3); title("\sigma in ms")
+    arrayfun(@(x) set(x, "Box", "off", "Color", "none"), axs)
+    linkaxes(axs,'y')
+    saveFigure(fig, fullfile(dataDir,"PopFigures",condNames(ccond)),1,1);
+end
