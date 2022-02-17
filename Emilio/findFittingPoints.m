@@ -289,4 +289,14 @@ gclID(xor(rclIdx(:,1,1), all(rclIdx(:,1,:),3)))
 % BC unique
 gclID(xor(rclIdx(:,1,2), all(rclIdx(:,1,:),3)))
 % Convergent
-gclID(all(rclIdx(:,1,:),3)))
+gclID(all(rclIdx(:,1,:),3))
+%% Response type
+[mSubs, coeffs, Npc, Nv] = responseType(PSTH(rclIdx(:,1),:), timeLapse, 'Plot', true);
+for cpc = unique(mSubs)'
+    mIdx = mSubs == cpc;
+    figure; imagesc(timeLapse, [], PSTH(mIdx,:));
+    yticks(1:sum(mIdx));
+    yticklabels(repU(gclID(mIdx)));
+    title(sprintf("PC %d", cpc))
+end
+    
