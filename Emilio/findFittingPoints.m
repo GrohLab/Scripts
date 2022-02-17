@@ -217,15 +217,19 @@ for ccond = 1:size(condNames, 2)
     saveFigure(fig, fullfile(dataDir,"PopFigures",condNames(ccond)),1,1);
 end
 %%
+dataDir = 'Z:\Emilio\SuperiorColliculusExperiments\Anaesthetised';
 repU = @(x) strrep(x,'_','.');
+spkTh = 0.8;
 Npsth_t = size(PSTH,2);
 [m_ph, b_ph] = lineariz([1, Npsth_t], timeLapse(2), timeLapse(1));
 psthTx = (1:Npsth_t)*m_ph + b_ph;
 respFlag = psthTx' > responseWindow;
 respFlag = xor(respFlag(:,1), respFlag(:,2));
+% 0.8 spikes per trial as a threshold for accepting significance.
 enghSpkFlag = squeeze(sum(PSTH(:, respFlag, :), 2) ./...
-    reshape(NaStack,1,1,[])) > 0.8;
+    reshape(NaStack,1,1,[])) > spkTh;
 cmoment = 1;
+signPrCnt = (1-alph)*100;
 for ccond = 1:Nccond
     figure; imagesc(timeLapse, [], PSTH(:,:,ccond)./...
         max(PSTH(:,:,ccond),[],2))
@@ -239,16 +243,22 @@ for ccond = 1:Nccond
     for signLvl = 1:size(alph,2)
         signFlag = signMat{ccond}(:,cmoment,signLvl) & wruIdx &...
             enghSpkFlag(:,ccond);
-        figure; axs(1) = subplot(10,1,1:8);
+        sgnFig = figure; axs(1) = subplot(10,1,1:8);
         imagesc(timeLapse, [], zscore(PSTH(signFlag,:, ccond),1,2));
         set(axs(1), "Box", "off", "Color", "none")
         set(get(axs(1), "XAxis"), "Visible", "off")
         yticks(1:sum(signFlag));
         yticklabels(repU(gclID(signFlag)));
-        title(sprintf("Z-score significance %.3f %s (%s)",...
-            signTh(signLvl), consCondNames{ccond}, momentStr(cmoment)))
+        title(sprintf("Z-score significance %.3f%% %s (%s)",...
+            signPrCnt(signLvl), consCondNames{ccond}, momentStr(cmoment)))
         axs(2) = subplot(10,1,9:10); plot(psthTx,...
             mean(zscore(PSTH(signFlag,:,ccond),1,2)))
         linkaxes(axs, "x"); xlim(timeLapse);
+        set(axs(2), "Box", "off", "Color", "none")
+        xlabel(axs(2), "Time [s]"); ylabel(axs(2), "Z-score")
+        ylabel(axs(1), "Clusters");
+        saveFigure(sgnFig, fullfile(dataDir, "PopFigures",...
+            sprintf("%s SPKTH%.2f SIGNLVL%.2f%%",consCondNames{ccond},...
+            spkTh, signPrCnt(signLvl))), 1)
     end
 end
