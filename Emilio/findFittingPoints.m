@@ -221,25 +221,34 @@ repU = @(x) strrep(x,'_','.');
 Npsth_t = size(PSTH,2);
 [m_ph, b_ph] = lineariz([1, Npsth_t], timeLapse(2), timeLapse(1));
 psthTx = (1:Npsth_t)*m_ph + b_ph;
+respFlag = psthTx' > responseWindow;
+respFlag = xor(respFlag(:,1), respFlag(:,2));
+enghSpkFlag = squeeze(sum(PSTH(:, respFlag, :), 2) ./...
+    reshape(NaStack,1,1,[])) > 0.8;
 cmoment = 1;
 for ccond = 1:Nccond
-    figure; imagesc(timeLapse, [], PSTH(:,:,ccond)./max(PSTH(:,:,ccond),[],2))
+    figure; imagesc(timeLapse, [], PSTH(:,:,ccond)./...
+        max(PSTH(:,:,ccond),[],2))
     yticks(1:size(PSTH,1));yticklabels(repU(gclID))
     title(sprintf("All clusters (%s)", consCondNames{ccond}));
-    figure; imagesc(timeLapse, [], PSTH(wruIdx,:,ccond)./max(PSTH(wruIdx,:,ccond),[],2))
+    figure; imagesc(timeLapse, [],...
+        PSTH(wruIdx,:,ccond)./max(PSTH(wruIdx,:,ccond),[],2))
     yticks(1:sum(wruIdx)); yticklabels(repU(gclID(wruIdx)))
     title("Clusters with different evoked median")
     momentStr = ["\mu", "Median"];
     for signLvl = 1:size(alph,2)
-        signFlag = signMat{ccond}(:,cmoment,signLvl);
+        signFlag = signMat{ccond}(:,cmoment,signLvl) & wruIdx &...
+            enghSpkFlag(:,ccond);
         figure; axs(1) = subplot(10,1,1:8);
-        imagesc(timeLapse, [], zscore(PSTH(wruIdx & signFlag,:, ccond),1,2));
-        yticks(1:sum(wruIdx & signFlag));
-        yticklabels(repU(gclID(wruIdx & signFlag)));
+        imagesc(timeLapse, [], zscore(PSTH(signFlag,:, ccond),1,2));
+        set(axs(1), "Box", "off", "Color", "none")
+        set(get(axs(1), "XAxis"), "Visible", "off")
+        yticks(1:sum(signFlag));
+        yticklabels(repU(gclID(signFlag)));
         title(sprintf("Z-score significance %.3f %s (%s)",...
             signTh(signLvl), consCondNames{ccond}, momentStr(cmoment)))
         axs(2) = subplot(10,1,9:10); plot(psthTx,...
-            mean(zscore(PSTH(wruIdx & signFlag,:,ccond),1,2)))
+            mean(zscore(PSTH(signFlag,:,ccond),1,2)))
         linkaxes(axs, "x"); xlim(timeLapse);
     end
 end
