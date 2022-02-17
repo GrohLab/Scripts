@@ -262,3 +262,31 @@ for ccond = 1:Nccond
             spkTh, signPrCnt(signLvl))), 1)
     end
 end
+%% Convergence proportions
+rclIdx = arrayfun(@(x) arrayfun(@(y) wruIdx & enghSpkFlag(:,x) &...
+    signMat{x}(:,1,y), 1:size(alph,2), fnOpts{:}), 1:Nccond, fnOpts{:});
+rclIdx = cellfun(@(x) cat(2,x{:}), rclIdx, fnOpts{:});
+rclIdx = cat(3, rclIdx{:});
+set(gca, "Box", "off", "Color", "none", "Visible", "on")
+cvgPropFig = figure; bar(flip(squeeze(sum(rclIdx).\...
+    sum(all(rclIdx,3))),2), "EdgeColor", "none")
+lgnd = legend({'BC','MC'}); 
+set(lgnd, "Box", "off", "Color", "none", "Location", "best")
+ylim([0,1])
+set(gca, "Box", "off", "Color", "none")
+xticklabels(signPrCnt)
+ylabel("Convergence proportion")
+xlabel("Significance percentage [%]")
+title("Convergence proportion per \alpha")
+saveFigure(cvgPropFig, fullfile(dataDir, "PopFigures/",...
+    "Relative convergence proportion per significance"), 1)
+%% Convergence info
+% Raw numbers
+sum(rclIdx);
+sum(rclIdx).\sum(all(rclIdx,3));
+% Motor unique
+gclID(xor(rclIdx(:,1,1), all(rclIdx(:,1,:),3)))
+% BC unique
+gclID(xor(rclIdx(:,1,2), all(rclIdx(:,1,:),3)))
+% Convergent
+gclID(all(rclIdx(:,1,:),3)))
