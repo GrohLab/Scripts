@@ -216,3 +216,30 @@ for ccond = 1:size(condNames, 2)
     linkaxes(axs,'y')
     saveFigure(fig, fullfile(dataDir,"PopFigures",condNames(ccond)),1,1);
 end
+%%
+repU = @(x) strrep(x,'_','.');
+Npsth_t = size(PSTH,2);
+[m_ph, b_ph] = lineariz([1, Npsth_t], timeLapse(2), timeLapse(1));
+psthTx = (1:Npsth_t)*m_ph + b_ph;
+cmoment = 1;
+for ccond = 1:Nccond
+    figure; imagesc(timeLapse, [], PSTH(:,:,ccond)./max(PSTH(:,:,ccond),[],2))
+    yticks(1:size(PSTH,1));yticklabels(repU(gclID))
+    title(sprintf("All clusters (%s)", consCondNames{ccond}));
+    figure; imagesc(timeLapse, [], PSTH(wruIdx,:,ccond)./max(PSTH(wruIdx,:,ccond),[],2))
+    yticks(1:sum(wruIdx)); yticklabels(repU(gclID(wruIdx)))
+    title("Clusters with different evoked median")
+    momentStr = ["\mu", "Median"];
+    for signLvl = 1:size(alph,2)
+        signFlag = signMat{ccond}(:,cmoment,signLvl);
+        figure; axs(1) = subplot(10,1,1:8);
+        imagesc(timeLapse, [], zscore(PSTH(wruIdx & signFlag,:, ccond),1,2));
+        yticks(1:sum(wruIdx & signFlag));
+        yticklabels(repU(gclID(wruIdx & signFlag)));
+        title(sprintf("Z-score significance %.3f %s (%s)",...
+            signTh(signLvl), consCondNames{ccond}, momentStr(cmoment)))
+        axs(2) = subplot(10,1,9:10); plot(psthTx,...
+            mean(zscore(PSTH(wruIdx & signFlag,:,ccond),1,2)))
+        linkaxes(axs, "x"); xlim(timeLapse);
+    end
+end
