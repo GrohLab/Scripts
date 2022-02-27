@@ -171,11 +171,11 @@ trigNames = trigNames(continuousNameSub);
 
 
 
-%% Now we have identified the units we want to analyse, and the different manipulations we've induced in thenm (Conditions). 
+%% Now we have identified the units we want to analyse, and the different manipulations we've induced in thenm (Conditions).
 
 % With multi-unit extracellular recordngs, the information we reliably have
 % access to and can answer question about, are unit firing (spike) rates
-% and the inter-spike intervals. 
+% and the inter-spike intervals.
 
 % Lets calculate the interspike intervals for later
 
@@ -199,24 +199,24 @@ end
 
 
 %% We can now decide how to porceed with respect to the time around each
-% manipulation that we want to consider. 
+% manipulation that we want to consider.
 
 
 
 % Time lapse, bin size, and spontaneous and response windows
 
-    % Viewing window denotes the timespan around the TTL trigger shown for the
-    % Peri-Stimulus-Time-Histograms (PSTHs - something we'll get on to later)
-    
-    % Response window is the timespan after the TTL trigger to be
-    % considered for the statistical analysis.
-    
-    % Bin size is also a PSTH measure that determines how many spikes are bunched into a given bin. 
-    
-    % Feel free to play around with these parameters once after first
-    % running with the defaults.
-    
-    
+% Viewing window denotes the timespan around the TTL trigger shown for the
+% Peri-Stimulus-Time-Histograms (PSTHs - something we'll get on to later)
+
+% Response window is the timespan after the TTL trigger to be
+% considered for the statistical analysis.
+
+% Bin size is also a PSTH measure that determines how many spikes are bunched into a given bin.
+
+% Feel free to play around with these parameters once after first
+% running with the defaults.
+
+
 promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
     'Bin size [s]:'};
 defInputs = {'-2, 6', '0.5, 2', '0.01'};
@@ -273,12 +273,12 @@ fprintf(1,'Spontaneous window: %.2f to %.2f ms before the trigger\n',...
 
 % Some conditions are duplicated as either '_AllTriggers', or 'Block'. The
 % Block triggers are 5 seconds time durations of the 'All_Triggers'
-% condition. 
+% condition.
 
-    % e.g. 10Hz_All_Triggers will contain trigger times for each TTL pulse,
-    % which can be a little as 5ms. The Block variety of this condition
-    % considers the duration of the pulse train (usually 5 seconds), to compare
-    % with other longer manipulations.
+% e.g. 10Hz_All_Triggers will contain trigger times for each TTL pulse,
+% which can be a little as 5ms. The Block variety of this condition
+% considers the duration of the pulse train (usually 5 seconds), to compare
+% with other longer manipulations.
 
 % We suggest going for a 'Mech_All_Block' conditions initally.
 
@@ -323,9 +323,9 @@ end
 
 
 % Ne = Number of units + the Mech as the first event + the Laser as the last
-% event, 
+% event,
 
-% Nt = Number of time samples in between the time window, 
+% Nt = Number of time samples in between the time window,
 
 % Nta = number of total triggers.
 
@@ -339,7 +339,7 @@ end
 tx = (0:Nt - 1)/fs + timeLapse(1);
 
 
-%% Now we can choose the conditions we wish to analyse within our 'All' condition. 
+%% Now we can choose the conditions we wish to analyse within our 'All' condition.
 
 % Choose the conditions to look at
 auxSubs = setdiff(1:numel(condNames), chCond);
@@ -353,7 +353,7 @@ if ~iOk
     return
 end
 
- cchCond = flip(cchCond); % Flip the conditions to get Control on x-axis later
+cchCond = flip(cchCond); % Flip the conditions to get Control on x-axis later
 
 % Select the onset or the offset of a trigger
 fprintf(1,'Condition(s):\n')
@@ -474,14 +474,14 @@ e = 1;
 f = length(consCondNames);
 for a = 1:length(consCondNames) - 1
     for b = (a + 1): length(consCondNames)
-
+        
         for c = 1: sZ(1,2)
-            clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05; 
-
+            clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+            
         end
-
+        
         e = e + 1;
-
+        
         if e == f
             e = e + 1;
         end
@@ -492,7 +492,7 @@ end
 
 %% Adding the absolute depth of each unit to the clInfo table.
 
-dpth = 1500;
+dpth = 1300;
 
 abs_depth = dpth - clInfo.depth;
 
@@ -507,7 +507,7 @@ clInfo = addvars(clInfo,abs_depth,'After','depth',...
 % determine the temporal sequence of spike activation (e.g. which
 % population is expressing the channel-rhodopsin protein).
 
-[TaggedIDs, fig] = Optotag([2,10], [0.2,4], clInfo, gclID, Conditions(14).name, Conditions(14).Triggers, sortedData, fs);
+[TaggedIDs, fig] = Optotag([2,10], [0.2,4], clInfo, gclID, Conditions(4).name, Conditions(4).Triggers, sortedData, fs);
 
 % idxTagged = ismember(clInfo.id, TaggedIDs);
 % if ~any(ismember(clInfo.Properties.VariableNames,'Tagged'))
@@ -541,7 +541,7 @@ if ~isfield(Conditions,'Stimulus') ||...
 end
 
 
-%% Creating a configuration structure to keep track of all the 
+%% Creating a configuration structure to keep track of all the
 configStructure = struct('Experiment', fullfile(dataDir,expName),...
     'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
     'BinSize_s', binSz, 'Trigger', struct('Name', condNames{chCond},...
@@ -588,7 +588,7 @@ for ccond = 1:size(delayFlags,2)
     relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
     relativeSpikeTimes(~filterIdx(2),:) = [];
     condRelativeSpkTms{ccond} = relativeSpikeTimes;
-
+    
     clSpkTms = cell(size(relativeSpikeTimes,1),1);
     if exist(csvFileName, 'file') && ccond == 1
         existFlag = true;
@@ -600,7 +600,7 @@ for ccond = 1:size(delayFlags,2)
         end
     end
     fID = 1;
-
+    
     for cr = 1:size(relativeSpikeTimes, 1)
         clSpkTms(cr) = {sort(cell2mat(relativeSpikeTimes(cr,:)))};
         if fID > 2
@@ -613,7 +613,7 @@ for ccond = 1:size(delayFlags,2)
     end
     relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
     relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
-  
+    
 end
 save(fullfile(dataDir,[expName,'_exportSpkTms.mat']),...
     'relativeSpkTmsStruct','configStructure')
@@ -680,7 +680,7 @@ for ccond = 1:Nccond
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
-
+    
     
 end
 % for a = 1:length(consideredConditions)
@@ -744,7 +744,7 @@ for ccond = 1:Nccond
         stims, csNames);
     configureFigureToPDF(psthFigs(ccond));
     psthFigs(ccond).Children(end).Title.String = consCondNames{ccond};
-   
+    
 end
 % for a = 1:length(consideredConditions)
 %     savefig(figure(a), fullfile(figureDir, [consCondNames{a}, '_filtered_PSTH_0.001binSz.fig']));
@@ -766,7 +766,7 @@ idxGroup3 = ismember(gclID, Group3);
 
 % Order the groups by depth
 
-ruIdx = [true, true, true; idxGroup3, idxGroup2, idxGroup1];
+ruIdx = [true, true, true; idxGroup3, idxGroup1, idxGroup2];
 %% We can plot the Depth vs change in FR by the groups we've just assigned
 
 
@@ -801,15 +801,15 @@ deltaRate(:,2) = c;
 figure('Color', 'White', 'Name', 'Changes in FR with Mechanical Stimulation');
 hold on
 for unit = 1:length(ID)
-dr = deltaRate(unit,:);
-dpth = [depths(unit), depths(unit)];
-if ismember(ID{unit}, Group3)
-plot(dr, dpth, 'LineStyle', '-', 'Color', [green, 0.5], 'LineWidth', 10);
-elseif ismember(ID{unit}, Group2)
-plot(dr, dpth, 'LineStyle', '-', 'Color', [red, 0.5], 'LineWidth', 10);
-elseif ismember(ID{unit}, Group1)
-plot(dr, dpth, 'LineStyle', '-', 'Color', [blue, 0.5], 'LineWidth', 10);
-end
+    dr = deltaRate(unit,:);
+    dpth = [depths(unit), depths(unit)];
+    if ismember(ID{unit}, Group3)
+        plot(dr, dpth, 'LineStyle', '-', 'Color', [green, 0.5], 'LineWidth', 10);
+    elseif ismember(ID{unit}, Group2)
+        plot(dr, dpth, 'LineStyle', '-', 'Color', [red, 0.5], 'LineWidth', 10);
+    elseif ismember(ID{unit}, Group1)
+        plot(dr, dpth, 'LineStyle', '-', 'Color', [blue, 0.5], 'LineWidth', 10);
+    end
 end
 ax = gca;
 ax.Title.String = 'Changes in FR with Mechanical Stimulation';
@@ -832,15 +832,15 @@ deltaRate(:,2) = l-c;
 figure('Color', 'White', 'Name', 'Laser Modulation of Mechanical Responses');
 hold on
 for unit = 1:length(ID)
-dr = deltaRate(unit,:);
-dpth = [depths(unit), depths(unit)];
-if ismember(ID{unit}, Group3)
-plot(dr, dpth, 'LineStyle', '-', 'Color', [green, 0.5], 'LineWidth', 10);
-elseif ismember(ID{unit}, Group2)
-plot(dr, dpth, 'LineStyle', '-', 'Color', [red, 0.5], 'LineWidth', 10);
-elseif ismember(ID{unit}, Group1)
-plot(dr, dpth, 'LineStyle', '-', 'Color', [blue, 0.5], 'LineWidth', 10);
-end
+    dr = deltaRate(unit,:);
+    dpth = [depths(unit), depths(unit)];
+    if ismember(ID{unit}, Group3)
+        plot(dr, dpth, 'LineStyle', '-', 'Color', [green, 0.5], 'LineWidth', 10);
+    elseif ismember(ID{unit}, Group2)
+        plot(dr, dpth, 'LineStyle', '-', 'Color', [red, 0.5], 'LineWidth', 10);
+    elseif ismember(ID{unit}, Group1)
+        plot(dr, dpth, 'LineStyle', '-', 'Color', [blue, 0.5], 'LineWidth', 10);
+    end
 end
 ax = gca;
 ax.Title.String = 'Laser Modulation of Mechanical Responses';
@@ -869,14 +869,14 @@ purple = [0.5,0,0.5];
 colours = [green; red; blue];
 % colours = [0,0,0];
 
-idxGroup1Tbl = ismember(All_Units.id, Group1);
-idxGroup2Tbl = ismember(All_Units.id, Group2);
-idxL6Tbl = ismember(All_Units.id, L6);
+idxGroup1Tbl = ismember(All_Units.id, Group3);
+idxGroup2Tbl = ismember(All_Units.id, Group1);
+idxL6Tbl = ismember(All_Units.id, Group2);
 
 ansFilt = questdlg('Would you like to filter for Mech Response?','Filter',...
     'Yes','No','Yes');
 if strcmp(ansFilt,'Yes')
-   idxMat = [idxGroup1Tbl, idxGroup2Tbl, idxL6Tbl]  & mechResponse;
+    idxMat = [idxGroup1Tbl, idxGroup2Tbl, idxL6Tbl]  & mechResponse;
 else
     idxMat = [idxGroup1Tbl, idxGroup2Tbl, idxL6Tbl] ;
 end
@@ -912,19 +912,19 @@ for unitGroup = 1:nGroups
     
     
     
-%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
-%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
-%     
-%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
-%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    %     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+    %
+    %     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
     
     medControl = median(rts(:,1));
     medLaser = median(rts(:,2));
-       
     
-%     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
-%     leg.Box = 'off';
-%     leg.Location = 'northeast';
+    
+    %     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+    %     leg.Box = 'off';
+    %     leg.Location = 'northeast';
     
     
     
@@ -981,19 +981,19 @@ for unitGroup = 1:nGroups
     
     
     
-%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
-%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
-%     
-%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
-%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    %     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+    %
+    %     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
     
     medControl = median(rts(:,1));
     medLaser = median(rts(:,2));
-       
     
-%     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
-%     leg.Box = 'off';
-%     leg.Location = 'northeast';
+    
+    %     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
+    %     leg.Box = 'off';
+    %     leg.Location = 'northeast';
     
     
     
@@ -1032,7 +1032,7 @@ end
 
 % yMax = [max(All_Units.Mech_Control_Rate_Spont), max(All_Units.Mech_Control_Rate_Evoked)];
 % yMin = 0;
- figure('Color', 'White', 'Name','Baseline_vs_Evoked_Rates_ViolinPlot');
+figure('Color', 'White', 'Name','Baseline_vs_Evoked_Rates_ViolinPlot');
 for unitGroup = 1:nGroups
     
     
@@ -1054,15 +1054,15 @@ for unitGroup = 1:nGroups
     
     
     
-%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
-%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
-%     
-%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
-%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    %     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+    %
+    %     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
     
     medControl = median(rts(:,1));
     medLaser = median(rts(:,2));
-       
+    
     
     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
     leg.Box = 'off';
@@ -1110,7 +1110,7 @@ end
 
 % yMax = [max(All_Units.Mech_Control_Rate_Spont), max(All_Units.Mech_Control_Rate_Evoked)];
 % yMin = 0;
- figure('Color', 'White', 'Name','Mech_Control_vs_Mech+Laser_Rates_ViolinPlot');
+figure('Color', 'White', 'Name','Mech_Control_vs_Mech+Laser_Rates_ViolinPlot');
 for unitGroup = 1:nGroups
     
     
@@ -1132,15 +1132,15 @@ for unitGroup = 1:nGroups
     
     
     
-%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
-%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
-%     
-%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
-%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    %     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+    %
+    %     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
     
     medControl = median(rts(:,1));
     medLaser = median(rts(:,2));
-       
+    
     
     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
     leg.Box = 'off';
@@ -1200,15 +1200,15 @@ for unitGroup = 1:nGroups
     
     
     
-%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
-%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
-%     
-%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
-%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    %     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+    %
+    %     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
     
     medControl = median(rts(:,1));
     medLaser = median(rts(:,2));
-       
+    
     
     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
     leg.Box = 'off';
@@ -1237,7 +1237,7 @@ for unitGroup = 1:nGroups
     leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
     ax.XAxis.Limits = [-xscale, xscale];
     %ax.YAxis.Limits = [yMin, yMax];
-%     ax.YAxis.Limits(1) = 0;
+    %     ax.YAxis.Limits(1) = 0;
     ax.YLabel.String = 'Relative Rate [Hz]';
     ax.XTick = [];
     %     ax.Visible = 'off';
@@ -1268,15 +1268,15 @@ for unitGroup = 1:nGroups
     
     
     
-%     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
-%         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
-%     
-%     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
-%         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
+    %     plot(zeros(nUnits,1) - 0.0025, rts(:,1),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', colour(unitGroup,:), 'MarkerSize', 2);
+    %
+    %     plot(zeros(nUnits,1) + 0.0025, rts(:,2),...
+    %         'LineStyle','none', 'Marker', '*', 'Color', [0,0,1], 'MarkerSize', 2);
     
     medControl = median(rts(:,1));
     medLaser = median(rts(:,2));
-       
+    
     
     leg = legend('Mech Control','Mech Laser', 'Location','northwest');
     leg.Box = 'off';
@@ -1305,13 +1305,13 @@ for unitGroup = 1:nGroups
     leg.String = [{'Mech Control'}, {'Mech + Laser'}, {'Population Median'}];
     ax.XAxis.Limits = [-xscale, xscale];
     %ax.YAxis.Limits = [yMin, yMax];
-%     ax.YAxis.Limits(1) = 0;
+    %     ax.YAxis.Limits(1) = 0;
     ax.YLabel.String = 'Relative Rate [Hz]';
     ax.XTick = [];
     %     ax.Visible = 'off';
 end
 
-%% We can also plot the popPSTHs according to these groups 
+%% We can also plot the popPSTHs according to these groups
 
 red = [0.75, 0, 0];
 green = [0, 0.75, 0];
@@ -1335,14 +1335,14 @@ for ccond = 1: length(consideredConditions)
         fthAxFlag = true;
         totlX = nFilters + 1;
     end
-   
+    
     
     clrDivider = nFilters-1;
     if nFilters <= 1
         clrDivider = nFilters;
     end
-   
-    datclr = [green; red; blue];   
+    
+    datclr = [green; red; blue];
     
     for a = 1:nFilters
         ax(a) = subplot(totlX,1,a,'Parent',fig);
@@ -1360,7 +1360,7 @@ for ccond = 1: length(consideredConditions)
         plot(psthTX,popPSTH,'Color', colour(a,:))
         ax(a).XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
         ax(a).XLim = [timeLapse(1), timeLapse(2)];
-
+        
         ax(a).Box = 'off';
         ax(a).ClippingStyle = 'rectangle';
         legend(ax(a),'show','Location','northeast')
@@ -1370,7 +1370,7 @@ for ccond = 1: length(consideredConditions)
         
     end
     ax(1).Title.String = consCondNames(ccond);
-
+    
     ax2 = subplot(totlX,1,nFilters + 1,'Parent',fig);
     
     stims = mean(cst(:,:,delayFlags(:,ccond)),3);
@@ -1421,7 +1421,7 @@ for ccond = 1: length(consideredConditions)
     %end
     
     
- 
+    
     %
     % Formatting the population PSTH plot
     
@@ -1475,15 +1475,15 @@ pwrs = unique(Power);
 
 for a = 1:length(pwrs)
     pwr = pwrs(a);
-
+    
     pwrInd = Power == pwr;
-    clIDind =  clInfo.id(clInfo.Mech_Control_7mW_R==true);
+    clIDind =  gclID;
     lngth = length(clIDind);
     for a = 1:lngth
         rng('default');
         cl = clIDind(a);
         clSel = find(ismember(pclID, cl));
-
+        
         rasCondSel = find(pwrInd);
         rasCond = consideredConditions(rasCondSel);
         rasCondNames = consCondNames(rasCondSel);
@@ -1495,9 +1495,11 @@ for a = 1:length(pwrs)
         clSel = clSel(rasOrd(rasOrd ~= 0));
         Nma = min(Na(rasCondSel));
         rasFig = figure;
-        columns = length(pwrs);
+        nPwrs = length(pwrs);
         Nrcond = length(rasCond);
         ax = gobjects(Nrcond*Nrcl,1);
+        lidx = 1;
+        cf = 1;
         for cc = 1:length(rasCond)
             % Equalize trial number
             trigSubset = sort(randsample(Na(rasCondSel(cc)),Nma));
@@ -1507,17 +1509,18 @@ for a = 1:length(pwrs)
             trigAlSubs = Conditions(rasCond(cc)).Triggers(trigSubset,:);
             timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
             trigChange = find(diff(timeDur) ~= 0);
-            
+           
             for ccl = 1:Nrcl
-                lidx = ccl + (cc - 1) * Nrcl;
-                ax(lidx) = subplot(Nrcond, Nrcl, lidx);       %  subplot( Nrcl, Nrcond, lidx); % to plot the other way around
-                title(ax(lidx),sprintf(rasCondNames{cc}), 'Interpreter', 'none') % ,pclID{clSel(ccl)}
+%                 lidx = ccl + (cc - 1) * Nrcl;
+                ax(cf) = subplot(Nrcond*3, Nrcl, lidx:lidx+1);
+%                 ax(lidx) = subplot(Nrcond, Nrcl, lidx);       %  subplot( Nrcl, Nrcond, lidx); % to plot the other way around
+                title(ax(cf),sprintf(rasCondNames{cc}), 'Interpreter', 'none') % ,pclID{clSel(ccl)}
                 plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
-                    timeLapse, fs,'',ax(lidx));
-                ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
-                ax(lidx).YAxis.Label.String = 'Trials';
-
-                xlabel(ax(lidx), 'Time [s]')
+                    timeLapse, fs,'',ax(cf));
+                ax(cf).YAxisLocation = 'origin';ax(cf).YAxis.TickValues = Nma;
+                ax(cf).YAxis.Label.String = 'Trials';
+                
+                xlabel(ax(cf), 'Time [s]')
                 initSub = 0;
                 optsRect = {'EdgeColor','none','FaceColor','none'};
                 for ctr = 1:numel(trigChange)
@@ -1530,12 +1533,21 @@ for a = 1:length(pwrs)
                 
                 
                 stims = mean(cst(:,:,delayFlags(:,rasCondSel(cc))),3);
-%                 stims = stims([2,3],:);
+                %                 stims = stims([2,3],:);
                 
                 stims = stims - median(stims,2);
                 
                 
                 
+                ax(cf).Title.String = rasCondNames(cc);
+                %ax1.Title.String = consCondNames(ccond);
+                % %if fthAxFlag
+                % ax2 = subplot(totlX,1,nFilters + 1,'Parent',fig);
+                cf = cf + 1;
+                ax(cf) = subplot(Nrcond*3, Nrcl, lidx+2);
+                lidx = lidx+3;
+%                 stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+%                 stims = stims - median(stims,2);
                 for cs = 1:size(stims,1)
                     if abs(log10(var(stims(cs,:),[],2))) < 13
                         [m,b] = lineariz(stims(cs,:),1,0);
@@ -1553,43 +1565,70 @@ for a = 1:length(pwrs)
                     
                 end
                 
-                hold off
-                ax = gca;
                 
-               
-
-                ax.FontName ='Arial';
-                ax.FontSize = 25;
-                      
+                stmClr([1,5,9]) = 1;
+                stmClr(stmClr == 0) = 0.25;
                 
                 
+                
+                for cs = 1:min(r,c)
+                    if exist('IDs','var')
+                        plot(ax(cf),trigTX,stims(:,cs),'LineStyle','-','LineWidth',0.5,...
+                            'DisplayName', csNames{cs}, 'Color', stmClr(cs,:))
+                    else
+                        plot(ax(cf),trigTX,stims(:,cs),'LineStyle','-','LineWidth',0.5,  'Color', stmClr(cs,:))
+                    end
+                    
+                    
+                    if cs == 1
+                        ax(cf).NextPlot = 'add';
+                    end
+                end
+                legend(ax(cf),'show','Location','best')
+                
+                ax(cf).Box = 'off';
+                ax(cf).XLim = [timeLapse(1), timeLapse(2)];
+                ax(cf).XAxis.Visible = 'off';
+                ax(cf).YAxis.Visible = 'off';
+%                 linkaxes([ax, ax2], 'x')
+                
+                
+                
+                
+                
+                
+                
+                ax(cf).YAxis(1).Limits = [0,1.01];
+                ax(cf).Legend.String = csNames;
+                
+                
+                
+                
+                
+                rasConds = rasCondNames{1};
+                if length(rasCondNames) > 1
+                    for r = 2:length(rasCondNames)
+                        rasConds = [rasConds, '+', rasCondNames{r}];
+                    end
+                end
+                
+                linkaxes(ax,'x')
+                rasFigName = ['Unit_', cell2mat(cl), '_', ];
+                rasFig.Name = [rasFigName, '_', num2str(pwr), 'mW'];
+                configureFigureToPDF (rasFig);
+                set(rasFig, 'Position', get(0, 'ScreenSize'));
+                cf = cf+1;
+%                 saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds,'_', num2str(timeLapse(1)), '_to_', num2str(timeLapse(2)),'.emf']));
+%                 %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
+%                 savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
             end
         end
-        
-        
-        
-        
-        
-        rasConds = rasCondNames{1};
-        if length(rasCondNames) > 1
-            for r = 2:length(rasCondNames)
-                rasConds = [rasConds, '+', rasCondNames{r}];
-            end
-        end
-        
-        linkaxes(ax,'x')
-        rasFigName = ['Unit_', cell2mat(cl), '_', ];
-        rasFig.Name = [rasFigName, '_', num2str(pwr), 'mW'];
-        configureFigureToPDF (rasFig);
-        set(rasFig, 'Position', get(0, 'ScreenSize'));
-        saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds,'_', num2str(timeLapse(1)), '_to_', num2str(timeLapse(2)),'.emf']));
-        %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
-        savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
     end
 end
+
 % close all
 
-%% ISI analysis - 
+%% ISI analysis -
 
 
 % Computing the Triggered ISIs
@@ -1623,16 +1662,16 @@ for chCond = 1:nCond
     TrigISIs.name = Conditions(cchCond(chCond)).name;
     TrigISIs.Vals(1).name = 'Spontaneous';
     TrigISIs.Vals(2).name = 'Evoked';
-
-
-% Adding ISIs to TrigISIs
-spontaneousWindow = -flip(responseWindow);
-
-
+    
+    
+    % Adding ISIs to TrigISIs
+    spontaneousWindow = -flip(responseWindow);
+    
+    
     
     
     % contains will give multiple units when looking for e.g. cl45
-%     spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
+    %     spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
     % spkSubs replaces round(sortedData{goods(1),2}*fs) for the rest of the
     % clusters
     % Subscript column vectors for the rest good clusters
@@ -1644,7 +1683,7 @@ spontaneousWindow = -flip(responseWindow);
         end
         [~, isiStack] = getStacks(false,Conditions(cchCond(chCond)).Triggers, onOffStr,...
             Window,fs,fs,[],ISIspar);
-        lInda = isiStack > 0; 
+        lInda = isiStack > 0;
         % timelapse becomes spontaneousWindow for pre-trigger, and responseWindow
         % for post
         TrigISIs.Vals(wIndex).TriggeredIsI = isiStack;
@@ -1657,59 +1696,59 @@ spontaneousWindow = -flip(responseWindow);
             close gcf;
         end
     end
-
-% ISIs and CumISIs
-
+    
+    % ISIs and CumISIs
+    
     for a = 1:length(TrigISIs.Vals(wIndex).cts)
         TrigISIs.Vals(1).ISI{a} = TrigISIs.Vals(1).cts{a}./sum(TrigISIs.Vals(1).cts{a});
         TrigISIs.Vals(2).ISI{a} = TrigISIs.Vals(2).cts{a}./sum(TrigISIs.Vals(2).cts{a});
         TrigISIs.Vals(1).CumISI{a} = cumsum(TrigISIs.Vals(1).ISI{a});
         TrigISIs.Vals(2).CumISI{a} = cumsum(TrigISIs.Vals(2).ISI{a});
     end
-
-
-
-% Plotting the ISIs
-
-
-figure('Color', 'White', 'Name', [TrigISIs.name]);
-hold on
-for wIndex = 1:2
-    CondNames = {'Baseline', 'Evoked'};
-    clr = {[0.5, 0, 0], [0, 1, 1]};
-    IsiStack = zeros(length(TrigISIs.Vals(wIndex).ISI), length(TrigISIs.Vals(wIndex).ISI{1}));
-    cumIsiStack = zeros(length(TrigISIs.Vals(wIndex).CumISI), length(TrigISIs.Vals(wIndex).CumISI{1}));
-    for cInd = 1:length(TrigISIs.Vals(wIndex).CumISI)
-        IsiStack(cInd,:) =  TrigISIs.Vals(wIndex).ISI{cInd};
-        cumIsiStack(cInd,:) =  TrigISIs.Vals(wIndex).CumISI{cInd};
-    end
-    % Getting rid of NaNs
-    cumIsiStack(length(TrigISIs.Vals(wIndex).CumISI) + 1,:) = NaN;
-    IsiStack(length(TrigISIs.Vals(wIndex).ISI) + 1,:) = NaN;
-    cumIndNaN = (length(TrigISIs.Vals(wIndex).CumISI) + 1);
-    for nInd = 1:(length(TrigISIs.Vals(wIndex).CumISI))
-        if isnan(cumIsiStack(nInd,:)) == true
-            cumIndNaN = [cumIndNaN; nInd];
+    
+    
+    
+    % Plotting the ISIs
+    
+    
+    figure('Color', 'White', 'Name', [TrigISIs.name]);
+    hold on
+    for wIndex = 1:2
+        CondNames = {'Baseline', 'Evoked'};
+        clr = {[0.5, 0, 0], [0, 1, 1]};
+        IsiStack = zeros(length(TrigISIs.Vals(wIndex).ISI), length(TrigISIs.Vals(wIndex).ISI{1}));
+        cumIsiStack = zeros(length(TrigISIs.Vals(wIndex).CumISI), length(TrigISIs.Vals(wIndex).CumISI{1}));
+        for cInd = 1:length(TrigISIs.Vals(wIndex).CumISI)
+            IsiStack(cInd,:) =  TrigISIs.Vals(wIndex).ISI{cInd};
+            cumIsiStack(cInd,:) =  TrigISIs.Vals(wIndex).CumISI{cInd};
         end
+        % Getting rid of NaNs
+        cumIsiStack(length(TrigISIs.Vals(wIndex).CumISI) + 1,:) = NaN;
+        IsiStack(length(TrigISIs.Vals(wIndex).ISI) + 1,:) = NaN;
+        cumIndNaN = (length(TrigISIs.Vals(wIndex).CumISI) + 1);
+        for nInd = 1:(length(TrigISIs.Vals(wIndex).CumISI))
+            if isnan(cumIsiStack(nInd,:)) == true
+                cumIndNaN = [cumIndNaN; nInd];
+            end
+        end
+        cumIndNaN = sort(cumIndNaN, 'descend');
+        cumIsiStack(cumIndNaN,:) =[];
+        IsiStack(cumIndNaN,:) = [];
+        stckSz = size(cumIsiStack);
+        ISIcum = sum(cumIsiStack)/stckSz(1);
+        % Only if the bin widths are constant!!!
+        plot(TrigISIs(1).Vals(1).bns{1}, ISIcum, 'Color', clr{wIndex})
     end
-    cumIndNaN = sort(cumIndNaN, 'descend');
-    cumIsiStack(cumIndNaN,:) =[];
-    IsiStack(cumIndNaN,:) = [];
-    stckSz = size(cumIsiStack);
-    ISIcum = sum(cumIsiStack)/stckSz(1);
-    % Only if the bin widths are constant!!!
-    plot(TrigISIs(1).Vals(1).bns{1}, ISIcum, 'Color', clr{wIndex})
-end
-legend(CondNames)
-ylabel('Cumulative Fraction');
-xlabel('ISI (msecs)');
-xlim([-4, 1]);
-xticks([-4:1])
-ylim([0, 1]);
-fig = gcf;
-ax = gca;
-ax.FontSize = 20;
-ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
+    legend(CondNames)
+    ylabel('Cumulative Fraction');
+    xlabel('ISI (msecs)');
+    xlim([-4, 1]);
+    xticks([-4:1])
+    ylim([0, 1]);
+    fig = gcf;
+    ax = gca;
+    ax.FontSize = 20;
+    ax.XTickLabel = 10.^cellfun(@str2double,ax.XTickLabel) * 1e3;
 end
 %%
 % We've now come to the end of the tutorial script. Please feel free to try
