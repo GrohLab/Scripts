@@ -181,3 +181,122 @@ for cif = 1:size(imFiles,1)
     imInv = 255 - im;
     imwrite(imInv, fullfile(imFiles(cif).folder, string(bName) + "_Inv.jpg"))
 end
+%% Pooled anaesthetised experiments
+dataDir = 'Z:\Emilio\SuperiorColliculusExperiments\Anaesthetised';
+load(fullfile(dataDir, 'Opto-responses.mat'))
+fnOpts = {"UniformOutput", false}; H = logical(H);
+gclID = clInfo(clInfo.ActiveUnit == 1, :).Properties.RowNames;
+respWin = [3, 35]*1e-3;
+condNames = arrayfun(@(x) string(x.name), relativeSpkTmsStruct);
+concatCellRows = @(cmat) arrayfun(@(x) cat(2, cmat{x,:}),...
+    (1:size(cmat,1))', fnOpts{:});
+getSpikeCellMat = @(spkStruct) arrayfun(@(x) x.SpikeTimes,...
+    spkStruct, fnOpts{:});
+sqzSpks = cellfun(concatCellRows, getSpikeCellMat(relativeSpkTmsStruct),...
+    fnOpts{:});
+respSpks = cellfun(@(x) cellfun(@(y) y(y>=respWin(1)&y<=respWin(2)),...
+    x, fnOpts{:}), sqzSpks, fnOpts{:});
+stDv = cellfun(@(x) cellfun(@(y) std(y), x), respSpks, fnOpts{:});
+stDv = cat(2, stDv{:});
+[PSTH, bnEdgs] = cellfun(@(x) cellfun(@(y) histcounts(y,...
+    "BinLimits", respWin, "BinWidth", 5e-4), x, fnOpts{:}),...
+    respSpks, fnOpts{:}); bnEdgs = bnEdgs{1}{1}; 
+bnCnts = (bnEdgs(1:end-1)+bnEdgs(2:end))/2;
+PSTH = cellfun(@(x) cat(1, x{:}), PSTH, fnOpts{:});
+for ccond = 1:size(condNames, 2)
+    fig = figure; axs(1) = subplot(1,2,1); 
+    imagesc(bnCnts*1e3, [], PSTH{ccond}(H(:,ccond),:))
+    yticks(1:sum(H(:,ccond))); title(condNames(ccond))
+    yticklabels(cellfun(@(x) strrep(x, '_','\_'), gclID(H(:,ccond)),...
+        fnOpts{:})); xlabel("Time [ms]"); axs(2) = subplot(1,2,2); 
+    barh(stDv(H(:,ccond),ccond), "EdgeColor", "none"); xlabel("Time [ms]");
+    set(get(axs(2), "YAxis"), "Direction", "reverse", "Visible", "off")
+    xticklabels(xticks*1e3); title("\sigma in ms")
+    arrayfun(@(x) set(x, "Box", "off", "Color", "none"), axs)
+    linkaxes(axs,'y')
+    saveFigure(fig, fullfile(dataDir,"PopFigures",condNames(ccond)),1,1);
+end
+%%
+dataDir = 'Z:\Emilio\SuperiorColliculusExperiments\Anaesthetised';
+repU = @(x) strrep(x,'_','.');
+spkTh = 0.8;
+Npsth_t = size(PSTH,2);
+[m_ph, b_ph] = lineariz([1, Npsth_t], timeLapse(2), timeLapse(1));
+psthTx = (1:Npsth_t)*m_ph + b_ph;
+respFlag = psthTx' > responseWindow;
+respFlag = xor(respFlag(:,1), respFlag(:,2));
+% 0.8 spikes per trial as a threshold for accepting significance.
+enghSpkFlag = squeeze(sum(PSTH(:, respFlag, :), 2) ./...
+    reshape(NaStack,1,1,[])) > spkTh;
+cmoment = 1;
+signPrCnt = (1-alph)*100;
+for ccond = 1:Nccond
+    figure; imagesc(timeLapse, [], PSTH(:,:,ccond)./...
+        max(PSTH(:,:,ccond),[],2))
+    yticks(1:size(PSTH,1));yticklabels(repU(gclID))
+    title(sprintf("All clusters (%s)", consCondNames{ccond}));
+    figure; imagesc(timeLapse, [],...
+        PSTH(wruIdx,:,ccond)./max(PSTH(wruIdx,:,ccond),[],2))
+    yticks(1:sum(wruIdx)); yticklabels(repU(gclID(wruIdx)))
+    title("Clusters with different evoked median")
+    momentStr = ["\mu", "Median"];
+    for signLvl = 1:size(alph,2)
+        signFlag = signMat{ccond}(:,cmoment,signLvl) & wruIdx &...
+            enghSpkFlag(:,ccond);
+        sgnFig = figure; axs(1) = subplot(10,1,1:8);
+        imagesc(timeLapse, [], zscore(PSTH(signFlag,:, ccond),1,2));
+        set(axs(1), "Box", "off", "Color", "none")
+        set(get(axs(1), "XAxis"), "Visible", "off")
+        yticks(1:sum(signFlag));
+        yticklabels(repU(gclID(signFlag)));
+        title(sprintf("Z-score significance %.3f%% %s (%s)",...
+            signPrCnt(signLvl), consCondNames{ccond}, momentStr(cmoment)))
+        axs(2) = subplot(10,1,9:10); plot(psthTx,...
+            mean(zscore(PSTH(signFlag,:,ccond),1,2)))
+        linkaxes(axs, "x"); xlim(timeLapse);
+        set(axs(2), "Box", "off", "Color", "none")
+        xlabel(axs(2), "Time [s]"); ylabel(axs(2), "Z-score")
+        ylabel(axs(1), "Clusters");
+        saveFigure(sgnFig, fullfile(dataDir, "PopFigures",...
+            sprintf("%s SPKTH%.2f SIGNLVL%.2f%%",consCondNames{ccond},...
+            spkTh, signPrCnt(signLvl))), 1)
+    end
+end
+%% Convergence proportions
+rclIdx = arrayfun(@(x) arrayfun(@(y) wruIdx & enghSpkFlag(:,x) &...
+    signMat{x}(:,1,y), 1:size(alph,2), fnOpts{:}), 1:Nccond, fnOpts{:});
+rclIdx = cellfun(@(x) cat(2,x{:}), rclIdx, fnOpts{:});
+rclIdx = cat(3, rclIdx{:});
+set(gca, "Box", "off", "Color", "none", "Visible", "on")
+cvgPropFig = figure; bar(flip(squeeze(sum(rclIdx).\...
+    sum(all(rclIdx,3))),2), "EdgeColor", "none")
+lgnd = legend({'BC','MC'}); 
+set(lgnd, "Box", "off", "Color", "none", "Location", "best")
+ylim([0,1])
+set(gca, "Box", "off", "Color", "none")
+xticklabels(signPrCnt)
+ylabel("Convergence proportion")
+xlabel("Significance percentage [%]")
+title("Convergence proportion per \alpha")
+saveFigure(cvgPropFig, fullfile(dataDir, "PopFigures/",...
+    "Relative convergence proportion per significance"), 1)
+%% Convergence info
+% Raw numbers
+sum(rclIdx);
+sum(rclIdx).\sum(all(rclIdx,3));
+% Motor unique
+gclID(xor(rclIdx(:,1,1), all(rclIdx(:,1,:),3)))
+% BC unique
+gclID(xor(rclIdx(:,1,2), all(rclIdx(:,1,:),3)))
+% Convergent
+gclID(all(rclIdx(:,1,:),3))
+%% Response type
+[mSubs, coeffs, Npc, Nv] = responseType(PSTH(rclIdx(:,1),:), timeLapse, 'Plot', true);
+for cpc = unique(mSubs)'
+    mIdx = mSubs == cpc;
+    figure; imagesc(timeLapse, [], PSTH(mIdx,:));
+    yticks(1:sum(mIdx));
+    yticklabels(repU(gclID(mIdx)));
+    title(sprintf("PC %d", cpc))
+end
+    

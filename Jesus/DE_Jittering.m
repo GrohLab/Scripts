@@ -252,7 +252,7 @@ stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
     responseWindow(1)*1e3, responseWindow(2)*1e3, spontaneousWindow(1)*1e3,...
     spontaneousWindow(2)*1e3);
 ccn = 1;
-%for cc = indCondSubs
+
 for cc = 1:numel(Figs)
     if ~ismember(cc, indCondSubs)
         altCondNames = strsplit(Figs(cc).Children(2).Title.String,': ');
