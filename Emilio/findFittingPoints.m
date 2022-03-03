@@ -221,8 +221,8 @@ dataDir = 'Z:\Emilio\SuperiorColliculusExperiments\Anaesthetised';
 repU = @(x) strrep(x,'_','.');
 spkTh = 0.8;
 Npsth_t = size(PSTH,2);
-[m_ph, b_ph] = lineariz([1, Npsth_t], timeLapse(2), timeLapse(1));
-psthTx = (1:Npsth_t)*m_ph + b_ph;
+m_ph = fit_poly([1, Npsth_t], timeLapse, 1);
+psthTx = (1:Npsth_t)*m_ph(1) + m_ph(2);
 respFlag = psthTx' > responseWindow;
 respFlag = xor(respFlag(:,1), respFlag(:,2));
 % 0.8 spikes per trial as a threshold for accepting significance.
@@ -267,7 +267,6 @@ rclIdx = arrayfun(@(x) arrayfun(@(y) wruIdx & enghSpkFlag(:,x) &...
     signMat{x}(:,1,y), 1:size(alph,2), fnOpts{:}), 1:Nccond, fnOpts{:});
 rclIdx = cellfun(@(x) cat(2,x{:}), rclIdx, fnOpts{:});
 rclIdx = cat(3, rclIdx{:});
-set(gca, "Box", "off", "Color", "none", "Visible", "on")
 cvgPropFig = figure; bar(flip(squeeze(sum(rclIdx).\...
     sum(all(rclIdx,3))),2), "EdgeColor", "none")
 lgnd = legend({'BC','MC'}); 
@@ -300,3 +299,17 @@ for cpc = unique(mSubs)'
     title(sprintf("PC %d", cpc))
 end
     
+%%
+Nbin = 64;
+ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
+
+logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
+    'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin,...
+    'normalization', 'fr');
+logFigs = plotLogPSTH(logPSTH);
+
+%%
+[PSTHpop, psthTx] = getPSTHfromRelSpkStruct(relativeSpkTmsStruct, configStructure);
+PSTHexp = getPSTHfromRelSpkStruct(relativeSpkTmsStruct2, configStructure2);
+PSTH = cat(1, PSTHpop, PSTHexp); rclIdx = cat(1, rclIdx, rclIdx2);
+
