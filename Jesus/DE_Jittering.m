@@ -328,7 +328,7 @@ propPieFileName = fullfile(figureDir,...
     responseWindow*1e3, [Ntn-Nrn, Nrn]));
 saveFigure(respFig, propPieFileName, 1);
 % Potentiated, depressed and unmodulated clusters pie
-if length(cchCond) == 2
+if Nccond == 2
     potFig = figure("Color", "w");
     pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
         'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
@@ -355,26 +355,26 @@ if strcmp(gcans, 'Yes')
     clWaveforms = getClusterWaveform(gclID(wruIdx), dataDir);
 end
 
-%% Addition mean signals to the Conditions variable
-if ~isfield(Conditions,'Stimulus') ||...
-        any(arrayfun(@(x) isempty(x.Stimulus), Conditions(consideredConditions)))
-    fprintf(1,'Writting the stimulus raw signal into Conditions variable:\n')
-    whFlag = contains(trigNames, whStim, 'IgnoreCase', 1);
-    lrFlag = contains(trigNames, cxStim, 'IgnoreCase', 1);
-    cdel = 1;
-    for cc = consideredConditions
-        fprintf(1,'- %s\n', Conditions(cc).name)
-        Conditions(cc).Stimulus = struct(...
-            'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
-            1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
-            1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
-        cdel = cdel + 1;
-    end
-    save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
-end
+%% Addition mean signals to the Conditions variable (Unused)
+% if ~isfield(Conditions,'Stimulus') ||...
+%         any(arrayfun(@(x) isempty(x.Stimulus), Conditions(consideredConditions)))
+%     fprintf(1,'Writting the stimulus raw signal into Conditions variable:\n')
+%     whFlag = contains(trigNames, whStim, 'IgnoreCase', 1);
+%     lrFlag = contains(trigNames, cxStim, 'IgnoreCase', 1);
+%     cdel = 1;
+%     for cc = consideredConditions
+%         fprintf(1,'- %s\n', Conditions(cc).name)
+%         Conditions(cc).Stimulus = struct(...
+%             'Mechanical',reshape(mean(cst(whFlag,:,delayFlags(:,cdel)),3),...
+%             1,Nt),'Laser',reshape(mean(cst(lrFlag,:,delayFlags(:,cdel)),3),...
+%             1,Nt),'TimeAxis',(0:Nt-1)/fs + timeLapse(1));
+%         cdel = cdel + 1;
+%     end
+%     save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
+% end
 
 
-%% Configuration structure
+%% Configuration structure (unused)
 configStructure = struct('Experiment', fullfile(dataDir,expName),...
     'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
     'BinSize_s', binSz, 'Trigger', struct('Name', condNames{chCond},...
@@ -468,9 +468,9 @@ for ccond = 1:size(delayFlags,2)
 end
 
 relSpkFileName =...
-    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
+    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
     expName, responseWindow*1e3, spontaneousWindow*1e3,...
-    Conditions(chCond).name, filtStr);
+    timeLapse*1e3, Conditions(chCond).name, filtStr);
 if ~exist(relSpkFileName,'file')
     save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
         'configStructure')
@@ -673,69 +673,69 @@ mdls(mdls(:,2) == 0, 2) = 1;
 % and with a small spread less than 2 ms in between 1 and 3 quartile as
 % precise. Considering unfiltered PSTH and the spikes within the response
 % window. Experiments with ChR2
-rangeAll = @(x) [min(x), max(x)];
-if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
-    fprintf(1,'Optotagging clusters... ')
-    tvNames = clInfo.Properties.VariableNames;
-    optoVarFlag = contains(tvNames, 'Optotag');
-    prevFlag = false;
-    if any(optoVarFlag)
-        fprintf(1, 'Previous optotag found!\n')
-        optoIdx = clInfo{clInfo.ActiveUnit == 1, 'Optotag'} == 1;
-        prevFlag = true;
-    else
-        PSTHtrial = PSTH ./ Na; 
-        
-        
-        oqVals = qVals(optoCl,:);
-        [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
-        availableIdx = oqVals(:,3) <= 7e-3; % Availability
-        preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
-        optoTaggedCl = optoCl(availableIdx & preciseIdx);
-        optoIdx = ismember(gclID,pclID(optoTaggedCl));
-        fprintf(1, 'Found %d clusters\n', sum(optoIdx))
-    end
-    if any(optoIdx)
-        
-        % Probe view
-        chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
-        chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
-        mdX = mean(rangeAll(chPos(:,1)));
-        % Matrix for scaling the xlimit for the probe view.
-        lsrCMap = [0.2, 0.8, 1];
-        optoOpts = {'MarkerEdgeColor',lsrCMap,'MarkerEdgeAlpha',0.3};
-        optoLineOpts = {'Marker','+', 'DisplayName','Optotagged region',...
-            'Color',lsrCMap}; scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
-        xview = scaleMatrix * repmat(mdX,2,1);
-        probFig = figure('Name', 'Probe', 'Color', [1,1,1]);
-        probAx = axes('NextPlot', 'add'); xlim(probAx, xview');
-        probPts = scatter(probAx, chPos(:,1), chPos(:,2), '.k');
-        title(probAx, 'Electrodes position in the probe');
-        probAx.XAxis.Visible = 'off'; text(mdX, -1, 'Tip', 'Parent', probAx,...
-            'HorizontalAlignment', "center", "VerticalAlignment",  "top")
-        tvNames = clInfo.Properties.VariableNames; tvNames = string(tvNames);
-        chanStr = ["ch";"channel"]; [~, varSel] = find(tvNames == chanStr);
-        optoCh = clInfo{gclID(optoIdx), varSel}';
-        [coordSubs, ~] = find(chMap == optoCh);
-        optoPts = scatter(probAx, chPos(coordSubs,1), chPos(coordSubs,2),...
-            optoOpts{:}); optoRange = rangeAll(chPos(coordSubs,2));
-        optoLine = line(probAx, [mdX;mdX], optoRange', optoLineOpts{:});
-        ylabel(probAx, 'Electrode position relative to the probe tip [mm]')
-        fprintf(1, 'Optotagged clusters found between %.1f and %.1f mm',...
-            optoRange); fprintf(1, ' relative to the tip of the probe.\n')
-        legend(probAx, optoLine); saveFigure(probFig, fullfile(figureDir,...
-            'Probe view + position of optotagged clusters'))
-        if ~prevFlag
-            clInfo = addvars(clInfo, false(size(clInfo,1),1),...
-                'NewVariableNames', 'Optotag');
-            clInfo{gclID(optoIdx), 'Optotag'} = true;
-            writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'),...
-                1)
-        end
-    else
-        fprintf(1, 'No optotagged clusters found!\n')
-    end
-end
+% rangeAll = @(x) [min(x), max(x)];
+% if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
+%     fprintf(1,'Optotagging clusters... ')
+%     tvNames = clInfo.Properties.VariableNames;
+%     optoVarFlag = contains(tvNames, 'Optotag');
+%     prevFlag = false;
+%     if any(optoVarFlag)
+%         fprintf(1, 'Previous optotag found!\n')
+%         optoIdx = clInfo{clInfo.ActiveUnit == 1, 'Optotag'} == 1;
+%         prevFlag = true;
+%     else
+%         PSTHtrial = PSTH ./ Na; 
+%         
+%         
+%         oqVals = qVals(optoCl,:);
+%         [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
+%         availableIdx = oqVals(:,3) <= 7e-3; % Availability
+%         preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
+%         optoTaggedCl = optoCl(availableIdx & preciseIdx);
+%         optoIdx = ismember(gclID,pclID(optoTaggedCl));
+%         fprintf(1, 'Found %d clusters\n', sum(optoIdx))
+%     end
+%     if any(optoIdx)
+%         
+%         % Probe view
+%         chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
+%         chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
+%         mdX = mean(rangeAll(chPos(:,1)));
+%         % Matrix for scaling the xlimit for the probe view.
+%         lsrCMap = [0.2, 0.8, 1];
+%         optoOpts = {'MarkerEdgeColor',lsrCMap,'MarkerEdgeAlpha',0.3};
+%         optoLineOpts = {'Marker','+', 'DisplayName','Optotagged region',...
+%             'Color',lsrCMap}; scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
+%         xview = scaleMatrix * repmat(mdX,2,1);
+%         probFig = figure('Name', 'Probe', 'Color', [1,1,1]);
+%         probAx = axes('NextPlot', 'add'); xlim(probAx, xview');
+%         probPts = scatter(probAx, chPos(:,1), chPos(:,2), '.k');
+%         title(probAx, 'Electrodes position in the probe');
+%         probAx.XAxis.Visible = 'off'; text(mdX, -1, 'Tip', 'Parent', probAx,...
+%             'HorizontalAlignment', "center", "VerticalAlignment",  "top")
+%         tvNames = clInfo.Properties.VariableNames; tvNames = string(tvNames);
+%         chanStr = ["ch";"channel"]; [~, varSel] = find(tvNames == chanStr);
+%         optoCh = clInfo{gclID(optoIdx), varSel}';
+%         [coordSubs, ~] = find(chMap == optoCh);
+%         optoPts = scatter(probAx, chPos(coordSubs,1), chPos(coordSubs,2),...
+%             optoOpts{:}); optoRange = rangeAll(chPos(coordSubs,2));
+%         optoLine = line(probAx, [mdX;mdX], optoRange', optoLineOpts{:});
+%         ylabel(probAx, 'Electrode position relative to the probe tip [mm]')
+%         fprintf(1, 'Optotagged clusters found between %.1f and %.1f mm',...
+%             optoRange); fprintf(1, ' relative to the tip of the probe.\n')
+%         legend(probAx, optoLine); saveFigure(probFig, fullfile(figureDir,...
+%             'Probe view + position of optotagged clusters'))
+%         if ~prevFlag
+%             clInfo = addvars(clInfo, false(size(clInfo,1),1),...
+%                 'NewVariableNames', 'Optotag');
+%             clInfo{gclID(optoIdx), 'Optotag'} = true;
+%             writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'),...
+%                 1)
+%         end
+%     else
+%         fprintf(1, 'No optotagged clusters found!\n')
+%     end
+% end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
     '(Might take a while to compute if no file exists!)'],...
