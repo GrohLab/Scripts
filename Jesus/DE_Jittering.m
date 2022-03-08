@@ -797,6 +797,64 @@ corrTmWin = [1, 25]*1e-3;
 %     cqVals(ccl,:) = (quartCut' - il(2,:))./il(1,:);
 % end
 % cqDiff = diff(cqVals(:,[1,4]),1,2);
+%% Behaviour
+afPttrn = "ArduinoTriggers*.mat";
+rfPttrn = "RollerSpeed*.mat";
 
+flds = dir(getParentDir(dataDir,1));
+pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), flds);
+flds(pointFlag) = [];
+behFoldFlag = arrayfun(@(x) any(strcmpi(x.name, 'Behaviour')), flds);
+if any(behFoldFlag) && sum(behFoldFlag) == 1
+    % If only one folder named Behaviour exists, chances are that this is
+    % an awake experiment.
+    behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
+    fprintf(1, "Found %s!\n", behDir)
+    promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]'};
+    defInputs = {'-1, 2', '0.005, 0.5'};
+    answ = inputdlg(promptStrings,'Behaviour parameters', [1, 30], defInputs);
+    if isempty(answ)
+        fprintf(1,'Cancelling...\n')
+        return
+    else
+        bvWin = str2num(answ{1}); %#ok<*ST2NM>
+        if numel(bvWin) ~= 2
+            bvWin = str2num(inputdlg('Please provide the time window [s]:',...
+                'Time window',[1, 30], '-0.1, 0.1'));
+            if isnan(bvWin) || isempty(bvWin)
+                fprintf(1,'Cancelling...')
+                return
+            end
+        end
+        brWin = str2num(answ{2});
+    end
+    fprintf(1,'Time window: %.2f - %.2f ms\n',bvWin*1e3)
+    fprintf(1,'Response window: %.2f - %.2f ms\n',brWin*1e3)
 
-
+    afFiles = dir(fullfile(behDir,afPttrn));
+    if ~isempty(afFiles) && numel(afFiles)==1
+        afName = fullfile(afFiles.folder, afFiles.name);
+        try
+            load(afName, "atTimes", "atNames")
+        catch
+        end
+    else
+    end
+    rfFiles = dir(fullfile(behDir, rfPttrn));
+    if ~isempty(rfFiles) && numel(rfFiles) == 1
+        rfName = fullfile(rfFiles.folder, rfFiles.name);
+        load(rfName)
+        %              Encoder steps  Radius^2
+        en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
+    else
+    end
+    lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
+    [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
+            fr, fr, [], vf); [~, Nbt, Nba] = size(vStack);
+    tmdl = fit_poly([1,Nbt], bvWin, 1); behTx = ((1:Nbt)'.^[1,0])*tmdl;
+    bsFlag = behTx <= 0; % Spontaneous flag
+    brFlag = behTx < brWin; brFlag = xor(brFlag(:,1),brFlag(:,2));
+    sSig = squeeze(std(vStack(:,bsFlag,:), [], 2));
+    
+else
+end
