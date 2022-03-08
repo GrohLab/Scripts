@@ -230,6 +230,7 @@ enghSpkFlag = squeeze(sum(PSTH(:, respFlag, :), 2) ./...
     reshape(NaStack,1,1,[])) > spkTh;
 cmoment = 1;
 signPrCnt = (1-alph)*100;
+%% Figures
 for ccond = 1:Nccond
     figure; imagesc(timeLapse, [], PSTH(:,:,ccond)./...
         max(PSTH(:,:,ccond),[],2))
@@ -267,6 +268,7 @@ rclIdx = arrayfun(@(x) arrayfun(@(y) wruIdx & enghSpkFlag(:,x) &...
     signMat{x}(:,1,y), 1:size(alph,2), fnOpts{:}), 1:Nccond, fnOpts{:});
 rclIdx = cellfun(@(x) cat(2,x{:}), rclIdx, fnOpts{:});
 rclIdx = cat(3, rclIdx{:});
+%% 
 cvgPropFig = figure; bar(flip(squeeze(sum(rclIdx).\...
     sum(all(rclIdx,3))),2), "EdgeColor", "none")
 lgnd = legend({'BC','MC'}); 
