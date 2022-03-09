@@ -908,7 +908,8 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     clMap = lines(Nccond); 
     phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
     % Plotting speed signals together       
-    figure("NextPlot", "add"); arrayfun(@(x) patch(behTx([1:end,end:-1:1]),...
+    fig = figure("NextPlot", "add"); 
+    arrayfun(@(x) patch(behTx([1:end,end:-1:1]),...
         mat2ptch(rsSgnls{x}), 1, phOpts{:}, clMap(x,:)), 1:Nccond); hold on
     lObj = arrayfun(@(x) plot(behTx, rsSgnls{x}(:,1), "Color", clMap(x,:),...
         "LineWidth", 1.5, "DisplayName", consCondNames{x}), 1:Nccond);
@@ -918,6 +919,6 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     lgnd = legend(lObj); set(lgnd, "Box", "off", "Location", "best")
     rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms";
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
-        brWin*1e3); saveFigure(fig  , fullfile(figureDir, rsFigName), 1)
+        brWin*1e3); saveFigure(fig, fullfile(figureDir, rsFigName), 1)
 else
 end
