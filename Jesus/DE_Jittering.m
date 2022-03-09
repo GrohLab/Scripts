@@ -844,17 +844,71 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     if ~isempty(rfFiles) && numel(rfFiles) == 1
         rfName = fullfile(rfFiles.folder, rfFiles.name);
         load(rfName)
-        %              Encoder steps  Radius^2
-        en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
+        try
+            %              Encoder steps  Radius^2
+            en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
+            fr = rollFs;
+        catch
+            %              Encoder steps  Radius^2
+            en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
+            rollFs = fr;
+        end
     else
     end
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
             fr, fr, [], vf); [~, Nbt, Nba] = size(vStack);
-    tmdl = fit_poly([1,Nbt], bvWin, 1); behTx = ((1:Nbt)'.^[1,0])*tmdl;
-    bsFlag = behTx <= 0; % Spontaneous flag
-    brFlag = behTx < brWin; brFlag = xor(brFlag(:,1),brFlag(:,2));
+    vStack = vStack*en2cm; tmdl = fit_poly([1,Nbt], bvWin, 1);
+    behTx = ((1:Nbt)'.^[1,0])*tmdl;
+     % Spontaneous flag 
+    bsFlag = behTx <= 0; brFlag = behTx < brWin; 
+    brFlag = xor(brFlag(:,1),brFlag(:,2));
     sSig = squeeze(std(vStack(:,bsFlag,:), [], 2));
-    
+    % A bit arbitrary threshold, but enough to remove running trials 
+    sigTh = 2.5; excFlag = sSig > sigTh;
+    ptOpts = {"Color", 0.7*ones(1,3), "LineWidth", 0.2;...
+        "Color", "k", "LineWidth",  1.5};
+    spTh = {0.1:0.1:3};
+    gp = zeros(Nccond, 1, 'single');
+    rsPttrn = "%s roller speed VW%.2f - %.2f s RM%.2f - %.2f ms EX%d";
+    pfPttrn = "%s move probability %.2f RW%.2f - %.2f ms EX%d";
+    rsSgnls = cell(Nccond, 1); mvFlags = cell(Nccond,1);
+    mat2ptch = @(x) [x(1:end,:)*[1;1]; x(end:-1:1,:)*[1;-1]];
+    for ccond = 1:Nccond
+        sIdx = delayFlags(:,ccond) & ~excFlag;
+        % % Plot speed signals
+        fig = figure("Color", "w"); 
+        Nex = sum(xor(sIdx, delayFlags(:,ccond)));
+        rsFigName = sprintf(rsPttrn,consCondNames{ccond}, bvWin,...
+            brWin*1e3, Nex);
+        % Plot all trials
+        plot(behTx, squeeze(vStack(:,:,sIdx)), ptOpts{1,:}); hold on;
+        % Plot mean of trials
+        rsSgnls{ccond} = [squeeze(mean(vStack(:,:,sIdx),3))',...
+            squeeze(std(vStack(:,:,sIdx),1,3))'];
+        lObj = plot(behTx, rsSgnls{ccond}(:,1), ptOpts{2,:});
+        lgnd = legend(lObj,string(consCondNames{ccond}));
+        set(lgnd, "Box", "off", "Location", "best")
+        set(gca, "Box", "off", "Color", "none")
+        title(['Roller speed ',consCondNames{ccond}])
+        xlabel("Time [s]"); ylabel("Roller speed [cm/s]"); xlim(bvWin)
+        saveFigure(fig, fullfile(figureDir, rsFigName), 1, 1)
+        % Probability plots
+        mvpt = getMaxAbsPerTrial(squeeze(vStack(:,:,sIdx)), brWin, behTx);
+        mvFlags{ccond} = compareMaxWithThresh(mvpt, spTh); 
+        gp(ccond) = getAUC(mvFlags{ccond});
+        pfName = sprintf(pfPttrn, consCondNames{ccond}, gp(ccond),...
+            brWin*1e3, Nex);
+        fig = plotThetaProgress(mvFlags(ccond), spTh,...
+            string(consCondNames{ccond}));
+        xlabel("Roller speed \theta [cm/s]"); 
+        title(sprintf("Trial proportion crossing \\theta: %.3f", gp(ccond)))
+        saveFigure(fig, fullfile(figureDir, pfName), 1, 1)
+    end
+    clMap = lines(Nccond); 
+    phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.2, 'FaceColor'};
+    % Plotting speed signals together       
+        figure("NextPlot", "add"); arrayfun(@(x) patch(behTx([1:end,end:-1:1]),...
+            mat2ptch(rsSgnls), 1, phOpts{:}, clMap(x,:)), 1:Nccond)
 else
 end
