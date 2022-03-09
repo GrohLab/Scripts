@@ -906,9 +906,18 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         saveFigure(fig, fullfile(figureDir, pfName), 1, 1)
     end
     clMap = lines(Nccond); 
-    phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.2, 'FaceColor'};
+    phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
     % Plotting speed signals together       
-        figure("NextPlot", "add"); arrayfun(@(x) patch(behTx([1:end,end:-1:1]),...
-            mat2ptch(rsSgnls), 1, phOpts{:}, clMap(x,:)), 1:Nccond)
+    figure("NextPlot", "add"); arrayfun(@(x) patch(behTx([1:end,end:-1:1]),...
+        mat2ptch(rsSgnls{x}), 1, phOpts{:}, clMap(x,:)), 1:Nccond); hold on
+    lObj = arrayfun(@(x) plot(behTx, rsSgnls{x}(:,1), "Color", clMap(x,:),...
+        "LineWidth", 1.5, "DisplayName", consCondNames{x}), 1:Nccond);
+    xlabel("Time [s]"); xlim(bvWin); ylabel("Roller speed [cm/s]")
+    set(gca, "Box", "off", "Color", "none")
+    title("Roller speed for all conditions")
+    lgnd = legend(lObj); set(lgnd, "Box", "off", "Location", "best")
+    rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms";
+    rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
+        brWin*1e3); saveFigure(fig  , fullfile(figureDir, rsFigName), 1)
 else
 end
