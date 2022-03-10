@@ -849,15 +849,21 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*rollFs;
             fr = rollFs;
         catch
-            %              Encoder steps  Radius^2
-            en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
-            rollFs = fr;
+            try
+                %              Encoder steps  Radius^2
+                en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
+                rollFs = fr;
+            catch
+                en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
+                rollFs = fsRoll;
+                fr = fsRoll;
+            end
         end
     else
     end
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
-            fr, fr, [], vf); [~, Nbt, Nba] = size(vStack);
+        fr, fr, [], vf); [~, Nbt, Nba] = size(vStack);
     vStack = vStack*en2cm; tmdl = fit_poly([1,Nbt], bvWin, 1);
     behTx = ((1:Nbt)'.^[1,0])*tmdl;
      % Spontaneous flag 
@@ -874,6 +880,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     pfPttrn = "%s move probability %.2f RW%.2f - %.2f ms EX%d";
     rsSgnls = cell(Nccond, 1); mvFlags = cell(Nccond,1);
     mat2ptch = @(x) [x(1:end,:)*[1;1]; x(end:-1:1,:)*[1;-1]];
+    getThreshCross = @(x) sum(x)/size(x,1);
     for ccond = 1:Nccond
         sIdx = delayFlags(:,ccond) & ~excFlag;
         % % Plot speed signals
@@ -892,7 +899,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         set(gca, "Box", "off", "Color", "none")
         title(['Roller speed ',consCondNames{ccond}])
         xlabel("Time [s]"); ylabel("Roller speed [cm/s]"); xlim(bvWin)
-        saveFigure(fig, fullfile(figureDir, rsFigName), 1, 1)
+        saveFigure(fig, fullfile(figureDir, rsFigName), 1)
         % Probability plots
         mvpt = getMaxAbsPerTrial(squeeze(vStack(:,:,sIdx)), brWin, behTx);
         mvFlags{ccond} = compareMaxWithThresh(mvpt, spTh); 
@@ -903,7 +910,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             string(consCondNames{ccond}));
         xlabel("Roller speed \theta [cm/s]"); 
         title(sprintf("Trial proportion crossing \\theta: %.3f", gp(ccond)))
-        saveFigure(fig, fullfile(figureDir, pfName), 1, 1)
+        saveFigure(fig, fullfile(figureDir, pfName), 1)
     end
     clMap = lines(Nccond); 
     phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
@@ -920,5 +927,19 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms";
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
         brWin*1e3); saveFigure(fig, fullfile(figureDir, rsFigName), 1)
+    % Plotting movement threshold crossings
+    fig = figure("NextPlot", "add");
+    mvSgnls = cellfun(getThreshCross, mvFlags, fnOpts{:});
+    mvSgnls = cat(1, mvSgnls{:}); mvSgnls = mvSgnls';
+    plot(spTh{1}, mvSgnls); 
+    ccnGP = cellfun(@(x, y) [x, sprintf(' AUC%.3f',y)], consCondNames', ...
+        num2cell(gp), fnOpts{:});
+    lgnd = legend(ccnGP); set(gca, "Box", "off", "Color", "none")
+    set(lgnd, "Box", "off", "Location", "best"); ylim([0,1])
+    xlabel("Roller speed \theta [cm/s]"); ylabel("Trial proportion")
+    title("Trial proportion crossing \theta")
+    pfPttrn = "Move probability %sRW%.2f - %.2f ms";
+    pfName = sprintf(pfPttrn, sprintf('%s ', ccnGP{:}), brWin*1e3);
+    saveFigure(fig, fullfile(figureDir, pfName), 1, 1)
 else
 end
