@@ -19,8 +19,8 @@ if Nts ~= length(timeAxis)
     return
 end
 % Response period for all trials
-responseFlags = timeAxis >= responseWindow(1) &...
-    timeAxis <= responseWindow(2);
+responseFlags = timeAxis >= responseWindow;
+responseFlags = xor(responseFlags(:,1), responseFlags(:,2));
 
 mavpt = max(abs(inStack(responseFlags, :)));
 
