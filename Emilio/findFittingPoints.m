@@ -315,25 +315,27 @@ logFigs = plotLogPSTH(logPSTH);
 PSTHexp = getPSTHfromRelSpkStruct(relativeSpkTmsStruct2, configStructure2);
 PSTH = cat(1, PSTHpop, PSTHexp); rclIdx = cat(1, rclIdx, rclIdx2);
 %%
-[~, mu, sig] = zscore(PSTH,1,2);
+[~, mu, sig] = zscore(PSTH, 1, [2, 3]);
 Nctx = size(PSTH,3);
 arcIdx = any(rclIdx,2); axs = gobjects(2,1);
 lgOpts = {'Box', 'off', 'Location', 'best'};
 cbOpts = {'AxisLocation', 'in', 'Box', 'off', 'Location', 'east'};
-axOpts = {'Box', 'off', 'Color', 'none'};
+axOpts = {'Box', 'off', 'Color', 'none','Clipping','off'};
 ctxName = ["MC", "BC"];
 figureDir = "Z:\Berin\0_Paper\Anaesthetised ephys figures";
 phPttrn = "%s PSTH responsive units VW%.2f - %.2f ms RW%.2f - %.2f ms SW%.2f - %.2f ms";
 clMap = [zeros(1,3);ones(1,3)/3];
 for cctx = 1:size(PSTH,3)
     fig = figure; axs(1) = subplot(6,1,1:5);
-    zPSTH = (PSTH(arcIdx, :,cctx) - mu(arcIdx, :, cctx))./sig(arcIdx, :, cctx);
+    zPSTH = (PSTH(arcIdx, :, cctx) - mu(arcIdx))./sig(arcIdx);
+    psthSig = mean((PSTH(rclIdx(:,cctx),:,cctx)-mu(rclIdx(:,cctx)))./ ...
+        sig(rclIdx(:,cctx)), 1, "omitnan");
     imagesc(timeLapse, [], zPSTH); yticks(axs(1), 1:sum(arcIdx))
-    colormap(pink)
-    yticklabels(axs(1), repU(gclID(arcIdx))); set(axs(1), "CLim", [-1/3,5])
+    colormap(hot)
+    yticklabels(axs(1), repU(gclID(arcIdx)));% set(axs(1), "CLim", [-1/3,5])
     title(sprintf("%s responsive units", ctxName(cctx)))
     ylabel("Units"); set(get(axs(1), "XAxis"), "Visible", "off")
-    psthSig = mean(zPSTH, 1, "omitnan");
+    
     axs(2) = subplot(6,1,6); plot(psthTx, psthSig, "LineWidth", 1.5,...
         "Color", "k");  linkaxes(axs, "x"); ylim(axs(2), [-2/3,3])
     xlim(timeLapse); lgnd = legend(axs(2), 'Population PSTH');
@@ -350,7 +352,7 @@ for cctx = 1:size(PSTH,3)
     plot(axs2, psthTx, psthSig, "LineWidth", 1.5,...
         "DisplayName",ctxName(cctx),"Color", clMap(cctx,:))
 end
-xlim(axs2, timeLapse)
+xlim(axs2, timeLapse); xticklabels(axs2, xticks(axs2)*1e3)
 lgnd = legend(axs2); set(lgnd, lgOpts{:}); xlabel(axs2, "Time [ms]")
 title(axs2, "Population PSTH per cortex"); ylabel(axs2, "Z-score")
 phPttrn = "Population PSTH for %s VW%.2f - %.2f ms RW%.2f - %.2f ms SW%.2f - %.2f ms";
@@ -358,56 +360,3 @@ phName = sprintf(phPttrn, sprintf('%s ', ctxName), timeLapse,...
     responseWindow([1,2,2,1]).*[1,1,-1,-1]*1e3);
 saveFigure(fig2, fullfile(figureDir, phName), 1)
 %%
-get(gcf, "Children")
-cb = get(gcf, "Children");
-cb.Label.String = "Z-Score"
-
-ylim(axs(2), 'auto')
-ylim(axs(2))
-zyLim = ylim(axs(2))
-ylim(axs(2), [zyLim(1),3])
-saveFigure(figure(1), fullfile("Z:\Berin\0_Paper\Anaesthetised ephys figures", "MC PSTH responsive units VW-30.0 - 40.0 ms RW5.0 - 20.0 ms SW-20.0 - -5.0 ms"), 1)
-figure; subplot(6,1,1:5); imagesc(timeLapse, [], (PSTH(rclIdx(:,2), :, 2) - mu(rclIdx(:,2), :, 2))./sig(rclIdx(:,2), :, 2)); colormap(jet)
-yticks(1:sum(rclIdx(:,2)))
-yticklabels(repU(gclID(rclIdx(:,2))))
-set(get(gca, "XAxis"), "Visible", "off")
-axs(1) = gca;
-axs(2) = subplot(6,1,6);
-plot(psthTx, mean((PSTH(rclIdx(:,2), :, 2) - mu(rclIdx(:,2), :, 2))./sig(rclIdx(:,2), :, 2)),"Parent", axs(2))
-linkaxes(axs, "x")
-xlim(timeLapse+[-0.5,0.5])
-xlim(timeLapse)
-set(axs, "Box", "off", "Color", "none")
-title(axs(1), "BC responsive units")
-xticklabels(xticks*1e3)
-xlabel('Time [ms]')
-zyLim = ylim(axs(2))
-ylim(axs(2), [zyLim(1),3])
-lgnd = legend(axs(2), "Population PSTH");
-set(lgnd, "Box", "off", "Location", "best")
-ylabel('Z-score')
-ylabel(axs(1), "Units")
-cb = colorbar(axs(1), "AxisLocation", "in", "Box", "off", "Location", "east");
-cb.Color
-
-clim(axs(1), [-1,5])
-get(axs(1), "Children")
-cb.Label.String = "Z-Score"
-cb.Label.Position
-properties(cb)
-saveFigure(figure(1), fullfile("Z:\Berin\0_Paper\Anaesthetised ephys figures", "BC PSTH responsive units VW-30.0 - 40.0 ms RW5.0 - 20.0 ms SW-20.0 - -5.0 ms"), 1)
-clc
-figure; subplot(6,1,1:5); imagesc(timeLapse, [], (PSTH(rclIdx(:,1), :, 1) - mu(rclIdx(:,1), :, 1))./sig(rclIdx(:,1), :, 1)); colormap(jet)
-yticks(1:sum(rclIdx(:,1)))
-yticklabels(repU(gclID(rclIdx(:,1))))
-set(get(gca, "XAxis"), "Visible", "off")
-axs(1) = gca;
-axs(2) = subplot(6,1,6);
-plot(psthTx, mean((PSTH(rclIdx(:,1), :, 1) - mu(rclIdx(:,1), :, 1))./sig(rclIdx(:,1), :, 1)),"Parent", axs(2))
-linkaxes(axs, "x")
-xlim(timeLapse+[-0.5,0.5])
-xlim(timeLapse)
-set(axs, "Box", "off", "Color", "none")
-title(axs(1), "MC responsive units")
-ylabel(axs(1), "Units")
-cb = colorbar(axs(1), "AxisLocation", "in", "Box", "off", "Location", "east");
