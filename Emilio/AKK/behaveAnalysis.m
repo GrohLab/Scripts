@@ -8,6 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 figureDir = fullfile(dataDir, 'Figures');
+axOpts = {"Box", "off", "Color", "none"};
 mkdir(figureDir);
 %% Roller speed and trigges from both arduino and intan
 % Triggers
@@ -40,7 +41,7 @@ stem(atTimes, -ones(size(atTimes, 1), 1), "DisplayName", "Arduino triggers")
 lgnd = legend("show"); set(lgnd, "Box", "off", "Location", "best")
 title("Roller velocity and triggers"); xlabel("Time [s]"); 
 ylabel("Roller velocity [encoder step per second]")
-set(gca, "Box", "off", "Color", "none")
+set(gca, axOpts{:})
 saveFigure(fFig, fullfile(figureDir, "Roller velocity and triggers"), 1);
 %% Parameters
 timeLapse = [-1, 2];
@@ -117,6 +118,7 @@ probFigs = arrayfun(@(x) plotThetaProgress(behResults(x, 2), thSet(x), ...
 xlArray = [repmat("Angle [°]",1,3), "Speed [cm/s]"];
 ttlString = sprintf("Trials crossing \\theta (%s)", puffIntensity);
 arrayfun(@(x) xlabel(probFigs(x).CurrentAxes, xlArray(x)), 1:Ns)
+arrayfun(@(x) set(probFigs(x).CurrentAxes, axOpts{:}), 1:Ns);
 arrayfun(@(x) title(probFigs(x).CurrentAxes, [ttlString;...
     "Excluded trials: "+ string(Net)+ " (\sigma:" + string(sigTh(x)) + ")"]),...
     1:Ns)
@@ -144,7 +146,9 @@ for cbp = 1:length(behStack)
         "LineWidth", 2, "Color", "k"); title(sNames(cbp))
     lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
     figname = ['SumOfSignals', num2str(sNames(cbp)), ' filtered'];
+    set(efig(cbp).CurrentAxes, axOpts{:})
     saveFigure(efig(cbp), fullfile(figureDir, figname), 1);
+    
 end
 
 fprintf(1, "General probability: %.3f \n", genProb)
