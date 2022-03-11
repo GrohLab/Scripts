@@ -8,7 +8,7 @@ us = 1e-6;
 % cell- and arrayfun auxiliary variable.
 fnOpts = {'UniformOutput', false};
 figureDir = fullfile(dataDir, 'Figures');
-axOpts = {"Box", "off", "Color", "none"};
+axOpts = {'Box', 'off', 'Color', 'none'};
 mkdir(figureDir);
 %% Roller speed and trigges from both arduino and intan
 % Triggers
@@ -150,6 +150,5 @@ for cbp = 1:length(behStack)
     saveFigure(efig(cbp), fullfile(figureDir, figname), 1);
     
 end
-
 fprintf(1, "General probability: %.3f \n", genProb)
 end
