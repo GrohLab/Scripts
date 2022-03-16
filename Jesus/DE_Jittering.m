@@ -227,6 +227,14 @@ for ccond = consideredConditions
     counter2 = counter2 + 1;
 end
 Na = sum(delayFlags,1);
+
+%% Configuration structure
+configStructure = struct('Experiment', fullfile(dataDir,expName),...
+    'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
+    'Spontaneous_window_s', spontaneousWindow, 'BinSize_s', binSz, ...
+    'Trigger', struct('Name', condNames{chCond}, 'Edge',onOffStr), ...
+    'ConsideredConditions',{consCondNames});
+
 %% Computing which units/clusters/putative neurons respond to the stimulus
 % Logical indices for fetching the stack values
 sponActStackIdx = tx >= spontaneousWindow(1) & tx <= spontaneousWindow(2);
@@ -264,10 +272,7 @@ for cc = 1:numel(Figs)
     stFigName = [stFigBasename, altCondNames, stFigSubfix];
     saveFigure(Figs(cc), stFigName)
 end
-H = cell2mat(cellfun(@(x) x.Pvalues,...
-    arrayfun(@(x) x.Activity, Results(indCondSubs), 'UniformOutput', 0),...
-    'UniformOutput', 0)) < 0.05;
-
+[rclIdx, H, zH] = getSignificantFlags(Results);
 Htc = sum(H,2);
 CtrlCond = contains(consCondNames,'control','IgnoreCase',true);
 if ~nnz(CtrlCond)
@@ -275,9 +280,24 @@ if ~nnz(CtrlCond)
 end
 wruIdx = all(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
-
+%% Saving statistical results
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
+resDir = fullfile(dataDir, 'Results');
+if ~exist(resDir, 'dir')
+    if ~mkdir(resDir)
+        fprintf(1, "There was an issue creating %s!\n", resDir)
+        fprintf(1, "Saving results in main directory")
+        resDir = dataDir;
+    end
+end
+resPttrn = 'Res VW%.2f-%.2f ms RW%.2f-%.2f ms SW%.2f-%.2f ms %d Cond.mat';
+resFN = sprintf(resPttrn, timeLapse*1e3, responseWindow*1e3, ...
+    spontaneousWindow*1e3, Nccond);
+resFP = fullfile(resDir, resFN);
+if ~exist(resFP, "file")
+    save(resFP, "Results", "Counts", "configStructure")
+end
 
 %% Cluster population proportions 
 % Responsive and unresponsive cells, significantly potentiated or depressed
@@ -372,13 +392,6 @@ end
 %     end
 %     save(fullfile(dataDir,[expName,'analysis.mat']),'Conditions','-append')
 % end
-
-
-%% Configuration structure (unused)
-configStructure = struct('Experiment', fullfile(dataDir,expName),...
-    'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
-    'BinSize_s', binSz, 'Trigger', struct('Name', condNames{chCond},...
-    'Edge',onOffStr), 'ConsideredConditions',{consCondNames});
 
 %% Filter question
 filterIdx = true(Ne,1);
@@ -768,16 +781,16 @@ try
     acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
 catch
     fprintf(1, 'No correlograms in the workspace!\n')
-    return
 end
-acorrs = single(cat(1, acorrs{:})); Ncrs = size(acorrs, 2);
-% Computing the lag axis for the auto-correlograms
-b = -ceil(Ncrs/2)/fs; corrTx = (1:Ncrs)'/fs + b;
-corrTmWin = [1, 25]*1e-3;
-% Interesting region in the auto-correlogram
-[cmdls, cr2, cqVals, cqDiff] =...
-    exponentialSpread(acorrs, corrTx, corrTmWin);
-
+if exist('acorrs', "var")
+    acorrs = single(cat(1, acorrs{:})); Ncrs = size(acorrs, 2);
+    % Computing the lag axis for the auto-correlograms
+    b = -ceil(Ncrs/2)/fs; corrTx = (1:Ncrs)'/fs + b;
+    corrTmWin = [1, 25]*1e-3;
+    % Interesting region in the auto-correlogram
+    [cmdls, cr2, cqVals, cqDiff] =...
+        exponentialSpread(acorrs, corrTx, corrTmWin);
+end
 % lwIdx = corrTx >= (1e-3 - 1/fs) & corrTx <= 25e-3;
 % lTx = corrTx(lwIdx);
 % icsAc = double(1 - cumsum(acorrs(:,lwIdx)./sum(acorrs(:,lwIdx),2),2));
