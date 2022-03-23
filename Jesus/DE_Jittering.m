@@ -121,8 +121,8 @@ else
     responseWindow = str2num(answ{2});
     binSz = str2double(answ(3));
 end
-fprintf(1,'Time window: %.2f - %.2f ms\n',timeLapse(1)*1e3, timeLapse(2)*1e3)
-fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow(1)*1e3, responseWindow(2)*1e3)
+fprintf(1,'Time window: %.2f - %.2f ms\n',timeLapse*1e3)
+fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow*1e3)
 fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
 sponAns = questdlg('Mirror the spontaneous window?','Spontaneous window',...
     'Yes','No','Yes');
@@ -796,7 +796,8 @@ end
 %% Behaviour
 afPttrn = "ArduinoTriggers*.mat";
 rfPttrn = "RollerSpeed*.mat";
-
+axOpts = {'Box','off','Color','none'};
+ldOpts = cat(2, axOpts{1:2}, {'Location','best'});
 flds = dir(getParentDir(dataDir,1));
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), flds);
 flds(pointFlag) = [];
@@ -850,9 +851,13 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
                 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
                 rollFs = fr;
             catch
-                en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
-                rollFs = fsRoll;
-                fr = fsRoll;
+                try
+                    en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
+                    rollFs = fsRoll;
+                    fr = fsRoll;
+                catch
+                    [~, vf, rollTx, fr, Texp] = createRollerSpeed(behDir);
+                end
             end
         end
     else
@@ -892,7 +897,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         lObj = plot(behTx, rsSgnls{ccond}(:,1), ptOpts{2,:});
         lgnd = legend(lObj,string(consCondNames{ccond}));
         set(lgnd, "Box", "off", "Location", "best")
-        set(gca, "Box", "off", "Color", "none")
+        set(gca, axOpts{:})
         title(['Roller speed ',consCondNames{ccond}])
         xlabel("Time [s]"); ylabel("Roller speed [cm/s]"); xlim(bvWin)
         saveFigure(fig, fullfile(figureDir, rsFigName), 1)
