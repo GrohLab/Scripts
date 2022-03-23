@@ -942,5 +942,12 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     pfPttrn = "Move probability %sRW%.2f - %.2f ms";
     pfName = sprintf(pfPttrn, sprintf('%s ', ccnGP{:}), brWin*1e3);
     saveFigure(fig, fullfile(figureDir, pfName), 1, 1)
+    % Tests for movement
+    prms = nchoosek(1:Nccond,2);
+    getDistTravel = @(x) squeeze(sum(abs(vStack(:,brFlag,xdf(:,x))),2));
+    dstTrav = arrayfun(getDistTravel, 1:Nccond, fnOpts{:});
+    [p, h, stats] = arrayfun(@(x) ranksum(dstTrav{prms(x,1)}, ...
+        dstTrav{prms(x,2)}), 1:size(prms,1), fnOpts{:});
+    
 else
 end
