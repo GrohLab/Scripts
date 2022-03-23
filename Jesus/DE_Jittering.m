@@ -797,7 +797,7 @@ end
 afPttrn = "ArduinoTriggers*.mat";
 rfPttrn = "RollerSpeed*.mat";
 axOpts = {'Box','off','Color','none'};
-ldOpts = cat(2, axOpts{1:2}, {'Location','best'});
+lgOpts = cat(2, axOpts{1:2}, {'Location','best'});
 flds = dir(getParentDir(dataDir,1));
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), flds);
 flds(pointFlag) = [];
@@ -915,30 +915,29 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     end
     clMap = lines(Nccond); 
     phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
-    % Plotting speed signals together       
-    fig = figure("NextPlot", "add"); 
-    arrayfun(@(x) patch(behTx([1:end,end:-1:1]),...
+    % Plotting speed signals together
+    fig = figure("Color", "off"); axs = axes("Parent", fig, "NextPlot", "add");
+    arrayfun(@(x) patch(axs, behTx([1:end, end:-1:1]),...
         mat2ptch(rsSgnls{x}), 1, phOpts{:}, clMap(x,:)), 1:Nccond); hold on
-    lObj = arrayfun(@(x) plot(behTx, rsSgnls{x}(:,1), "Color", clMap(x,:),...
+    lObj = arrayfun(@(x) plot(axs, behTx, rsSgnls{x}(:,1), "Color", clMap(x,:),...
         "LineWidth", 1.5, "DisplayName", consCondNames{x}), 1:Nccond);
-    xlabel("Time [s]"); xlim(bvWin); ylabel("Roller speed [cm/s]")
-    set(gca, "Box", "off", "Color", "none")
-    title("Roller speed for all conditions")
-    lgnd = legend(lObj); set(lgnd, "Box", "off", "Location", "best")
+    xlabel(axs, "Time [s]"); xlim(axs, bvWin); ylabel(axs, "Roller speed [cm/s]")
+    set(axs, axOpts{:}); title(axs, "Roller speed for all conditions")
+    lgnd = legend(axs, lObj); set(lgnd, lgOpts{:})
     rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms";
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
         brWin*1e3); saveFigure(fig, fullfile(figureDir, rsFigName), 1)
     % Plotting movement threshold crossings
-    fig = figure("NextPlot", "add");
+    fig = figure("Color", "off"); axs = axes("Parent", fig, "NextPlot", "add");
     mvSgnls = cellfun(getThreshCross, mvFlags, fnOpts{:});
     mvSgnls = cat(1, mvSgnls{:}); mvSgnls = mvSgnls';
-    plot(spTh{1}, mvSgnls); 
+    plot(axs, spTh{1}, mvSgnls);
     ccnGP = cellfun(@(x, y) [x, sprintf(' AUC%.3f',y)], consCondNames', ...
         num2cell(gp), fnOpts{:});
-    lgnd = legend(ccnGP); set(gca, "Box", "off", "Color", "none")
-    set(lgnd, "Box", "off", "Location", "best"); ylim([0,1])
-    xlabel("Roller speed \theta [cm/s]"); ylabel("Trial proportion")
-    title("Trial proportion crossing \theta")
+    lgnd = legend(axs, ccnGP); set(axs, axOpts{:})
+    set(lgnd, lgOpts{:}); ylim(axs, [0,1])
+    xlabel(axs, "Roller speed \theta [cm/s]"); ylabel(axs, "Trial proportion")
+    title(axs, "Trial proportion crossing \theta")
     pfPttrn = "Move probability %sRW%.2f - %.2f ms";
     pfName = sprintf(pfPttrn, sprintf('%s ', ccnGP{:}), brWin*1e3);
     saveFigure(fig, fullfile(figureDir, pfName), 1)
