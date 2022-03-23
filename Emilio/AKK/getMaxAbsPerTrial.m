@@ -23,6 +23,6 @@ responseFlags = timeAxis >= responseWindow;
 responseFlags = xor(responseFlags(:,1), responseFlags(:,2));
 
 mavpt = max(abs(inStack(responseFlags, :)-median(inStack,1)));
-
+mavpt = mavpt(:);
 end
 
