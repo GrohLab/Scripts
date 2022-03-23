@@ -1,4 +1,4 @@
-% 30.08.19 Jittering analysis by using the Data Explorer. 
+% 30.08.19 Jittering analysis by using the Data Explorer.
 clearvars
 %% Load the data
 % Choosing the working directory
@@ -45,7 +45,7 @@ spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
 % Subscript column vectors for the rest good clusters
 spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
     'UniformOutput',false);
-% Number of good clusters 
+% Number of good clusters
 Ncl = numel(goods);
 % Redefining the stimulus signals from the low amplitude to logical values
 whStim = {'piezo','whisker','mech','audio'};
@@ -218,7 +218,7 @@ allWhiskerStimulus = chCond;
 consideredConditions = auxSubs(cchCond);
 
 Nccond = length(consideredConditions);
-%% Boolean flags 
+%% Boolean flags
 delayFlags = false(NTa,Nccond);
 counter2 = 1;
 for ccond = consideredConditions
@@ -234,7 +234,7 @@ sponActStackIdx = tx >= spontaneousWindow(1) & tx <= spontaneousWindow(2);
 respActStackIdx = tx >= responseWindow(1) & tx <= responseWindow(2);
 % The spontaneous activity of all the clusters, which are allocated from
 % the second until one before the last row, during the defined spontaneous
-% time window, and the whisker control condition. 
+% time window, and the whisker control condition.
 
 timeFlags = [sponActStackIdx;respActStackIdx];
 % Time window
@@ -335,8 +335,8 @@ for ccond = 1:size(delayFlags,2)
     relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
     relativeSpikeTimes(~filterIdx(2),:) = [];
     condRelativeSpkTms{ccond} = relativeSpikeTimes;
-%     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
-%         'UniformOutput',false);
+    %     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
+    %         'UniformOutput',false);
     clSpkTms = cell(size(relativeSpikeTimes,1),1);
     if exist(csvFileName, 'file') && ccond == 1
         existFlag = true;
@@ -395,7 +395,7 @@ if strcmp(dans, 'Yes')
         orderedStr = [orderedStr, sprintf('%s ',ordVar{cvar})]; %#ok<AGROW>
     end
     orderedStr = [orderedStr, 'ordered'];
-    
+
     if ~strcmp(ordVar,'id')
         [~,ordSubs] = sortrows(clInfo(pclID,:),ordVar);
     end
@@ -460,7 +460,7 @@ if numel(logFigs) > 1
         expName, Nccond, responseWindow*1e3, Nbin, filtStr);
     saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
 end
-%% Cluster population proportions 
+%% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
 fnOpts = {'UniformOutput', false};
@@ -470,8 +470,8 @@ axOpts = {'Box', 'off', 'Color', 'none'};
 evFr = cellfun(@(x) mean(x,2)./diff(responseWindow), Counts(:,2),fnOpts{:});
 evFr = cat(2, evFr{:});
 getMI = @(x) diff(x, 1, 2)./sum(x, 2);
-MIevok = getMI(evFr); 
-Nrn = sum(wruIdx); Ntn = size(wruIdx,1); 
+MIevok = getMI(evFr);
+Nrn = sum(wruIdx); Ntn = size(wruIdx,1);
 signMod = Results(1).Activity(2).Pvalues < 0.05;
 potFlag = MIevok > 0;
 Nrsn = sum(wruIdx & signMod); Nrsp = sum(wruIdx & signMod & potFlag);
@@ -499,9 +499,9 @@ MIspon = getMI(spFr); SNr = evFr./spFr;
 %% Plot proportional pies
 clrMap = lines(2); clrMap([3,4],:) = [0.65;0.8].*ones(2,3);
 % Responsive and non responsive clusters
-respFig = figure("Color", "w"); 
+respFig = figure("Color", "w");
 pie([Ntn-Nrn, Nrn], [0, 1], {'Unresponsive', 'Responsive'});
-pObj = findobj(respFig, "Type", "Patch"); 
+pObj = findobj(respFig, "Type", "Patch");
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
 arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x+2,:)), 1:length(pObj))
 propPieFileName = fullfile(figureDir,...
@@ -651,7 +651,7 @@ if strcmpi(rasAns,'Yes')
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
     rasFigPath = fullfile(figureDir, rasFigName);
-    arrayfun(@(x) set(x,'Color','none'), ax); 
+    arrayfun(@(x) set(x,'Color','none'), ax);
     saveFigure(rasFig, rasFigPath, 1);
     clearvars ax rasFig
 end
@@ -680,9 +680,9 @@ mdls(mdls(:,2) == 0, 2) = 1;
 %         optoIdx = clInfo{clInfo.ActiveUnit == 1, 'Optotag'} == 1;
 %         prevFlag = true;
 %     else
-%         PSTHtrial = PSTH ./ Na; 
-%         
-%         
+%         PSTHtrial = PSTH ./ Na;
+%
+%
 %         oqVals = qVals(optoCl,:);
 %         [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
 %         availableIdx = oqVals(:,3) <= 7e-3; % Availability
@@ -692,7 +692,7 @@ mdls(mdls(:,2) == 0, 2) = 1;
 %         fprintf(1, 'Found %d clusters\n', sum(optoIdx))
 %     end
 %     if any(optoIdx)
-%         
+%
 %         % Probe view
 %         chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
 %         chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
@@ -838,7 +838,11 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     else
     end
     rfFiles = dir(fullfile(behDir, rfPttrn));
-    if ~isempty(rfFiles) && numel(rfFiles) == 1
+    if isempty(rfFiles)
+        [~, vf, rollTx, fr, Texp] = createRollerSpeed(behDir);
+        rfFiles = dir(fullfile(behDir, rfPttrn));
+    end
+    if numel(rfFiles) == 1
         rfName = fullfile(rfFiles.folder, rfFiles.name);
         load(rfName)
         try
@@ -851,41 +855,38 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
                 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
                 rollFs = fr;
             catch
-                try
-                    en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
-                    rollFs = fsRoll;
-                    fr = fsRoll;
-                catch
-                    [~, vf, rollTx, fr, Texp] = createRollerSpeed(behDir);
-                end
+                en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
+                rollFs = fsRoll;
+                fr = fsRoll;
             end
         end
-    else
     end
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
-        fr, fr, [], vf); [~, Nbt, Nba] = size(vStack);
-    vStack = vStack*en2cm; tmdl = fit_poly([1,Nbt], bvWin, 1);
+        fr, fr, [], vf*en2cm); [~, Nbt, Nba] = size(vStack);
+    tmdl = fit_poly([1,Nbt], bvWin, 1);
     behTx = ((1:Nbt)'.^[1,0])*tmdl;
-     % Spontaneous flag 
-    bsFlag = behTx <= 0; brFlag = behTx < brWin; 
+    % Spontaneous flag
+    bsFlag = behTx <= 0; brFlag = behTx < brWin;
     brFlag = xor(brFlag(:,1),brFlag(:,2));
     sSig = squeeze(std(vStack(:,bsFlag,:), [], 2));
-    % A bit arbitrary threshold, but enough to remove running trials 
+    % A bit arbitrary threshold, but enough to remove running trials
     sigTh = 2.5; excFlag = sSig > sigTh;
     ptOpts = {"Color", 0.7*ones(1,3), "LineWidth", 0.2;...
         "Color", "k", "LineWidth",  1.5};
-    spTh = {0.1:0.1:3};
+    spTh = {0.1:0.1:3}; % Speed threshold
     gp = zeros(Nccond, 1, 'single');
     rsPttrn = "%s roller speed VW%.2f - %.2f s RM%.2f - %.2f ms EX%d";
     pfPttrn = "%s move probability %.2f RW%.2f - %.2f ms EX%d";
     rsSgnls = cell(Nccond, 1); mvFlags = cell(Nccond,1); mvpt = mvFlags;
     mat2ptch = @(x) [x(1:end,:)*[1;1]; x(end:-1:1,:)*[1;-1]];
     getThreshCross = @(x) sum(x)/size(x,1);
+    xdf = arrayfun(@(x) ~excFlag & delayFlags(:,x), 1:Nccond, ...
+        fnOpts{:});  xdf = cat(2, xdf{:});
     for ccond = 1:Nccond
         sIdx = delayFlags(:,ccond) & ~excFlag;
         % % Plot speed signals
-        fig = figure("Color", "w"); 
+        fig = figure("Color", "w");
         Nex = sum(xor(sIdx, delayFlags(:,ccond)));
         rsFigName = sprintf(rsPttrn,consCondNames{ccond}, bvWin,...
             brWin*1e3, Nex);
@@ -910,11 +911,11 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             brWin*1e3, Nex);
         fig = plotThetaProgress(mvFlags(ccond), spTh,...
             string(consCondNames{ccond}));
-        xlabel("Roller speed \theta [cm/s]"); 
+        xlabel("Roller speed \theta [cm/s]");
         title(sprintf("Trial proportion crossing \\theta: %.3f", gp(ccond)))
         saveFigure(fig, fullfile(figureDir, pfName), 1)
     end
-    clMap = lines(Nccond); 
+    clMap = lines(Nccond);
     phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
     % Plotting speed signals together
     fig = figure("Color", "off"); axs = axes("Parent", fig, "NextPlot", "add");
