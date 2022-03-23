@@ -879,7 +879,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     gp = zeros(Nccond, 1, 'single');
     rsPttrn = "%s roller speed VW%.2f - %.2f s RM%.2f - %.2f ms EX%d";
     pfPttrn = "%s move probability %.2f RW%.2f - %.2f ms EX%d";
-    rsSgnls = cell(Nccond, 1); mvFlags = cell(Nccond,1);
+    rsSgnls = cell(Nccond, 1); mvFlags = cell(Nccond,1); mvpt = mvFlags;
     mat2ptch = @(x) [x(1:end,:)*[1;1]; x(end:-1:1,:)*[1;-1]];
     getThreshCross = @(x) sum(x)/size(x,1);
     for ccond = 1:Nccond
@@ -902,8 +902,9 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         xlabel("Time [s]"); ylabel("Roller speed [cm/s]"); xlim(bvWin)
         saveFigure(fig, fullfile(figureDir, rsFigName), 1)
         % Probability plots
-        mvpt = getMaxAbsPerTrial(squeeze(vStack(:,:,sIdx)), brWin, behTx);
-        mvFlags{ccond} = compareMaxWithThresh(mvpt, spTh); 
+        mvpt{ccond} = getMaxAbsPerTrial(squeeze(vStack(:,:,sIdx)), ...
+            brWin, behTx);
+        mvFlags{ccond} = compareMaxWithThresh(mvpt{ccond}, spTh);
         gp(ccond) = getAUC(mvFlags{ccond});
         pfName = sprintf(pfPttrn, consCondNames{ccond}, gp(ccond),...
             brWin*1e3, Nex);
