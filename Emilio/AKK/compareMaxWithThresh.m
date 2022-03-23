@@ -3,6 +3,8 @@ function [moveFlag] = compareMaxWithThresh(mx, thCell)
 %per signal against a given threshold set.
 %   Detailed explanation goes here, later
 %% 
-moveFlag = mx' > thCell{1};
-
+if isrow(mx)
+    mx = mx';
+end
+moveFlag = mx > thCell{1};
 end
