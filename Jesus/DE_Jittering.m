@@ -941,7 +941,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     title("Trial proportion crossing \theta")
     pfPttrn = "Move probability %sRW%.2f - %.2f ms";
     pfName = sprintf(pfPttrn, sprintf('%s ', ccnGP{:}), brWin*1e3);
-    saveFigure(fig, fullfile(figureDir, pfName), 1, 1)
+    saveFigure(fig, fullfile(figureDir, pfName), 1)
     % Tests for movement
     prms = nchoosek(1:Nccond,2);
     getDistTravel = @(x) squeeze(sum(abs(vStack(:,brFlag,xdf(:,x))),2));
