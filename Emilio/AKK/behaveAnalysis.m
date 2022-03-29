@@ -151,4 +151,5 @@ for cbp = 1:length(behStack)
     
 end
 fprintf(1, "General probability: %.3f \n", genProb)
+close all
 end
