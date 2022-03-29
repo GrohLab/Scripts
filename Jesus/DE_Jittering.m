@@ -827,16 +827,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     end
     fprintf(1,'Time window: %.2f - %.2f ms\n',bvWin*1e3)
     fprintf(1,'Response window: %.2f - %.2f ms\n',brWin*1e3)
-
-    afFiles = dir(fullfile(behDir,afPttrn));
-    if ~isempty(afFiles) && numel(afFiles)==1
-        afName = fullfile(afFiles.folder, afFiles.name);
-        try
-            load(afName, "atTimes", "atNames")
-        catch
-        end
-    else
-    end
+    % Roller speed
     rfFiles = dir(fullfile(behDir, rfPttrn));
     if isempty(rfFiles)
         [~, vf, rollTx, fr, Texp] = createRollerSpeed(behDir);
@@ -860,6 +851,19 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
                 fr = fsRoll;
             end
         end
+    end
+    % Triggers
+    getFilePath = @(x) fullfile(x.folder, x.name);
+    atVar = {'atTimes', 'atNames', 'itTimes', 'itNames'};
+    afFiles = dir(fullfile(behDir,afPttrn));
+    if ~isempty(afFiles)
+        atV = arrayfun(@(x) load(getFilePath(x), atVar{:}), afFiles);
+        atT = arrayfun(@(x, z) cellfun(@(y, a) y+a, ...
+            x.atTimes, repmat(z,1,length(x.atTimes)), fnOpts{:}), atV', ...
+            num2cell([0, Texp(1:end-1)]), fnOpts{:});
+        atT = cat(1, atT{:});
+        atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:2, fnOpts{:});
+        atNames = atV(1).atNames;
     end
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
@@ -918,7 +922,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     clMap = lines(Nccond);
     phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
     % Plotting speed signals together
-    fig = figure("Color", "off"); axs = axes("Parent", fig, "NextPlot", "add");
+    fig = figure("Color", "w"); axs = axes("Parent", fig, "NextPlot", "add");
     arrayfun(@(x) patch(axs, behTx([1:end, end:-1:1]),...
         mat2ptch(rsSgnls{x}), 1, phOpts{:}, clMap(x,:)), 1:Nccond); hold on
     lObj = arrayfun(@(x) plot(axs, behTx, rsSgnls{x}(:,1), "Color", clMap(x,:),...
@@ -930,7 +934,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
         brWin*1e3); saveFigure(fig, fullfile(figureDir, rsFigName), 1)
     % Plotting movement threshold crossings
-    fig = figure("Color", "off"); axs = axes("Parent", fig, "NextPlot", "add");
+    fig = figure("Color", "w"); axs = axes("Parent", fig, "NextPlot", "add");
     mvSgnls = cellfun(getThreshCross, mvFlags, fnOpts{:});
     mvSgnls = cat(1, mvSgnls{:}); mvSgnls = mvSgnls';
     plot(axs, spTh{1}, mvSgnls);
