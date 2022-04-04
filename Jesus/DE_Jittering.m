@@ -4,6 +4,7 @@ clearvars
 % Choosing the working directory
 dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
     'Choose a working directory');
+%% 
 if dataDir == 0
     return
 end
@@ -11,6 +12,14 @@ end
 figureDir = fullfile(dataDir,'Figures\');
 if ~mkdir(figureDir)
     fprintf(1,'There was an issue with the figure folder...\n');
+end
+if isempty(dir(fullfile(dataDir, '*analysis.mat')))
+    pgObj = ProtocolGetter(dataDir);
+    pgObj.getConditionSignals;
+    pgObj.getSignalEdges;
+    pgObj.getFrequencyEdges;
+    pgObj.pairStimulus;
+    pgObj.saveConditions;
 end
 % Loading the necessary files
 if ~loadTriggerData(dataDir)
@@ -807,6 +816,9 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     % an awake experiment.
     behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
     fprintf(1, "Found %s!\n", behDir)
+    if isempty(dir(fullfile(behDir, 'ArduinoTrigger*.mat')))
+        readAndCorrectArdTrigs(behDir);
+    end
     promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]'};
     defInputs = {'-1, 2', '0.005, 0.5'};
     answ = inputdlg(promptStrings,'Behaviour parameters', [1, 30], defInputs);
