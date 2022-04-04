@@ -9,33 +9,53 @@ us = 1e-6;
 fnOpts = {'UniformOutput', false};
 figureDir = fullfile(dataDir, 'Figures');
 axOpts = {'Box', 'off', 'Color', 'none'};
-mkdir(figureDir);
+if ~exist(figureDir, "dir")
+    if ~mkdir(figureDir)
+        fprintf(1, "Couldn't create %s!\n", figureDir)
+    end
+end
 %% Roller speed and trigges from both arduino and intan
 % Triggers
 fullname = @(x) fullfile(x.folder, x.name);
-trigFile = dir(fullfile(dataDir, 'Roller_position*.csv'));
-expDate = getDates(trigFile, "Roller_position");
-try
-    [atTimes, ~, itTimes] = readAndCorrectArdTrigs(dataDir);
-    atTimes = atTimes{1}; itTimes = itTimes{1};
-catch
-    trigFile = dir(fullfile(dataDir, "ArduinoTriggers*.mat"));
-    load(fullname(trigFile));
-    atTimes = atTimes{1}; itTimes = itTimes{1};
+csvFiles = dir(fullfile(dataDir, 'Roller_position*.csv'));
+trigFiles = dir(fullfile(dataDir, 'ArduinoTriggers*.mat'));
+rsFiles = dir(fullfile(dataDir, "RollerSpeed*.mat"));
+expDate = getDates(csvFiles, "Roller_position");
+vars2load = {'atTimes', 'atNames', 'itTimes', 'itNames', 'Nt', 'minOfSt'};
+if isempty(trigFiles)
+    % Create Arduino trigger file(s)
+    readAndCorrectArdTrigs(dataDir);
+    trigFiles = dir(fullfile(dataDir, 'ArduinoTriggers*.mat'));
 end
+
+if isempty(rsFiles)
+    % Create roller speed
+    [~, vf, rollTx, fr, Texp] = createRollerSpeed(dataDir);
+else
+    load(fullname(rsFiles), 'vf', 'rollTx','fr','Texp')
+end
+% Loading the triggers
+tStruct = arrayfun(@(x) load(fullname(x), vars2load{:}), trigFiles);
+% Adding experiment(s) offset to arduino triggers
+atT = arrayfun(@(x, z) cellfun(@(y, a) y+a, ...
+    x.atTimes, repmat(z,1,length(x.atTimes)), fnOpts{:}), tStruct', ...
+    num2cell([0, Texp(1:end-1)]), fnOpts{:}); atT = cat(1, atT{:});
+atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:size(atT), fnOpts{:});
+% Adding experiment(s) offset to intan triggers
+Nt2 = [0, tStruct.Nt];
+itT = arrayfun(@(x,z) cellfun(@(y, a) y+a, x.itTimes, ...
+    num2cell(repmat(z,1,length(x.itTimes))), fnOpts{:}), tStruct', ...
+    Nt2(1:end-1), fnOpts{:}); itT = cat(1, itT{:});
+itTimes = arrayfun(@(x) cat(1, itT{:,x}), 1:size(itT), fnOpts{:});
+atTimes = atTimes{1}; itTimes = itTimes{1};
 % Roller speed
-try
-    [~, vf, rollTx, fr] = createRollerSpeed(dataDir);
-catch
-    rsFiles = dir(fullfile(dataDir, "RollerSpeed*.mat"));
-    load(fullname(rsFiles))
-end
 rollTx = rollTx{1};
+% Encoder transformation to cm / s
 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
 
 %% Speed figure
 fFig = figure(); 
-plot(rollTx(1:end-1) - rollTx(1), vf, "DisplayName", "Roller velocity (speed)")
+plot(rollTx - rollTx(1), vf, "DisplayName", "Roller velocity (speed)")
 hold on; stem(itTimes(:,1), ones(size(itTimes, 1), 1), "DisplayName", "Intan triggers")
 stem(atTimes, -ones(size(atTimes, 1), 1), "DisplayName", "Arduino triggers")
 lgnd = legend("show"); set(lgnd, "Box", "off", "Location", "best")
@@ -130,25 +150,32 @@ arrayfun(@(x) saveFigure(probFigs(x), fullfile(figureDir, sNames(x) +...
 %% Save?
 % If RollerSpeed.mat doesn't exist in the experiment folder, then create
 % it.
-rsfName = fullfile(dataDir, "BehaviourData" + string(expDate) + ".mat");
-if ~exist(rsfName, 'file')
-    save(rsfName, "genProb", "thSet", "behResults", "behStack", "stTx")
+rsfName = sprintf("BehaviourData%s_VW%.2f - %.2f s RW%.2f - %.2f ms.mat", ...
+    string(expDate), timeLapse, responseWindow*1e3);
+rsfPath = fullfile(dataDir, rsfName);
+if ~exist(rsfPath, 'file')
+    save(rsfPath, "genProb", "thSet", "behResults", "behStack", "stTx")
 end
 %% EEG-like plots for the nose and the two whisker-sets
 efig = gobjects(size(behStack,1),1);
+yaxName = [repmat("Angle [°]",1,3), "Roller speed [cm/s"];
 for cbp = 1:length(behStack)
     plotEEGchannels(behStack{cbp}', [], diff(timeLapse),...
         fr, 1, -timeLapse(1));
     title(sNames(cbp)); efig(cbp) = figure(); 
-    plot(stTx, behStack{cbp}-median(behStack{cbp},1), "LineWidth", 0.5,...
+    plot(stTx, behStack{cbp}(:,~excludeFlag)- ...
+        median(behStack{cbp}(:,~excludeFlag),1), "LineWidth", 0.5,...
         "Color", 0.75*ones(3,1)); hold on;
-    plot(stTx, mean(behStack{cbp}-median(behStack{cbp},1),2),...
+    plot(stTx, mean(behStack{cbp}(:,~excludeFlag)- ...
+        median(behStack{cbp}(:,~excludeFlag),1),2),...
         "LineWidth", 2, "Color", "k"); title(sNames(cbp))
     lgnd = legend(puffIntensity); set(lgnd, "Box", "off", "Location", "best")
-    figname = ['SumOfSignals', num2str(sNames(cbp)), ' filtered'];
+    figName = sprintf("Mean %s VW%.1f - %.1f s RW%.2f - %.2f ms NEX%d", ...
+        sNames(cbp), timeLapse, responseWindow*1e3, Net);
     set(efig(cbp).CurrentAxes, axOpts{:})
-    saveFigure(efig(cbp), fullfile(figureDir, figname), 1);
-    
+    xlabel(efig(cbp).CurrentAxes, "Time [s]");
+    ylabel(efig(cbp).CurrentAxes, yaxName(cbp))
+    saveFigure(efig(cbp), fullfile(figureDir, figName), 1);
 end
 fprintf(1, "General probability: %.3f \n", genProb)
 close all
