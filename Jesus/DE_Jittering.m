@@ -816,7 +816,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     % an awake experiment.
     behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
     fprintf(1, "Found %s!\n", behDir)
-    if isempty(dir(fullfile(behDir, 'ArduinoTrigger*.mat')))
+    if isempty(dir(fullfile(behDir, afPttrn)))
         readAndCorrectArdTrigs(behDir);
     end
     promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]'};
@@ -877,6 +877,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:2, fnOpts{:});
         atNames = atV(1).atNames;
     end
+    %%
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
         fr, fr, [], vf*en2cm); [~, Nbt, Nba] = size(vStack);
@@ -886,6 +887,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     bsFlag = behTx <= 0; brFlag = behTx < brWin;
     brFlag = xor(brFlag(:,1),brFlag(:,2));
     sSig = squeeze(std(vStack(:,bsFlag,:), [], 2));
+    %%
     % A bit arbitrary threshold, but enough to remove running trials
     sigTh = 2.5; excFlag = sSig > sigTh;
     ptOpts = {"Color", 0.7*ones(1,3), "LineWidth", 0.2;...
@@ -899,8 +901,9 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     getThreshCross = @(x) sum(x)/size(x,1);
     xdf = arrayfun(@(x) ~excFlag & delayFlags(:,x), 1:Nccond, ...
         fnOpts{:});  xdf = cat(2, xdf{:});
+    %%
     for ccond = 1:Nccond
-        sIdx = delayFlags(:,ccond) & ~excFlag;
+        sIdx = xdf(:,ccond);
         % % Plot speed signals
         fig = figure("Color", "w");
         Nex = sum(xor(sIdx, delayFlags(:,ccond)));
