@@ -909,8 +909,12 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         % Plot all trials
         plot(behTx, squeeze(vStack(:,:,sIdx)), ptOpts{1,:}); hold on;
         % Plot mean of trials
+        % Standard deviation
+        %rsSgnls{ccond} = [squeeze(mean(vStack(:,:,sIdx),3))',...
+            %squeeze(std(vStack(:,:,sIdx),1,3))'];
+        % S.E.M.
         rsSgnls{ccond} = [squeeze(mean(vStack(:,:,sIdx),3))',...
-            squeeze(std(vStack(:,:,sIdx),1,3))'];
+            squeeze(std(vStack(:,:,sIdx),1,3))'./sqrt(sum(sIdx))];
         lObj = plot(behTx, rsSgnls{ccond}(:,1), ptOpts{2,:});
         lgnd = legend(lObj,string(consCondNames{ccond}));
         set(lgnd, "Box", "off", "Location", "best")
@@ -942,7 +946,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     xlabel(axs, "Time [s]"); xlim(axs, bvWin); ylabel(axs, "Roller speed [cm/s]")
     set(axs, axOpts{:}); title(axs, "Roller speed for all conditions")
     lgnd = legend(axs, lObj); set(lgnd, lgOpts{:})
-    rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms";
+    rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms SEM";
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
         brWin*1e3); saveFigure(fig, fullfile(figureDir, rsFigName), 1)
     % Plotting movement threshold crossings
