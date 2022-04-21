@@ -49,10 +49,8 @@ if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
 end
 gclID = sortedData(goods,1);
 badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
-% Logical spike trace for the first good cluster
-spkLog = StepWaveform.subs2idx(round(sortedData{goods(1),2}*fs),Ns);
 % Subscript column vectors for the rest good clusters
-spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods(2:end),2),...
+spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods,2),...
     'UniformOutput',false);
 % Number of good clusters
 Ncl = numel(goods);
@@ -181,8 +179,9 @@ end
 % cst - continuous stack has a numerical nature
 % Both of these stacks have the same number of time samples and trigger
 % points. They differ only in the number of considered events.
-[discStack, cst] = getStacks(spkLog,Conditions(chCond).Triggers,onOffStr,...
+[discStack, cst] = getStacks(false,Conditions(chCond).Triggers,onOffStr,...
     timeLapse,fs,fs,spkSubs,continuousSignals);
+discStack(2,:,:) = [];
 % ISI stack
 try
     [~, isiStack] = getStacks(spkLog,Conditions(chCond).Triggers, onOffStr,...
@@ -323,14 +322,6 @@ cellLogicalIndexing = @(x,idx) x(idx);
 isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
 
-firstSpike = zeros(Nwru,Nccond);
-M = 16;
-binAx = responseWindow(1):binSz:responseWindow(2);
-condHist = zeros(size(binAx,2)-1, Nccond);
-firstOrdStats = zeros(2,Nccond);
-condParams = zeros(M,3,Nccond);
-txpdf = responseWindow(1):1/fs:responseWindow(2);
-condPDF = zeros(numel(txpdf),Nccond);
 csvBase = fullfile(dataDir, expName);
 csvSubfx = sprintf(' VW%.1f-%.1f ms (%s).csv', timeLapse*1e3, filtStr);
 existFlag = false;
@@ -469,6 +460,12 @@ if numel(logFigs) > 1
         expName, Nccond, responseWindow*1e3, Nbin, filtStr);
     saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
 end
+
+%% Spontaneous firing rates
+trainDuration = 1;
+AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
+[spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
+            [0, Ns/fs], fs, trainDuration + delta_t + responseWindow(1));
 %% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
@@ -490,7 +487,7 @@ if size(spkSubs,1) < size(gclID,1)
 end
 NaCount = 1;
 % Experiment firing rate and ISI per considered condition
-spFr = zeros(Ncl, size(consideredConditions,2), 'single');
+spFrC = zeros(Ncl, size(consideredConditions,2), 'single');
 econdIsi = cell(Ncl, size(consideredConditions,2));
 econdSpks = econdIsi;
 trainDuration = 1;
@@ -499,12 +496,12 @@ for ccond = consideredConditions
     consTime = [Conditions(ccond).Triggers(1,1) - round(itiSub/2),...
         Conditions(ccond).Triggers(Na(NaCount),2) + round(itiSub/2)]...
         ./fs;
-    [spFr(:,NaCount),~, econdSpks(:,NaCount), econdIsi(:,NaCount)] =...
+    [spFrC(:,NaCount),~, econdSpks(:,NaCount), econdIsi(:,NaCount)] =...
         getSpontFireFreq(spkSubs, Conditions(ccond).Triggers,...
         consTime, fs, trainDuration + delta_t + responseWindow(1));
     NaCount = NaCount + 1;
 end
-MIspon = getMI(spFr); SNr = evFr./spFr;
+MIspon = getMI(spFrC); SNr = evFr./spFrC;
 %% Plot proportional pies
 clrMap = lines(2); clrMap([3,4],:) = [0.65;0.8].*ones(2,3);
 % Responsive and non responsive clusters
