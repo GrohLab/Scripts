@@ -100,7 +100,7 @@ if ~exist(isiFile,'file')
         fprintf(1, 'Not possible to create such a big array')
     end
 else
-    load(isiFile,'ISIspar')
+    % load(isiFile,'ISIspar')
 end
 % ISIsignal = zeros(Ncl,Ns,'single');
 % for ccl = 1:Ncl
@@ -365,6 +365,7 @@ for ccond = 1:size(delayFlags,2)
     relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
     relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
 end
+clearvars condRelativeSpkTms relativeSpikeTimes
 
 relSpkFileName =...
     sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
@@ -443,6 +444,7 @@ for ccond = 1:Nccond
     figFilePath = fullfile(figureDir, figFileName);
     saveFigure(psthFigs(ccond), figFilePath);
 end
+clearvars stims cst continuousSignals Triggers
 %% Log PSTH -- Generalise this part!!
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
