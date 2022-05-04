@@ -539,9 +539,15 @@ if Nccond == 2
 end
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
-    ' ''responding'' clusters?'], 'Waveforms', 'Yes', 'No', 'No');
-if strcmp(gcans, 'Yes')
-    clWaveforms = getClusterWaveform(gclID(wruIdx), dataDir);
+    ' ''responding'' clusters?'], 'Waveforms', 'Resp only', 'All', 'None', ...
+    'None');
+switch gcans 
+    case 'Resp only'
+        clWaveforms = getClusterWaveform(gclID(wruIdx), dataDir);
+    case 'All'
+        clWaveforms = getClusterWaveform(gclID, dataDir);
+    case 'None'
+        fprintf(1, 'You can always get the waveforms later\n')
 end
 
 %% Addition mean signals to the Conditions variable (Unused)
@@ -971,6 +977,4 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     dstTrav = arrayfun(getDistTravel, 1:Nccond, fnOpts{:});
     [p, h, stats] = arrayfun(@(x) ranksum(dstTrav{prms(x,1)}, ...
         dstTrav{prms(x,2)}), 1:size(prms,1), fnOpts{:});
-    
-else
 end
