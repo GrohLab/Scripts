@@ -467,7 +467,7 @@ end
 trainDuration = 1;
 AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
 [spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
-            [0, Ns/fs], fs, trainDuration + delta_t + responseWindow(1));
+            [0, Inf], fs, trainDuration + delta_t + responseWindow(1));
 %% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
