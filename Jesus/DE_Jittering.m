@@ -882,7 +882,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:2, fnOpts{:});
         atNames = atV(1).atNames;
     end
-    %%
+    
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
         fr, fr, [], vf*en2cm); [~, Nbt, Nba] = size(vStack);
@@ -892,7 +892,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     bsFlag = behTx <= 0; brFlag = behTx < brWin;
     brFlag = xor(brFlag(:,1),brFlag(:,2));
     sSig = squeeze(std(vStack(:,bsFlag,:), [], 2));
-    %%
+    
     % A bit arbitrary threshold, but enough to remove running trials
     sigTh = 2.5; excFlag = sSig > sigTh;
     ptOpts = {"Color", 0.7*ones(1,3), "LineWidth", 0.2;...
@@ -906,7 +906,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     getThreshCross = @(x) sum(x)/size(x,1);
     xdf = arrayfun(@(x) ~excFlag & delayFlags(:,x), 1:Nccond, ...
         fnOpts{:});  xdf = cat(2, xdf{:});
-    %%
+    
     for ccond = 1:Nccond
         sIdx = xdf(:,ccond);
         % % Plot speed signals
@@ -954,9 +954,11 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     xlabel(axs, "Time [s]"); xlim(axs, bvWin); ylabel(axs, "Roller speed [cm/s]")
     set(axs, axOpts{:}); title(axs, "Roller speed for all conditions")
     lgnd = legend(axs, lObj); set(lgnd, lgOpts{:})
-    rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms SEM";
+    rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms EX%s SEM";
+    Nex = sum(trialFlag) - sum(xdf);
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
-        brWin*1e3); saveFigure(fig, fullfile(figureDir, rsFigName), 1)
+        brWin*1e3, sprintf('%d ', Nex));  
+    saveFigure(fig, fullfile(figureDir, rsFigName), 1)
     % Plotting movement threshold crossings
     fig = figure("Color", "w"); axs = axes("Parent", fig, "NextPlot", "add");
     mvSgnls = cellfun(getThreshCross, mvFlags, fnOpts{:});
