@@ -825,7 +825,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         readAndCorrectArdTrigs(behDir);
     end
     promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]'};
-    defInputs = {'-1, 2', '0.005, 0.5'};
+    defInputs = {'-0.25, 0.5', '0.005, 0.4'};
     answ = inputdlg(promptStrings,'Behaviour parameters', [1, 30], defInputs);
     if isempty(answ)
         fprintf(1,'Cancelling...\n')
@@ -902,6 +902,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     rsPttrn = "%s roller speed VW%.2f - %.2f s RM%.2f - %.2f ms EX%d";
     pfPttrn = "%s move probability %.2f RW%.2f - %.2f ms EX%d";
     rsSgnls = cell(Nccond, 1); mvFlags = cell(Nccond,1); mvpt = mvFlags;
+    qSgnls = rsSgnls;
     mat2ptch = @(x) [x(1:end,:)*[1;1]; x(end:-1:1,:)*[1;-1]];
     getThreshCross = @(x) sum(x)/size(x,1);
     xdf = arrayfun(@(x) ~excFlag & delayFlags(:,x), 1:Nccond, ...
@@ -923,6 +924,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         % S.E.M.
         rsSgnls{ccond} = [squeeze(mean(vStack(:,:,sIdx),3))',...
             squeeze(std(vStack(:,:,sIdx),1,3))'./sqrt(sum(sIdx))];
+        qSgnls{ccond} = quantile(squeeze(vStack(:,:, sIdx)), 3, 2);
         lObj = plot(behTx, rsSgnls{ccond}(:,1), ptOpts{2,:});
         lgnd = legend(lObj,string(consCondNames{ccond}));
         set(lgnd, "Box", "off", "Location", "best")
@@ -945,7 +947,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     end
     clMap = lines(Nccond);
     phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
-    % Plotting speed signals together
+    % Plotting mean speed signals together
     fig = figure("Color", "w"); axs = axes("Parent", fig, "NextPlot", "add");
     arrayfun(@(x) patch(axs, behTx([1:end, end:-1:1]),...
         mat2ptch(rsSgnls{x}), 1, phOpts{:}, clMap(x,:)), 1:Nccond); hold on
@@ -955,10 +957,26 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     set(axs, axOpts{:}); title(axs, "Roller speed for all conditions")
     lgnd = legend(axs, lObj); set(lgnd, lgOpts{:})
     rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms EX%s SEM";
-    Nex = sum(trialFlag) - sum(xdf);
+    Nex = Na - sum(xdf);
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
         brWin*1e3, sprintf('%d ', Nex));  
     saveFigure(fig, fullfile(figureDir, rsFigName), 1)
+
+    % Plotting median speed signals together
+    q2patch = @(x) [x(:,1);x(end:-1:1,3)];
+    fig = figure("Color", "w"); axs = axes("Parent", fig, "NextPlot", "add");
+    arrayfun(@(x) patch(axs, behTx([1:end, end:-1:1]),...
+        q2patch(qSgnls{x}), 1, phOpts{:}, clMap(x,:)), 1:Nccond); hold on
+    lObj = arrayfun(@(x) plot(axs, behTx, qSgnls{x}(:,2), "Color", clMap(x,:),...
+        "LineWidth", 1.5, "DisplayName", consCondNames{x}), 1:Nccond);
+    xlabel(axs, "Time [s]"); xlim(axs, bvWin); ylabel(axs, "Roller speed [cm/s]")
+    set(axs, axOpts{:}); title(axs, "Roller speed for all conditions")
+    lgnd = legend(axs, lObj); set(lgnd, lgOpts{:})
+    rsPttrn = "Median roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms EX%s SEM";
+    rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
+        brWin*1e3, sprintf('%d ', Nex));
+    saveFigure(fig, fullfile(figureDir, rsFigName), 1)
+
     % Plotting movement threshold crossings
     fig = figure("Color", "w"); axs = axes("Parent", fig, "NextPlot", "add");
     mvSgnls = cellfun(getThreshCross, mvFlags, fnOpts{:});
