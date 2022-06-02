@@ -753,9 +753,6 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     % an awake experiment.
     behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
     fprintf(1, "Found %s!\n", behDir)
-    if isempty(dir(fullfile(behDir, afPttrn)))
-        readAndCorrectArdTrigs(behDir);
-    end
     promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]'};
     defInputs = {'-0.25, 0.5', '0.005, 0.4'};
     answ = inputdlg(promptStrings,'Behaviour parameters', [1, 30], defInputs);
@@ -774,6 +771,10 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         end
         brWin = str2num(answ{2});
     end
+    if isempty(dir(fullfile(behDir, afPttrn)))
+        readAndCorrectArdTrigs(behDir);
+    end
+    
     fprintf(1,'Time window: %.2f - %.2f ms\n',bvWin*1e3)
     fprintf(1,'Response window: %.2f - %.2f ms\n',brWin*1e3)
     % Roller speed
