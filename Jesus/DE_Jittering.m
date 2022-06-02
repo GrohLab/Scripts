@@ -928,6 +928,23 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     pfPttrn = "Move probability %sRW%.2f - %.2f ms %s";
     pfName = sprintf(pfPttrn, sprintf('%s ', ccnGP{:}), brWin*1e3, thrshStr);
     saveFigure(fig, fullfile(figureDir, pfName), 1)
+
+    % Plotting maximum speed for all considered trials
+    fig = figure; axs = axes('Parent', fig, 'NextPlot', 'add');
+    arrayfun(@(x) boxchart(x*ones(size(mvpt{x},1),1), mvpt{x}, 'Notch', 'on'), ...
+        1:size(mvpt,1))
+    xticks(axs, 1:size(mvpt,1)); xticklabels(axs, consCondNames)
+    ylim(axs, [0, round(1.05*(max(cellfun(@(x) quantile(x, 0.75) + 1.5*iqr(x), ...
+        mvpt))),1)]); ylabel(axs, "Roller speed [cm/s]")
+    arrayfun(@(x) text(x, median(mvpt{x}), sprintf("%.2f",median(mvpt{x})), ...
+        HorizontalAlignment="center", VerticalAlignment="bottom"), ...
+        1:Nccond, fnOpts{:});
+    title(axs, "Roller speed distribution")
+    rsdPttrn = "Roller speed dist %sVW%.2f - %.2f ms RM%.2f - %.2f ms EX%s%s";
+    rsdFigName = sprintf(rsdPttrn, sprintf('%s ', consCondNames{:}), bvWin*1e3,...
+        brWin*1e3, sprintf('%d ', Nex), thrshStr);
+    saveFigure(fig, fullfile(figureDir, rsdFigName), 1)
+
     % Tests for movement
     prms = nchoosek(1:Nccond,2);
     getDistTravel = @(x) squeeze(sum(abs(vStack(:,brFlag,xdf(:,x))),2));
@@ -936,5 +953,10 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         dstTrav{prms(x,2)}), 1:size(prms,1), fnOpts{:});
     [pm, hm, statsm] = arrayfun(@(x) ranksum(mvpt{prms(x,1)}, ...
         mvpt{prms(x,2)}), 1:size(prms,1), fnOpts{:});
+    resPttrn = "Results %s%sVW%.2f - %.2f ms RW%.2f - %.2f ms EX%s%s.mat";
+resName = sprintf(resPttrn, sprintf("%d ", hd{:}), ...
+    sprintf('%s ',consCondNames{:}), bvWin*1e3, brWin*1e3, ...
+    sprintf('%d ', Nex), thrshStr);
+    save(fullfile(behDir, resName), "gp", "dstTrav", "ccnGP", "mvpt", "xdf", ...
+        "vStack", "spTh", "sigTh", "sMedTh", "medTh", "brWin", "bvWin", "prms")
 end
-%% 
