@@ -403,7 +403,9 @@ end
 
 %% Plot PSTH
 goodsIdx = logical(clInfo.ActiveUnit);
-csNames = fieldnames(Triggers);
+if exist('Triggers', 'var')
+    csNames = fieldnames(Triggers);
+end
 Nbn = diff(timeLapse)/binSz;
 if (Nbn - round(Nbn)) ~= 0
     Nbn = ceil(Nbn);
@@ -676,75 +678,6 @@ respIdx = isWithinResponsiveWindow(btx);
 % respTmWin = [2, 30]*1e-3;
 [mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, responseWindow);
 mdls(mdls(:,2) == 0, 2) = 1;
-%% Optotag
-% Clusters with 0.63 spikes per stimulus in a 1 ms bin will be considered
-% with consistency, 50% of the response before 7 ms as readily available,
-% and with a small spread less than 2 ms in between 1 and 3 quartile as
-% precise. Considering unfiltered PSTH and the spikes within the response
-% window. Experiments with ChR2
-% rangeAll = @(x) [min(x), max(x)];
-% if contains(Conditions(chCond).name,'laser','IgnoreCase',1)
-%     fprintf(1,'Optotagging clusters... ')
-%     tvNames = clInfo.Properties.VariableNames;
-%     optoVarFlag = contains(tvNames, 'Optotag');
-%     prevFlag = false;
-%     if any(optoVarFlag)
-%         fprintf(1, 'Previous optotag found!\n')
-%         optoIdx = clInfo{clInfo.ActiveUnit == 1, 'Optotag'} == 1;
-%         prevFlag = true;
-%     else
-%         PSTHtrial = PSTH ./ Na;
-%
-%
-%         oqVals = qVals(optoCl,:);
-%         [~, modeTm] = max(optoPSTH(:, respIdx, :),[],2);
-%         availableIdx = oqVals(:,3) <= 7e-3; % Availability
-%         preciseIdx = (oqVals(:,5) - oqVals(:,2)) < 2e-3; % Precision
-%         optoTaggedCl = optoCl(availableIdx & preciseIdx);
-%         optoIdx = ismember(gclID,pclID(optoTaggedCl));
-%         fprintf(1, 'Found %d clusters\n', sum(optoIdx))
-%     end
-%     if any(optoIdx)
-%
-%         % Probe view
-%         chPos = readNPY(fullfile(dataDir, 'channel_positions.npy'));
-%         chMap = readNPY(fullfile(dataDir, 'channel_map.npy')); scl = 10;
-%         mdX = mean(rangeAll(chPos(:,1)));
-%         % Matrix for scaling the xlimit for the probe view.
-%         lsrCMap = [0.2, 0.8, 1];
-%         optoOpts = {'MarkerEdgeColor',lsrCMap,'MarkerEdgeAlpha',0.3};
-%         optoLineOpts = {'Marker','+', 'DisplayName','Optotagged region',...
-%             'Color',lsrCMap}; scaleMatrix = eye(2)+[-scl;scl].*flip(eye(2),1);
-%         xview = scaleMatrix * repmat(mdX,2,1);
-%         probFig = figure('Name', 'Probe', 'Color', [1,1,1]);
-%         probAx = axes('NextPlot', 'add'); xlim(probAx, xview');
-%         probPts = scatter(probAx, chPos(:,1), chPos(:,2), '.k');
-%         title(probAx, 'Electrodes position in the probe');
-%         probAx.XAxis.Visible = 'off'; text(mdX, -1, 'Tip', 'Parent', probAx,...
-%             'HorizontalAlignment', "center", "VerticalAlignment",  "top")
-%         tvNames = clInfo.Properties.VariableNames; tvNames = string(tvNames);
-%         chanStr = ["ch";"channel"]; [~, varSel] = find(tvNames == chanStr);
-%         optoCh = clInfo{gclID(optoIdx), varSel}';
-%         [coordSubs, ~] = find(chMap == optoCh);
-%         optoPts = scatter(probAx, chPos(coordSubs,1), chPos(coordSubs,2),...
-%             optoOpts{:}); optoRange = rangeAll(chPos(coordSubs,2));
-%         optoLine = line(probAx, [mdX;mdX], optoRange', optoLineOpts{:});
-%         ylabel(probAx, 'Electrode position relative to the probe tip [mm]')
-%         fprintf(1, 'Optotagged clusters found between %.1f and %.1f mm',...
-%             optoRange); fprintf(1, ' relative to the tip of the probe.\n')
-%         legend(probAx, optoLine); saveFigure(probFig, fullfile(figureDir,...
-%             'Probe view + position of optotagged clusters'))
-%         if ~prevFlag
-%             clInfo = addvars(clInfo, false(size(clInfo,1),1),...
-%                 'NewVariableNames', 'Optotag');
-%             clInfo{gclID(optoIdx), 'Optotag'} = true;
-%             writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'),...
-%                 1)
-%         end
-%     else
-%         fprintf(1, 'No optotagged clusters found!\n')
-%     end
-% end
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
     '(Might take a while to compute if no file exists!)'],...
@@ -820,9 +753,6 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     % an awake experiment.
     behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
     fprintf(1, "Found %s!\n", behDir)
-    if isempty(dir(fullfile(behDir, afPttrn)))
-        readAndCorrectArdTrigs(behDir);
-    end
     promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]'};
     defInputs = {'-0.25, 0.5', '0.005, 0.4'};
     answ = inputdlg(promptStrings,'Behaviour parameters', [1, 30], defInputs);
@@ -841,6 +771,10 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         end
         brWin = str2num(answ{2});
     end
+    if isempty(dir(fullfile(behDir, afPttrn)))
+        readAndCorrectArdTrigs(behDir);
+    end
+    
     fprintf(1,'Time window: %.2f - %.2f ms\n',bvWin*1e3)
     fprintf(1,'Response window: %.2f - %.2f ms\n',brWin*1e3)
     % Roller speed
@@ -994,6 +928,28 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     pfPttrn = "Move probability %sRW%.2f - %.2f ms %s";
     pfName = sprintf(pfPttrn, sprintf('%s ', ccnGP{:}), brWin*1e3, thrshStr);
     saveFigure(fig, fullfile(figureDir, pfName), 1)
+
+    % Plotting maximum speed for all considered trials
+    fig = figure; axs = axes('Parent', fig, 'NextPlot', 'add');
+    arrayfun(@(x) boxchart(x*ones(size(mvpt{x},1),1), mvpt{x}, 'Notch', 'on'), ...
+        1:size(mvpt,1))
+    xticks(axs, 1:size(mvpt,1)); xticklabels(axs, consCondNames)
+    try
+        ylim(axs, [0, round(1.05*(max(cellfun(@(x) quantile(x, 0.75) + ...
+            1.5*iqr(x), mvpt))),1)]);
+    catch
+        ylim(axs, 'auto')
+    end
+    ylabel(axs, "Roller speed [cm/s]")
+    arrayfun(@(x) text(x, median(mvpt{x}), sprintf("%.2f",median(mvpt{x})), ...
+        HorizontalAlignment="center", VerticalAlignment="bottom"), ...
+        1:Nccond, fnOpts{:});
+    title(axs, "Roller speed distribution")
+    rsdPttrn = "Roller speed dist %sVW%.2f - %.2f ms RM%.2f - %.2f ms EX%s%s";
+    rsdFigName = sprintf(rsdPttrn, sprintf('%s ', consCondNames{:}), bvWin*1e3,...
+        brWin*1e3, sprintf('%d ', Nex), thrshStr);
+    saveFigure(fig, fullfile(figureDir, rsdFigName), 1)
+
     % Tests for movement
     prms = nchoosek(1:Nccond,2);
     getDistTravel = @(x) squeeze(sum(abs(vStack(:,brFlag,xdf(:,x))),2));
@@ -1002,4 +958,10 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         dstTrav{prms(x,2)}), 1:size(prms,1), fnOpts{:});
     [pm, hm, statsm] = arrayfun(@(x) ranksum(mvpt{prms(x,1)}, ...
         mvpt{prms(x,2)}), 1:size(prms,1), fnOpts{:});
+    resPttrn = "Results %s%sVW%.2f - %.2f ms RW%.2f - %.2f ms EX%s%s.mat";
+    resName = sprintf(resPttrn, sprintf("%d ", hd{:}), ...
+        sprintf('%s ',consCondNames{:}), bvWin*1e3, brWin*1e3, ...
+        sprintf('%d ', Nex), thrshStr);
+    save(fullfile(behDir, resName), "gp", "dstTrav", "ccnGP", "mvpt", "xdf", ...
+        "vStack", "spTh", "sigTh", "sMedTh", "tMedTh", "brWin", "bvWin", "prms")
 end
