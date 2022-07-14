@@ -812,7 +812,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             x.atTimes, repmat(z,1,length(x.atTimes)), fnOpts{:}), atV', ...
             num2cell([0, Texp(1:end-1)]), fnOpts{:});
         atT = cat(1, atT{:});
-        atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:numel(atT), fnOpts{:});
+        atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:size(atT,2), fnOpts{:});
         atNames = atV(1).atNames;
     end
     
