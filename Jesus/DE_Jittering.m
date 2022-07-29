@@ -445,7 +445,7 @@ for ccond = 1:Nccond
     figFilePath = fullfile(figureDir, figFileName);
     saveFigure(psthFigs(ccond), figFilePath);
 end
-clearvars stims cst continuousSignals Triggers
+
 %% Log PSTH -- Generalise this part!!
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
