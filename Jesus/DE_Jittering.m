@@ -809,11 +809,20 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     afFiles = dir(fullfile(behDir,afPttrn));
     if ~isempty(afFiles)
         atV = arrayfun(@(x) load(getFilePath(x), atVar{:}), afFiles);
+        Nrecs = length(atV);
         atT = arrayfun(@(x, z) cellfun(@(y, a) y+a, ...
             x.atTimes, repmat(z,1,length(x.atTimes)), fnOpts{:}), atV', ...
             num2cell([0, Texp(1:end-1)]), fnOpts{:});
-        atT = cat(1, atT{:});
-        atTimes = arrayfun(@(x) cat(1, atT{:,x}), 1:size(atT,2), fnOpts{:});
+        trig_per_recording = cellfun(@(x) size(x,2), atT);
+        [max_trigs, record_most_trigs] = max(trig_per_recording);
+        record_trig_cont_ID = arrayfun(@(x) ...
+            contains(atV(record_most_trigs).atNames, x.atNames), ...
+            atV(1:Nrecs), fnOpts{:}); outCell = cell(Nrecs, max_trigs);
+        for cr = 1:Nrecs
+            outCell(cr,record_trig_cont_ID{cr}) = atT{cr};
+        end
+        atTimes = arrayfun(@(x) cat(1, outCell{:,x}), 1:size(outCell,2), ...
+            fnOpts{:});
         atNames = atV(1).atNames;
     end
     
