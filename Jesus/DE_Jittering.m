@@ -337,6 +337,7 @@ for ccond = 1:size(delayFlags,2)
     %     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
     %         'UniformOutput',false);
     clSpkTms = cell(size(relativeSpikeTimes,1),1);
+    %{
     if exist(csvFileName, 'file') && ccond == 1
         existFlag = true;
         ansOW = questdlg(['The exported .csv files exist! ',...
@@ -351,16 +352,21 @@ for ccond = 1:size(delayFlags,2)
         fID = fopen(csvFileName,'w');
         fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
     end
+    %}
     for cr = 1:size(relativeSpikeTimes, 1)
         clSpkTms(cr) = {sort(cell2mat(relativeSpikeTimes(cr,:)))};
+        %{
         if fID > 2
             fprintf(fID,'%s,',gclID{cr});
             fprintf(fID,'%f,',clSpkTms{cr});fprintf(fID,'\n');
         end
+        %}
     end
+    %{
     if fID > 2
         fclose(fID);
     end
+    %}
     relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
     relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
 end
