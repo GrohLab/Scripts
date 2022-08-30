@@ -317,18 +317,23 @@ end
 %% Getting the relative spike times for the whisker responsive units (wru)
 % For each condition, the first spike of each wru will be used to compute
 % the standard deviation of it.
-cellLogicalIndexing = @(x,idx) x(idx);
+
+% cellLogicalIndexing = @(x,idx) x(idx);
 isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
 
-csvBase = fullfile(dataDir, expName);
-csvSubfx = sprintf(' VW%.1f-%.1f ms (%s).csv', timeLapse*1e3, filtStr);
-existFlag = false;
-condRelativeSpkTms = cell(Nccond,1);
-relativeSpkTmsStruct = struct('name',{},'SpikeTimes',{});
+% csvBase = fullfile(dataDir, expName);
+% csvSubfx = sprintf(' VW%.1f-%.1f ms (%s).csv', timeLapse*1e3, filtStr);
+% existFlag = false;
+rst = arrayfun(@(x) getRasterFromStack(discStack, ~delayFlags(:,x), ...
+    filterIdx(3:end), timeLapse, fs, true, true), 1:size(delayFlags,2), ...
+    fnOpts{:});
+relativeSpkTmsStruct = struct('name', consCondNames, 'SpikeTimes', rst);
+%{
 spkDir = fullfile(dataDir, 'SpikeTimes');
+condRelativeSpkTms = cell(Nccond,1);
 for ccond = 1:size(delayFlags,2)
-    csvFileName = [csvBase,' ',consCondNames{ccond}, csvSubfx];
+    % csvFileName = [csvBase,' ',consCondNames{ccond}, csvSubfx];
     relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
         filterIdx(3:end), timeLapse, fs, true, false);
     relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
@@ -371,7 +376,7 @@ for ccond = 1:size(delayFlags,2)
     relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
 end
 clearvars condRelativeSpkTms relativeSpikeTimes
-
+%}
 relSpkFileName =...
     sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
     expName, responseWindow*1e3, spontaneousWindow*1e3,...
@@ -444,7 +449,7 @@ for ccond = 1:Nccond
     end
     psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
         sweeps, timeLapse, binSz, [consCondNames(ccond); pclID(ordSubs)],...
-        strrep(expName,'_','\_'), stims, csNames);
+        strrep(expName,'_',' '), stims, csNames);
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
