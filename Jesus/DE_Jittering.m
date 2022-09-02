@@ -80,6 +80,7 @@ end
 continuousSignals(continuousNameSub == 0) = [];
 continuousNameSub(continuousNameSub == 0) = [];
 trigNames = trigNames(continuousNameSub);
+fnOpts = {'UniformOutput', false};
 %% Inter-spike intervals
 isiFile = fullfile(dataDir,[expName,'_ISIvars.mat']);
 if ~exist(isiFile,'file')
