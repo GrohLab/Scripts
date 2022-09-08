@@ -47,3 +47,6 @@ title('Population firing rate vs roller speed')
 cbObj = colorbar('Box', 'off'); cbObj.Label.String = 'Normalized time';
 set(gca, 'Color', 'none', 'Box', 'off', 'Clipping','off')
 
+%% 
+PSTH_unit_trial = getPSTH_perU_perT(relativeSpkTmsStruct, configStructure);
+PSTH_trial = cellfun(@(x) mean(x, 3), PSTH_unit_trial, fnOpts{:});
