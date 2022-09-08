@@ -287,7 +287,7 @@ configStructure = struct('Experiment', fullfile(dataDir,expName),...
     'Spontaneous_window_s', spontaneousWindow, 'BinSize_s', binSz, ...
     'Trigger', struct('Name', condNames{chCond}, 'Edge',onOffStr), ...
     'ConsideredConditions',{consCondNames});
-%% Saving statistical results
+%% Results directory
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 resDir = fullfile(dataDir, 'Results');
@@ -298,10 +298,52 @@ if ~exist(resDir, 'dir')
         resDir = dataDir;
     end
 end
+%% Map prototype
+CC_key = '';
+for cc = 1:length(consCondNames)-1
+    CC_key = [CC_key, sprintf('%s-', consCondNames{cc})]; %#ok<AGROW> 
+end
+CC_key = [CC_key, sprintf('%s', consCondNames{end})];
+C_key = condNames{chCond};
+SW_key = sprintf('SW%.2f-%.2f', spontaneousWindow*1e3);
+RW_key = sprintf('RW%.2f-%.2f', responseWindow*1e3);
+current_key = {RW_key, SW_key, C_key, CC_key};
+
+mapPttrn = "Map %s.mat";
+resMap_path = fullfile(resDir, sprintf(mapPttrn, expName));
+nmFlag = true;
+try 
+    tempMap = MapNested();
+catch
+    fprintf(1, "'RolandRitt/Matlab-NestedMap' toolbox not installed!")
+    fprintf(1, "Cannot create multi-key map!")
+    nmFlag = false;
+end
+if nmFlag
+    if exist("resMap_path", "file")
+        resMap_vars = load(resMap_path,"resMap", "keyCell");
+        resMap = resMap_vars.resMap;
+        keyCell = resMap_vars.keyCell; clearvars respMap_vars
+        try
+            resMap_value = resMap(current_key{:});
+            clearvars resMap_value
+        catch
+            fprintf(1, "Saving responsive unit flags")
+            resMap(current_key{:}) = wruIdx;
+            keyCell = cat(1, keyCell, current_key);
+        end
+    else
+        fprintf(1, "Saving responsive unit flags")
+        resMap = MapNested();
+        resMap(current_key{:}) = wruIdx;
+    end
+    
+end
+
+%% Saving statistical results
 % Not the best name, but works for now...
-resPttrn = 'Res VW%.2f-%.2f ms RW%.2f-%.2f ms SW%.2f-%.2f ms %d Cond.mat';
-resFN = sprintf(resPttrn, timeLapse*1e3, responseWindow*1e3, ...
-    spontaneousWindow*1e3, Nccond);
+resPttrn = 'Res VW%.2f-%.2f ms %s ms %s ms %s.mat';
+resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
 resFP = fullfile(resDir, resFN);
 if ~exist(resFP, "file")
     save(resFP, "Results", "Counts", "configStructure", "gclID")
