@@ -21,7 +21,7 @@ end
 
 %% Constructing the helper 'global' variables
 
-% Triggers.MechStim = Triggers.MechStim * -1;
+Triggers.MechStim = Triggers.MechStim * -1;
 
 % Number of total samples
 Ns = min(structfun(@numel,Triggers));
@@ -276,7 +276,7 @@ for cc = 1:numel(Figs)
     %         print(Figs(cc),[stFigName,'.pdf'],'-dpdf','-fillpage')
     %         print(Figs(cc),[stFigName,'.emf'],'-dmeta')
     %     end
-    savefig(Figs(cc),fullfile(figureDir, [altCondNames, '.fig']));
+    savefig(Figs(cc),fullfile(figureDir, [altCondNames, stFigSubfix '.fig']));
 end
 
 H = cell2mat(cellfun(@(x) x.Pvalues,...
@@ -291,7 +291,7 @@ end
 wruIdx = any(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 
-fprintf('%d whisker responding clusters:\n', Nwru);
+fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 %% Getting cluster info and adding variables to table
 % clInfo = getClusterInfo(fullfile(dataDir,'cluster_info.tsv'));
@@ -330,26 +330,26 @@ sZ = size(Counts);
 d = length(consCondNames);
 e = 1;
 f = length(consCondNames);
-% for a = 1:length(consCondNames) - 1
-%     for b = (a + 1): length(consCondNames)
-%
-%         for c = 1: sZ(1,2)
-%             clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
-%             %RAM example
-%             %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
-%             %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
-%
-%         end
-%
-%         e = e + 1;
-%
-%         if e == f
-%             e = e + 1;
-%         end
-%     end
-%     d = d - 1;
-%     f = f + d;
-% end
+for a = 1:length(consCondNames) - 1
+    for b = (a + 1): length(consCondNames)
+
+        for c = 1: sZ(1,2)
+            clInfo{clInfo.ActiveUnit == true,[consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response']} = Results(e).Activity(c).Pvalues < 0.05;
+            %RAM example
+            %myString = [consCondNames{1,a},'_vs_',consCondNames{1,b}, '_', Results(e).Activity(c).Type, '_Response'];
+            %clInfo{clInfo.ActiveUnit == true,myString} = Results(e).Activity(c).Pvalues < 0.05;
+
+        end
+
+        e = e + 1;
+
+        if e == f
+            e = e + 1;
+        end
+    end
+    d = d - 1;
+    f = f + d;
+end
 writeClusterInfo(clInfo, fullfile(dataDir,'cluster_info.tsv'));
 %% Add modulation index
 
@@ -365,7 +365,7 @@ end
 %% adding abs_depth to table
 
 promptStrings = {'How deep was your probe? (um)'};
-defInputs = {'1500'};
+defInputs = {'1400'};
 dpth = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
 
 dpth = str2double(dpth{1});
@@ -637,7 +637,7 @@ end
 % end
 
 
-%% Plot PSTH - MODIFIED (Only makes sense if depth ordered)
+%% depthPSTH
 
 csNames = fieldnames(Triggers);
 pclTblInd = ismember(clInfo.id, pclID(ordSubs));
@@ -720,8 +720,9 @@ red = [0.75, 0, 0];
 green = [0, 0.75, 0];
 blue = [0.25, 0.5, 1];
 purple = [0.5,0,0.5];
-
+grey = [0.5, 0.5, 0.5];
 csNames = fieldnames(Triggers);
+colour = [green; red; blue];
 % ruIdx = filterIdx;
 axLabel = 'Firing Rate [Hz]';
 for ccond = 1: length(consideredConditions)
@@ -744,7 +745,7 @@ for ccond = 1: length(consideredConditions)
         clrDivider = nFilters;
     end
     %datclr =  [0:0.8/(nFilters-1):0.8]' * ones(1, 3);
-    datclr = [red; green; blue];    %[1,0,0; 0,1,0; 0,0,0; 0,0.5,1];
+    datclr = [green; red; blue];    %[1,0,0; 0,1,0; 0,0,0; 0,0.5,1];
     
     for a = 1:nFilters
         ax(a) = subplot(totlX,1,a,'Parent',fig);
@@ -759,7 +760,7 @@ for ccond = 1: length(consideredConditions)
         psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
         trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
         popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps * binSz);
-        plot(psthTX,popPSTH,'Color', datclr(a,:))
+        plot(psthTX,popPSTH,'Color', colour(a,:))
         ax(a).XLabel.String = sprintf('Time_{%.2f ms} [s]',binSz*1e3);
         ax(a).XLim = [timeLapse(1), timeLapse(2)];
         %ax(a).YLim = [0, 50];
@@ -767,7 +768,7 @@ for ccond = 1: length(consideredConditions)
         ax(a).Box = 'off';
         ax(a).ClippingStyle = 'rectangle';
         legend(ax(a),'show','Location','northeast')
-        ruNames = [{'Group 1'}, {'Group 2'}, {'L6'}];
+        ruNames = [{'L4'}, {'L5'}, {'L6'}];
         ax(a).Legend.String = ruNames{a};
         ax(a).YAxis(1).Label.String = axLabel;
         
@@ -913,7 +914,7 @@ for grp = 1: nFilters
         psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
         trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
         popPSTH = sum(PSTH,1,'omitnan')/(Ncl * sweeps * binSz);
-        plot(psthTX,popPSTH, 'Color', [[0,0,0], transparency(ccond)])
+        plot(psthTX,popPSTH, 'Color', colour(grp,:))
         hold on
         
     end
@@ -1070,7 +1071,7 @@ for a = 1:length(pwrs)
     % TblInd = find(clInfo.ActiveUnit); % ATM this only makes rasters that show sig control mech response
     % clIDind = clInfo.id(TblInd);
     pwrInd = Power == pwr;
-    clIDind =  gclID;
+    clIDind =  pclID;
     lngth = length(clIDind);
     for a = 1:lngth
         rng('default');
@@ -1083,7 +1084,7 @@ for a = 1:length(pwrs)
         %         rasCondSel = find(ismember(consCondNames, LasCondControl) | ismember(consCondNames, MchLasCond));
         %         label = 'Laser';
         %     end
-        rasCondSel = flip(find(pwrInd));
+        rasCondSel = [1 2 3];;
         rasCond = consideredConditions(rasCondSel);
         rasCondNames = consCondNames(rasCondSel);
         Nrcl = numel(clSel);
@@ -1092,7 +1093,7 @@ for a = 1:length(pwrs)
         [rasIdx, rasOrd] = ismember(pclID(ordSubs), pclID(clSel));
         clSub = clSub(rasOrd(rasIdx));
         clSel = clSel(rasOrd(rasOrd ~= 0));
-        Nma = 20; % min(Na(rasCondSel));
+        Nma = min(Na(rasCondSel));
         rasFig = figure;
         columns = length(pwrs);
         Nrcond = length(rasCond);
@@ -1160,15 +1161,15 @@ for a = 1:length(pwrs)
                 
                 
                 
-                yyaxis('right');
-                hold on
-                for cs = 1:min(r,c)
-                    if exist('IDs','var')
-                        plot(trigTX,stims(:,cs),'LineStyle','-','LineWidth', 3,...
-                            'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
-                    else
-                        plot(trigTX,stims(:,cs),'LineStyle','-','LineWidth',3, 'Color', stmClr(cs,:))
-                    end
+%                 yyaxis('right');
+%                 hold on
+%                 for cs = 1:min(r,c)
+%                     if exist('IDs','var')
+%                         plot(trigTX,stims(:,cs),'LineStyle','-','LineWidth', 1,...
+%                             'DisplayName', IDs{cs}, 'Color', stmClr(cs,:))
+%                     else
+%                         plot(trigTX,stims(:,cs),'LineStyle','-','LineWidth',1, 'Color', stmClr(cs,:))
+%                     end
                     
                     
                     %                    ax2.Children(1).Color = defineColorForStimuli(IDs(cs));
@@ -1177,19 +1178,19 @@ for a = 1:length(pwrs)
 %                         ax2.NextPlot = 'add';
 %                     end
 
-                end
+%                 end
                 hold off
                 ax = gca;
                 
                
-                ax.YAxis(2).Limits = [0.015, 1];
-                ax.YAxis(2).Visible = 'off';
+%                 ax.YAxis(2).Limits = [0.015, 1];
+%                 ax.YAxis(2).Visible = 'off';
                 ax.FontName ='Arial';
                 ax.FontSize = 25;
                 
-                f=get(gca,'Children');
-                legend(f)
-                
+%                 f=get(gca,'Children');
+%                 legend(f)
+%                 
                 
                 
                 

@@ -30,8 +30,8 @@ end
 legend(CondNames)
 ylabel('Cumulative Fraction');
 xlabel('ISI (msecs)');
-xlim([-3, 1]);
-xticks([-3:1])
+xlim([-4, 1]);
+xticks([-4:1])
 ylim([0, 1]);
 fig = gcf;
 ax = gca;

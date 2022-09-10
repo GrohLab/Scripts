@@ -2,7 +2,7 @@
 
 name = 'Population Separations';
 
-triggerTimes = Conditions(7).Triggers;
+triggerTimes = Conditions(14).Triggers;
 clInd = ismember(clInfo.id, gclID);
 depths = table(clInfo.id(clInd), clInfo.abs_depth(clInd));
 depths = sortrows(depths,'Var2','ascend');
@@ -29,18 +29,18 @@ nan = isnan(mn);
 
 % Sorting by depth, latency, and jitter
 
-tagged = mn > 2 & mn <= 7 & sd >=0.2 & sd <= 4; % Could make these a Nby2 matrix 2 assign groups based on latency, jitter, depth
-tagged = tagged & Dpth >-1000 & Dpth <-650;
-later = mn > 5 & mn <= 15 & sd >=0.5 & sd <= 10;
-later = later & Dpth <-1000 & Dpth <-600;
-latest = mn > 7 & mn <= 25 & sd >=0.2 & sd <= 50;
-latest = latest & Dpth <-400 & Dpth >-650;
+L6 = mn > 2 & mn <= 10 & sd >=0.2 & sd <= 4; % Could make these a Nby2 matrix 2 assign groups based on latency, jitter, depth
+L6 = L6 & Dpth <-650;
+L4 = mn > 10 & mn <= 15 & sd >=0.5 & sd <= 10;
+L4 = L4 & Dpth >-700;
+L5 = mn > 15 & mn <= 50 & sd >=0.2 & sd <= 50;
+L5 = L5 & Dpth >-900 & Dpth <-600;
 
-other = ~tagged & ~later & ~latest;
+other = ~L6 & ~L4 & ~L5;
 
-nTagged = sum(tagged);
-nLater = sum(later);
-nLatest = sum(latest);
+nL6 = sum(L6);
+nL4 = sum(L4);
+nL5 = sum(L5);
 nOther = sum(other);
 
 
@@ -63,22 +63,22 @@ blue = [0.25, 0.5, 1];
 
 
 %Plotting the first data point of each group member for the legend
-firstLater = find(later, 1, 'first');
-firstLatest = find(latest, 1, 'first');
-firstL6 = find(tagged, 1, 'first');
+firstL4 = find(L4, 1, 'first');
+firstL5 = find(L5, 1, 'first');
+firstL6 = find(L6, 1, 'first');
 
-tagged(firstL6) = false;
-later(firstLater) = false;
-latest(firstLatest) = false;
+L6(firstL6) = false;
+L4(firstL4) = false;
+L5(firstL5) = false;
 
 
 fig = figure('Name', name, 'Color', 'White');
 
 hold on
 
-errorbar(mn(firstLatest),Dpth(firstLatest),sd(firstLatest), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', green, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', green);
-errorbar(mn(firstL6),Dpth(firstL6),sd(firstL6), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', red, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', red);
-errorbar(mn(firstLater),Dpth(firstLater),sd(firstLater), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', blue, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', blue);
+errorbar(mn(firstL4),Dpth(firstL4),sd(firstL4), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', green, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', green);
+errorbar(mn(firstL5),Dpth(firstL5),sd(firstL5), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', red, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', red);
+errorbar(mn(firstL6),Dpth(firstL6),sd(firstL6), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', blue, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', blue);
 
 leg = legend;
 
@@ -86,13 +86,13 @@ leg = legend;
 
 hold on
 
-errorbar(mn(later),Dpth(later),sd(later), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', blue, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', blue);
+errorbar(mn(L4),Dpth(L4),sd(L4), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', green, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', green);
 %errorbar(mn(laterRS),Dpth(laterRS),sd(laterRS), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', [1, 0, 0], 'MarkerSize', 6, 'LineWidth', 0.01, 'CapSize', 5); %, 'MarkerFaceColor', [1, 0, 0]);
 
-errorbar(mn(latest),Dpth(latest),sd(latest), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', green, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', green);
+errorbar(mn(L5),Dpth(L5),sd(L5), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', red, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', red);
 %errorbar(mn(latestRS),Dpth(latestRS),sd(latestRS), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', [0, 1, 0], 'MarkerSize', 6, 'LineWidth', 0.01, 'CapSize', 5); %, 'MarkerFaceColor', [0, 1, 0]);
 
-errorbar(mn(tagged),Dpth(tagged),sd(tagged), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', red, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', red);
+errorbar(mn(L6),Dpth(L6),sd(L6), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', blue, 'MarkerSize', 2, 'LineWidth', 0.01, 'CapSize', 5, 'MarkerFaceColor', blue);
 %errorbar(mn(taggedRS),Dpth(taggedRS),sd(taggedRS), 'horizontal', 'LineStyle', 'none', 'Marker', 'o', 'Color', [0.25, 0.5, 1], 'MarkerSize', 6, 'LineWidth', 0.01, 'CapSize', 5); %, 'MarkerFaceColor', [0.25, 0.5, 1]);
 
 leg.String(4:end) = [];
@@ -137,7 +137,7 @@ hold off
 
 %% Pie Chart
 
-x = [nLatest, nTagged, nLater, nOther];
+x = [nL4, nL5, nL6, nOther];
 explode = ones(1,4);
 labels = [{'Put L4'}, {'L5'}, {'Put L6'}, {'Other'}];
 
@@ -170,3 +170,9 @@ ax.Children(8).FaceColor = green;
 for slice = 2:2:2*length(x)
     ax.Children(slice).EdgeColor = [1,1,1];
 end
+%% GroupIDs
+
+GroupIDs = [{'L4'}, ID(L4); {'L5'}, ID(L5); {'L6'}, ID(L6)];
+% nGrps = length(GroupIDs);
+% for grp = 1:nGrps
+   

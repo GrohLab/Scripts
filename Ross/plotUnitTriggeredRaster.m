@@ -76,7 +76,7 @@ end
 
 
 ax = gca;
-plotTaggedRasterFromStack(discStack([1,2],:,tSubs),...
+plotTaggedRasterFromStackRoss(discStack([1,2],:,tSubs),...
     timeLapse, fs,figureName, ax, rasclr);
 ax.YTick = [ax.YLim(1), ax.YLim(2)];
 % PSTH

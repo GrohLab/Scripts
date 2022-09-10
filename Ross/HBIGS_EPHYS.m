@@ -100,7 +100,7 @@ end
 
 %% Constructing the helper 'global' variables
 
-% Triggers.MechStim = Triggers.MechStim * -1;
+Triggers.MechStim = Triggers.MechStim * -1;
 
 % Number of total samples
 Ns = min(structfun(@numel,Triggers));
@@ -121,7 +121,7 @@ badsIdx = badsIdx | silentUnits;
 % Indicating which units will be analysed in the clInfo table
 % (ActiveUnits!)
 if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
-    clInfo = addvars(clInfo,~badsIdx,'After','id',...
+    clInfo = addvars(clInfo,~badsIdx','After','id',...
         'NewVariableNames','ActiveUnit');
 end
 
@@ -492,7 +492,7 @@ end
 
 %% Adding the absolute depth of each unit to the clInfo table.
 
-dpth = 1300;
+dpth = 1500;
 
 abs_depth = dpth - clInfo.depth;
 
@@ -507,7 +507,7 @@ clInfo = addvars(clInfo,abs_depth,'After','depth',...
 % determine the temporal sequence of spike activation (e.g. which
 % population is expressing the channel-rhodopsin protein).
 
-[TaggedIDs, fig] = Optotag([2,10], [0.2,4], clInfo, gclID, Conditions(4).name, Conditions(4).Triggers, sortedData, fs);
+[TaggedIDs, fig] = Optotag([2,12], [0.2,6], clInfo, gclID, Conditions(6).name, Conditions(6).Triggers, sortedData, fs);
 
 % idxTagged = ismember(clInfo.id, TaggedIDs);
 % if ~any(ismember(clInfo.Properties.VariableNames,'Tagged'))
@@ -646,7 +646,7 @@ if strcmp(dans, 'Yes')
 end
 
 %% Plot PSTH
-goodsIdx = logical(clInfo.ActiveUnit);
+% goodsIdx = logical(clInfo.ActiveUnit);
 csNames = fieldnames(Triggers);
 Nbn = diff(timeLapse)/binSz;
 if (Nbn - round(Nbn)) ~= 0
@@ -1473,11 +1473,11 @@ pwrs = unique(Power);
 
 
 
-for a = 1:length(pwrs)
-    pwr = pwrs(a);
+for b = 1:length(pwrs)
+    pwr = pwrs(b);
     
     pwrInd = Power == pwr;
-    clIDind =  gclID;
+    clIDind =  pclID; % {'365'}; % Change this to e.g. L6 or Group 1 to generate only these rasters
     lngth = length(clIDind);
     for a = 1:lngth
         rng('default');
@@ -1512,7 +1512,7 @@ for a = 1:length(pwrs)
            
             for ccl = 1:Nrcl
 %                 lidx = ccl + (cc - 1) * Nrcl;
-                ax(cf) = subplot(Nrcond*3, Nrcl, lidx:lidx+1);
+                ax(cf) = subplot(Nrcond*3,Nrcl, lidx:lidx+1);
 %                 ax(lidx) = subplot(Nrcond, Nrcl, lidx);       %  subplot( Nrcl, Nrcond, lidx); % to plot the other way around
                 title(ax(cf),sprintf(rasCondNames{cc}), 'Interpreter', 'none') % ,pclID{clSel(ccl)}
                 plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
@@ -1618,11 +1618,12 @@ for a = 1:length(pwrs)
                 configureFigureToPDF (rasFig);
                 set(rasFig, 'Position', get(0, 'ScreenSize'));
                 cf = cf+1;
-%                 saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds,'_', num2str(timeLapse(1)), '_to_', num2str(timeLapse(2)),'.emf']));
-%                 %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
-%                 savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
+%                 
             end
         end
+        saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds,'_', num2str(timeLapse(1)), '_to_', num2str(timeLapse(2)),'.emf']));
+%                 %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
+%                 savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
     end
 end
 
