@@ -313,18 +313,19 @@ mapPttrn = "Map %s.mat";
 resMap_path = fullfile(resDir, sprintf(mapPttrn, expName));
 nmFlag = true;
 try 
-    tempMap = MapNested();
+    resMap = MapNested();
 catch
     fprintf(1, "'RolandRitt/Matlab-NestedMap' toolbox not installed!")
     fprintf(1, "Cannot create multi-key map!")
     nmFlag = false;
 end
 if nmFlag
-    if exist("resMap_path", "file")
+    if exist(resMap_path, "file")
         resMap_vars = load(resMap_path,"resMap", "keyCell");
         resMap = resMap_vars.resMap;
         keyCell = resMap_vars.keyCell; clearvars respMap_vars
         try
+            % Testing if the current key combination exists
             resMap_value = resMap(current_key{:});
             clearvars resMap_value
         catch
@@ -334,10 +335,9 @@ if nmFlag
         end
     else
         fprintf(1, "Saving responsive unit flags")
-        resMap = MapNested();
         resMap(current_key{:}) = wruIdx;
     end
-    %TODO
+    save(resMap_path, "resMap", "keyCell")
 end
 
 %% Saving statistical results
