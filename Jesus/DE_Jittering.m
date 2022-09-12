@@ -365,68 +365,18 @@ end
 isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
 
-% csvBase = fullfile(dataDir, expName);
-% csvSubfx = sprintf(' VW%.1f-%.1f ms (%s).csv', timeLapse*1e3, filtStr);
-% existFlag = false;
 rst = arrayfun(@(x) getRasterFromStack(discStack, ~delayFlags(:,x), ...
     filterIdx(3:end), timeLapse, fs, true, true), 1:size(delayFlags,2), ...
     fnOpts{:});
 relativeSpkTmsStruct = struct('name', consCondNames, 'SpikeTimes', rst);
-%{
-spkDir = fullfile(dataDir, 'SpikeTimes');
-condRelativeSpkTms = cell(Nccond,1);
-for ccond = 1:size(delayFlags,2)
-    % csvFileName = [csvBase,' ',consCondNames{ccond}, csvSubfx];
-    relativeSpikeTimes = getRasterFromStack(discStack,~delayFlags(:,ccond),...
-        filterIdx(3:end), timeLapse, fs, true, false);
-    relativeSpikeTimes(:,~delayFlags(:,ccond)) = [];
-    relativeSpikeTimes(~filterIdx(2),:) = [];
-    condRelativeSpkTms{ccond} = relativeSpikeTimes;
-    %     respIdx = cellfun(isWithinResponsiveWindow, relativeSpikeTimes,...
-    %         'UniformOutput',false);
-    clSpkTms = cell(size(relativeSpikeTimes,1),1);
-    %{
-    if exist(csvFileName, 'file') && ccond == 1
-        existFlag = true;
-        ansOW = questdlg(['The exported .csv files exist! ',...
-            'Would you like to overwrite them?'],'Overwrite?','Yes','No','No');
-        if strcmp(ansOW,'Yes')
-            existFlag = false;
-            fprintf(1,'Overwriting... ');
-        end
-    end
-    fID = 1;
-    if ~existFlag
-        fID = fopen(csvFileName,'w');
-        fprintf(fID,'%s, %s\n','Cluster ID','Relative spike times [ms]');
-    end
-    %}
-    for cr = 1:size(relativeSpikeTimes, 1)
-        clSpkTms(cr) = {sort(cell2mat(relativeSpikeTimes(cr,:)))};
-        %{
-        if fID > 2
-            fprintf(fID,'%s,',gclID{cr});
-            fprintf(fID,'%f,',clSpkTms{cr});fprintf(fID,'\n');
-        end
-        %}
-    end
-    %{
-    if fID > 2
-        fclose(fID);
-    end
-    %}
-    relativeSpkTmsStruct(ccond).name = consCondNames{ccond};
-    relativeSpkTmsStruct(ccond).SpikeTimes = condRelativeSpkTms{ccond};
-end
-clearvars condRelativeSpkTms relativeSpikeTimes
-%}
+firstSpkStruct = getFirstSpikeInfo(relativeSpkTmsStruct, configStructure);
 relSpkFileName =...
     sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
     expName, responseWindow*1e3, spontaneousWindow*1e3,...
     timeLapse*1e3, Conditions(chCond).name, filtStr);
 if ~exist(relSpkFileName,'file')
     save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
-        'configStructure')
+        'configStructure', 'firstSpkStruct')
 end
 
 %% Ordering PSTH
