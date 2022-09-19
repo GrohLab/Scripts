@@ -4,7 +4,7 @@ clearvars
 % Choosing the working directory
 dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
     'Choose a working directory');
-%% 
+%%
 if dataDir == 0
     return
 end
@@ -26,31 +26,40 @@ if ~loadTriggerData(dataDir)
     fprintf(1,'Not possible to load all the necessary variables\n')
     return
 end
-
+fnOpts = {'UniformOutput', false};
+spk_file_vars = {'spike_times','gclID','Nt','Ns','goods'};
 %% Constructing the helper 'global' variables
-% Number of total samples
-Ns = structfun(@numel,Triggers); Ns = min(Ns(Ns>1));
-% Total duration of the recording
-Nt = Ns/fs;
-% Useless clusters (labeled as noise or they have very low firing rate)
-badsIdx = cellfun(@(x) x==3,sortedData(:,3));
-bads = find(badsIdx);
-totSpkCount = cellfun(@numel,sortedData(:,2));
-clusterSpikeRate = totSpkCount/Nt;
-silentUnits = clusterSpikeRate < 0.1;
-bads = union(bads,find(silentUnits));
-goods = setdiff(1:size(sortedData,1),bads);
-badsIdx = badsIdx | silentUnits;
-if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
-    clInfo = addvars(clInfo,~badsIdx,'After',1,...
-        'NewVariableNames','ActiveUnit');
-    writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'), 1);
+
+spkPttrn = "%s_Spike_Times.mat";
+spk_path = fullfile(dataDir, sprintf(spkPttrn, expName));
+if ~exist(spk_path, "file")
+    % Number of total samples
+    Ns = structfun(@numel,Triggers); Ns = min(Ns(Ns>1));
+    % Total duration of the recording
+    Nt = Ns/fs;
+    % Useless clusters (labeled as noise or they have very low firing rate)
+    badsIdx = cellfun(@(x) x==3,sortedData(:,3));
+    bads = find(badsIdx);
+    totSpkCount = cellfun(@numel,sortedData(:,2));
+    clusterSpikeRate = totSpkCount/Nt;
+    silentUnits = clusterSpikeRate < 0.1;
+    bads = union(bads,find(silentUnits));
+    goods = setdiff(1:size(sortedData,1),bads);
+    badsIdx = badsIdx | silentUnits;
+    if ~any(ismember(clInfo.Properties.VariableNames,'ActiveUnit'))
+        clInfo = addvars(clInfo,~badsIdx,'After',1,...
+            'NewVariableNames','ActiveUnit');
+        writeClusterInfo(clInfo, fullfile(dataDir, 'cluster_info.tsv'), 1);
+    end
+    gclID = sortedData(goods,1);
+    badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
+    spike_times = sortedData(~badsIdx, 2);
+    save(spk_path, spk_file_vars{:})
+else
+    % Subscript column vectors for the rest good clusters
+    load(spk_path, spk_file_vars{:})
 end
-gclID = sortedData(goods,1);
-badsIdx = StepWaveform.subs2idx(bads,size(sortedData,1));
-% Subscript column vectors for the rest good clusters
-spkSubs = cellfun(@(x) round(x.*fs),sortedData(goods,2),...
-    'UniformOutput',false);
+spkSubs = cellfun(@(x) round(x.*fs),spike_times, fnOpts{:});
 % Number of good clusters
 Ncl = numel(goods);
 % Redefining the stimulus signals from the low amplitude to logical values
@@ -301,7 +310,7 @@ end
 %% Map prototype
 CC_key = '';
 for cc = 1:length(consCondNames)-1
-    CC_key = [CC_key, sprintf('%s-', consCondNames{cc})]; %#ok<AGROW> 
+    CC_key = [CC_key, sprintf('%s-', consCondNames{cc})]; %#ok<AGROW>
 end
 CC_key = [CC_key, sprintf('%s', consCondNames{end})];
 C_key = condNames{chCond};
@@ -312,7 +321,7 @@ current_key = {RW_key, SW_key, C_key, CC_key};
 mapPttrn = "Map %s.mat";
 resMap_path = fullfile(resDir, sprintf(mapPttrn, expName));
 nmFlag = true;
-try 
+try
     resMap = MapNested();
 catch
     fprintf(1, "'RolandRitt/Matlab-NestedMap' toolbox not installed!")
@@ -336,6 +345,7 @@ if nmFlag
     else
         fprintf(1, "Saving responsive unit flags")
         resMap(current_key{:}) = wruIdx;
+        keyCell = current_key;
     end
     save(resMap_path, "resMap", "keyCell")
 end
@@ -472,7 +482,7 @@ end
 trainDuration = 1;
 AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
 [spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
-            [0, Inf], fs, trainDuration + delta_t + responseWindow(1));
+    [0, Inf], fs, trainDuration + delta_t + responseWindow(1));
 %% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
@@ -546,7 +556,7 @@ end
 gcans = questdlg(['Do you want to get the waveforms from the',...
     ' ''responding'' clusters?'], 'Waveforms', 'Resp only', 'All', 'None', ...
     'None');
-switch gcans 
+switch gcans
     case 'Resp only'
         clWaveforms = getClusterWaveform(gclID(wruIdx), dataDir);
     case 'All'
@@ -779,7 +789,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     if isempty(dir(fullfile(behDir, afPttrn)))
         readAndCorrectArdTrigs(behDir);
     end
-    
+
     fprintf(1,'Time window: %.2f - %.2f ms\n',bvWin*1e3)
     fprintf(1,'Response window: %.2f - %.2f ms\n',brWin*1e3)
     % Roller speed
@@ -829,7 +839,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             fnOpts{:});
         atNames = atV(1).atNames;
     end
-    
+
     lSub = arrayfun(@(x) contains(Conditions(chCond).name, x), atNames);
     [~, vStack] = getStacks(false, round(atTimes{lSub} * fr), 'on', bvWin,...
         fr, fr, [], vf*en2cm); [~, Nbt, Nba] = size(vStack);
@@ -841,7 +851,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     sSig = squeeze(std(vStack(:,bsFlag,:), [], 2));
     sMed = squeeze(median(vStack(:,bsFlag,:), 2));
     tMed = squeeze(median(vStack, 2));
-    
+
     % A bit arbitrary threshold, but enough to remove running trials
     sigTh = 2.5; sMedTh = 0.2; tMedTh = 1;
     thrshStr = sprintf("TH s%.2f sp_m%.2f t_m%.2f", sigTh, sMedTh, tMedTh);
@@ -858,7 +868,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     getThreshCross = @(x) sum(x)/size(x,1);
     xdf = arrayfun(@(x) ~excFlag & delayFlags(:,x), 1:Nccond, ...
         fnOpts{:});  xdf = cat(2, xdf{:});
-    
+
     for ccond = 1:Nccond
         sIdx = xdf(:,ccond);
         % % Plot speed signals
@@ -871,7 +881,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         % Plot mean of trials
         % Standard deviation
         %rsSgnls{ccond} = [squeeze(mean(vStack(:,:,sIdx),3))',...
-            %squeeze(std(vStack(:,:,sIdx),1,3))'];
+        %squeeze(std(vStack(:,:,sIdx),1,3))'];
         % S.E.M.
         rsSgnls{ccond} = [squeeze(mean(vStack(:,:,sIdx),3))',...
             squeeze(std(vStack(:,:,sIdx),1,3))'./sqrt(sum(sIdx))];
@@ -910,7 +920,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     rsPttrn = "Mean roller speed %s VW%.2f - %.2f s RM%.2f - %.2f ms EX%s %s SEM";
     Nex = Na - sum(xdf);
     rsFigName = sprintf(rsPttrn, sprintf('%s ', consCondNames{:}), bvWin,...
-        brWin*1e3, sprintf('%d ', Nex), thrshStr);  
+        brWin*1e3, sprintf('%d ', Nex), thrshStr);
     saveFigure(fig, fullfile(figureDir, rsFigName), 1)
 
     % Plotting median speed signals together
