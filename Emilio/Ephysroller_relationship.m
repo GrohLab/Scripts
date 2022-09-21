@@ -50,3 +50,23 @@ set(gca, 'Color', 'none', 'Box', 'off', 'Clipping','off')
 %% 
 PSTH_unit_trial = getPSTH_perU_perT(relativeSpkTmsStruct, configStructure);
 PSTH_trial = cellfun(@(x) mean(x, 3), PSTH_unit_trial, fnOpts{:});
+%%
+%rastClrMap = jet(sum(lruIdx));
+clCount = 1; axs = gobjects(2);
+for ccl = find(lruIdx)'
+    figure("name", sprintf("%s",gclID{ccl}))
+    axs(1) = subplot(1,2,1);
+    for ct = considered_ephys_trials{1}'
+        scatter(axs(1), relativeSpkTmsStruct(1).SpikeTimes{ccl,ct}, ...
+            repmat(ct, size(relativeSpkTmsStruct(1).SpikeTimes{ccl,ct}, 2),1), ...
+            [], 'k', 'filled', 'MarkerEdgeColor','none')
+        hold on
+    end
+    clCount = clCount + 1;
+    axs(2) = subplot(1,2,2);
+    imagesc(axs(2), 1e3*behTx, considered_ephys_trials{1}, ...
+        squeeze(vStack(:,:,xdf(:,1)))')
+    axis("xy")
+    colormap(bwg_cm(128))
+    linkaxes(axs, "y")
+end
