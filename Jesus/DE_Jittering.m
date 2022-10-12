@@ -316,7 +316,8 @@ CC_key = [CC_key, sprintf('%s', consCondNames{end})];
 C_key = condNames{chCond};
 SW_key = sprintf('SW%.2f-%.2f', spontaneousWindow*1e3);
 RW_key = sprintf('RW%.2f-%.2f', responseWindow*1e3);
-current_key = {RW_key, SW_key, C_key, CC_key};
+O_key = sprintf('%s', onOffStr);
+current_key = {RW_key, SW_key, C_key, CC_key, O_key};
 
 mapPttrn = "Map %s.mat";
 resMap_path = fullfile(resDir, sprintf(mapPttrn, expName));
@@ -324,8 +325,8 @@ nmFlag = true;
 try
     resMap = MapNested();
 catch
-    fprintf(1, "'RolandRitt/Matlab-NestedMap' toolbox not installed!")
-    fprintf(1, "Cannot create multi-key map!")
+    fprintf(1, "'RolandRitt/Matlab-NestedMap' toolbox not installed! ")
+    fprintf(1, "Cannot create multi-key map!\n")
     nmFlag = false;
 end
 if nmFlag
@@ -338,12 +339,12 @@ if nmFlag
             resMap_value = resMap(current_key{:});
             clearvars resMap_value
         catch
-            fprintf(1, "Saving responsive unit flags")
+            fprintf(1, "Saving responsive unit flags\n")
             resMap(current_key{:}) = wruIdx;
             keyCell = cat(1, keyCell, current_key);
         end
     else
-        fprintf(1, "Saving responsive unit flags")
+        fprintf(1, "Saving responsive unit flags\n")
         resMap(current_key{:}) = wruIdx;
         keyCell = current_key;
     end
