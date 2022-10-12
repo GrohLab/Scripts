@@ -988,4 +988,44 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         sprintf('%d ', Nex), thrshStr);
     save(fullfile(behDir, resName), "gp", "dstTrav", "ccnGP", "mvpt", "xdf", ...
         "vStack", "spTh", "sigTh", "sMedTh", "tMedTh", "brWin", "bvWin", "prms")
+
+    % Behaviour signals
+    timeAxis_speed = (0:length(vf)-1)'/fr;
+    time_drift_mdl = fit_poly(atTimes{lSub}, Conditions(1).Triggers(:,1)/fs, 1);
+    timeAxis_speed_corrected = timeAxis_speed.^[1,0] * time_drift_mdl;
+    timeAxis_speed2 = (0:1/fr:timeAxis_speed_corrected(end))';
+    vels = interp1(timeAxis_speed_corrected, vf*en2cm, timeAxis_speed2);
+
+    
+
+    dlcFiles = dir(fullfile(behDir, "*filtered.csv"));
+    dlcFile = [];
+    if ~isempty(dlcFiles)
+        if numel(dlcFiles)==1
+            dlcFile = dlcFiles.name;
+        end
+    else
+        dlcFiles = dir(fullfile(behDir, "roller*DLC_resnet50_AwakenSCJul20shuffle1_1030000.csv"));
+        if ~empty(dlcFiles)
+            if numel(dlcFiles) == 1
+                dlcFile = dlcFiles.name;
+            end
+        else
+            fprintf(1, "No DLC applied on the videos yet!\n")
+            fprintf(1, "Unable to get behavioural signals!\n")
+        end
+    end
+
+    if ~isempty(dlcFile)
+        dlcTable = readDLCData(fullfile(behDir, dlcFile));
+        [a_bodyParts, refStruct] = getBehaviourSignals(dlcTable);
+        nose = a_bodyParts{:,"nose"} - mean(a_bodyParts{:,"nose"});
+        % Right whiskers
+        rw = mean(a_bodyParts{:,{'rw1', 'rw2', 'rw3', 'rw4'}}, 2);
+        rw = rw - mean(rw);
+        % Left whiskers
+        lw = mean(a_bodyParts{:,{'lw1', 'lw2', 'lw3', 'lw4'}},2);
+        lw = lw - mean(lw);
+    end
+
 end
