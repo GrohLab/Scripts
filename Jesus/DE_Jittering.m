@@ -1001,7 +1001,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         timeAxis_speed_corrected = timeAxis_speed.^[1,0] * time_drift_mdl;
         timeAxis_speed = (0:1/fr:timeAxis_speed_corrected(end))';
         vels = interp1(timeAxis_speed_corrected, vf*en2cm, timeAxis_speed);
-        save(behResPath, "vels", "timeAxis_speed")
+        save(behResPath, "vels", "timeAxis_speed", "fr")
             
         dlcFiles = dir(fullfile(behDir, "*filtered.csv"));
         dlcFile = [];
@@ -1032,7 +1032,5 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             lw = lw - mean(lw);
             save(behResPath,"rw","lw","nose","-append")
         end
-
     end
-
 end
