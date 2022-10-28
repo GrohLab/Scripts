@@ -110,7 +110,7 @@ sSigma = squeeze(std(behStack(:, spontFlag, :), [], 2));
 sigTh = [5; 5; 2; 2.5];
 excludeFlag = sSigma > sigTh;
 % This doesn't take into consideretion the nose
-excludeFlag = any(excludeFlag(2.^[0:2],:),1); 
+excludeFlag = any(excludeFlag(2.^(0:2),:),1); 
 Net = sum(excludeFlag, 2);
 behStack = arrayfun(@(x) squeeze(behStack(x, :, :)), (1:size(behStack,1))',...
     fnOpts{:});
