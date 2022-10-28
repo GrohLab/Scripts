@@ -1011,7 +1011,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             end
         else
             dlcFiles = dir(fullfile(behDir, "roller*DLC_resnet50_AwakenSCJul20shuffle1_1030000.csv"));
-            if ~empty(dlcFiles)
+            if ~isempty(dlcFiles)
                 if numel(dlcFiles) == 1
                     dlcFile = dlcFiles.name;
                 end
