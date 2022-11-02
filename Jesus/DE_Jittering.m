@@ -1000,7 +1000,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     behResPath = fullfile(behDir, behResName);
     if ~exist(behResName,'file')
         timeAxis_speed = (0:length(vf)-1)'/fr;
-        time_drift_mdl = fit_poly(atTimes{lSub}, Conditions(1).Triggers(:,1)/fs, 1);
+        time_drift_mdl = fit_poly(atTimes{lSub}, Conditions(chCond).Triggers(:,1)/fs, 1);
         timeAxis_speed_corrected = timeAxis_speed.^[1,0] * time_drift_mdl;
         timeAxis_speed = (0:1/fr:timeAxis_speed_corrected(end))';
         vels = interp1(timeAxis_speed_corrected, vf*en2cm, timeAxis_speed);
