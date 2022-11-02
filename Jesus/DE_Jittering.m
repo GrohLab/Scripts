@@ -10,9 +10,12 @@ if dataDir == 0
 end
 % Creating the figure directory
 figureDir = fullfile(dataDir,'Figures\');
-if ~mkdir(figureDir)
-    fprintf(1,'There was an issue with the figure folder...\n');
+if ~exist(figureDir, "dir")
+    if ~mkdir(figureDir)
+        error("Could not create figure directory!\n")
+    end
 end
+
 if isempty(dir(fullfile(dataDir, '*analysis.mat')))
     pgObj = ProtocolGetter(dataDir);
     pgObj.getConditionSignals;
