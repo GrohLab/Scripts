@@ -108,6 +108,13 @@ behStack = dlcStack; behStack(4,:,:) = vStack;
 % movements.
 sSigma = squeeze(std(behStack(:, spontFlag, :), [], 2));
 sigTh = [5; 5; 2; 2.5];
+
+sSig = squeeze(std(behStack(:,bsFlag,:), [], 2));
+sMed = squeeze(median(behStack(:,bsFlag,:), 2));
+tMed = squeeze(median(behStack, 2));
+
+splOut = fitSpline((0:size(behDLCSignals_filtered,1)-1)/fr, behDLCSignals_filtered(:,2), 1, 0.1146, 0.9528, true);
+
 excludeFlag = sSigma > sigTh;
 % This doesn't take into consideretion the nose (1,2,4)
 excludeFlag = any(excludeFlag(2.^(0:2),:),1); 
@@ -158,7 +165,7 @@ if ~exist(rsfPath, 'file')
 end
 %% EEG-like plots for the nose and the two whisker-sets
 efig = gobjects(size(behStack,1),1);
-yaxName = [repmat("Angle [°]",1,3), "Roller speed [cm/s"];
+yaxName = [repmat("Angle [°]",1,3), "Roller speed [cm/s]"];
 for cbp = 1:length(behStack)
     plotEEGchannels(behStack{cbp}', [], diff(timeLapse),...
         fr, 1, -timeLapse(1));
