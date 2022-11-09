@@ -758,7 +758,25 @@ end
 %     cqVals(ccl,:) = (quartCut' - il(2,:))./il(1,:);
 % end
 % cqDiff = diff(cqVals(:,[1,4]),1,2);
+
 %% Behaviour
+flds = dir(getParentDir(dataDir,1));
+pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), flds);
+flds(pointFlag) = [];
+behFoldFlag = arrayfun(@(x) any(strcmpi(x.name, 'Behaviour')), flds);
+possNames = ["P", "L"];
+if any(behFoldFlag) && sum(behFoldFlag) == 1
+    % If only one folder named Behaviour exists, chances are that this is
+    % an awake experiment.
+    behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
+    fprintf(1, "Found %s!\n", behDir)
+    behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), {["Piezo", "Puff"];["Laser","Light"]});
+    analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
+        'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
+        'ConditionsNames', consCondNames);
+end
+
+%{
 afPttrn = "ArduinoTriggers*.mat";
 rfPttrn = "RollerSpeed*.mat";
 axOpts = {'Box','off','Color','none'};
@@ -1037,3 +1055,4 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         end
     end
 end
+%}
