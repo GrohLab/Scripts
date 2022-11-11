@@ -832,10 +832,8 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             try
                 %              Encoder steps  Radius^2
                 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fr;
-                rollFs = fr;
             catch
                 en2cm = ((2*pi)/((2^15)-1))*((14.85/2)^2)*fsRoll;
-                rollFs = fsRoll;
                 fr = fsRoll;
             end
         end
