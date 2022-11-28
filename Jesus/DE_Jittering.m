@@ -760,7 +760,7 @@ end
 % cqDiff = diff(cqVals(:,[1,4]),1,2);
 
 %% Behaviour
-%{
+
 flds = dir(getParentDir(dataDir,1));
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), flds);
 flds(pointFlag) = [];
@@ -776,8 +776,8 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
         'ConditionsNames', consCondNames);
 end
+%{
 
-%}
 afPttrn = "ArduinoTriggers*.mat";
 rfPttrn = "RollerSpeed*.mat";
 axOpts = {'Box','off','Color','none'};
@@ -1054,3 +1054,4 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         end
     end
 end
+%}
