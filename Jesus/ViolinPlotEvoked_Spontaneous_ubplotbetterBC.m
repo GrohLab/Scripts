@@ -1,5 +1,6 @@
 
 h1=subplot(2,1,2)
+
 [yCtrE xCtrE]=ksdensity(evFr(wruIdx&posMod&signMod,1),'Bandwidth',7)
 patch(yCtrE*-1,xCtrE,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.7)
 hold on

@@ -1,4 +1,4 @@
-
+posMod=MIevok>=0.001;negMod=MIevok<=-0.001
 h1=subplot(2,1,2)
 [yCtrE xCtrE]=ksdensity(evFr(wruIdx&posMod&signMod,1),'Bandwidth',7)
 patch(yCtrE*-1,xCtrE,[0 0 1],'EdgeAlpha',0.1,'FaceAlpha',0.7)
@@ -6,8 +6,8 @@ hold on
 [yAIE xAIE]=ksdensity(evFr(wruIdx&posMod&signMod,2),'Bandwidth',7)
 patch(yAIE,xAIE,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.7)
 hold on
-plot(zeros(68,1)-0.0025,evFr(wruIdx&posMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
-plot(zeros(68,1)+0.0025,evFr(wruIdx&posMod&signMod,2),'k^','MarkerFaceColor',[0.7 0 0])
+plot(zeros(33,1)-0.0025,evFr(wruIdx&posMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
+plot(zeros(33,1)+0.0025,evFr(wruIdx&posMod&signMod,2),'k^','MarkerFaceColor',[0.7 0 0])
 plot(-0.0025,median(evFr(wruIdx&posMod&signMod,1)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
 plot(-0.0025,median(evFr(wruIdx&posMod&signMod,1)),'ko','MarkerFaceColor',[1 1 1],'MarkerSize',6)
 plot(+0.0025,median(evFr(wruIdx&posMod&signMod,2)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
@@ -22,8 +22,8 @@ hold on
 [yAIDepE xAIDepE]=ksdensity(evFr(wruIdx&negMod&signMod,2),'Bandwidth',7)
 patch((yAIDepE+0.05),xAIDepE+1,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.7)
 hold on
-plot(zeros(33,1)+0.0475,evFr(wruIdx&negMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
-plot(zeros(33,1)+0.0525,evFr(wruIdx&negMod&signMod,2),'kv','MarkerFaceColor',[0.7 0 0])
+plot(zeros(38,1)+0.0475,evFr(wruIdx&negMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
+plot(zeros(38,1)+0.0525,evFr(wruIdx&negMod&signMod,2),'kv','MarkerFaceColor',[0.7 0 0])
 plot(+0.0475,median(evFr(wruIdx&negMod&signMod,1)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
 plot(+0.0475,median(evFr(wruIdx&negMod&signMod,1)),'ko','MarkerFaceColor',[1 1 1],'MarkerSize',6)
 plot(+0.0525,median(evFr(wruIdx&negMod&signMod,2)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
@@ -38,8 +38,8 @@ hold on
 
 patch((yAIAllE-0.05),xAIAllE+1,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.7) % evoked
 hold on
-plot(zeros(318,1)-0.0475,evFr(wruIdx,2),'ksquare','MarkerFaceColor',[0.7 0 0])
-plot(zeros(318,1)-0.0525,evFr(wruIdx,1),'ksquare','MarkerFaceColor',[0 0 0.7])
+plot(zeros(251,1)-0.0475,evFr(wruIdx,2),'ksquare','MarkerFaceColor',[0.7 0 0])
+plot(zeros(251,1)-0.0525,evFr(wruIdx,1),'ksquare','MarkerFaceColor',[0 0 0.7])
 plot(-0.0475,median(evFr(wruIdx,2)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
 plot(-0.0475,median(evFr(wruIdx,2)),'ko','MarkerFaceColor',[1 1 1],'MarkerSize',6)
 plot(-0.0525,median(evFr(wruIdx,1)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
@@ -71,8 +71,8 @@ hold on
 [yAI xAI]=ksdensity(pfr(wruIdx&posMod&signMod,2),'Bandwidth',0.7)
 patch(yAI,xAI,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.7)
 hold on
-plot(zeros(68,1)-0.025,pfr(wruIdx&posMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
-plot(zeros(68,1)+0.025,pfr(wruIdx&posMod&signMod,2),'k^','MarkerFaceColor',[0.7 0 0])
+plot(zeros(33,1)-0.025,pfr(wruIdx&posMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
+plot(zeros(33,1)+0.025,pfr(wruIdx&posMod&signMod,2),'k^','MarkerFaceColor',[0.7 0 0])
 plot(-0.025,median(pfr(wruIdx&posMod&signMod,1)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
 plot(-0.025,median(pfr(wruIdx&posMod&signMod,1)),'ko','MarkerFaceColor',[1 1 1],'MarkerSize',6)
 plot(+0.025,median(pfr(wruIdx&posMod&signMod,2)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
@@ -86,8 +86,8 @@ hold on
 [yAIDep xAIDep]=ksdensity(pfr(wruIdx&negMod&signMod,2),'Bandwidth',1)
 patch((yAIDep+0.5),xAIDep+1,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.7)
 hold on
-plot(zeros(33,1)+0.475,pfr(wruIdx&negMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
-plot(zeros(33,1)+0.525,pfr(wruIdx&negMod&signMod,2),'kv','MarkerFaceColor',[0.7 0 0])
+plot(zeros(38,1)+0.475,pfr(wruIdx&negMod&signMod,1),'ksquare','MarkerFaceColor',[0 0 0.7])
+plot(zeros(38,1)+0.525,pfr(wruIdx&negMod&signMod,2),'kv','MarkerFaceColor',[0.7 0 0])
 plot(+0.475,median(pfr(wruIdx&negMod&signMod,1)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
 plot(+0.475,median(pfr(wruIdx&negMod&signMod,1)),'ko','MarkerFaceColor',[1 1 1],'MarkerSize',6)
 plot(+0.525,median(pfr(wruIdx&negMod&signMod,2)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
@@ -101,8 +101,8 @@ hold on
 [yAIAll xAIAll]=ksdensity(pfr(wruIdx,2),'Bandwidth',1)
 patch((yAIAll-0.5),xAIAll+1,[1 0 0],'EdgeAlpha',0.1,'FaceAlpha',0.7)
 hold on
-plot(zeros(318,1)-0.475,pfr(wruIdx,2),'ksquare','MarkerFaceColor',[0.7 0 0])
-plot(zeros(318,1)-0.525,pfr(wruIdx,1),'ksquare','MarkerFaceColor',[0 0 0.7])
+plot(zeros(251,1)-0.475,pfr(wruIdx,2),'ksquare','MarkerFaceColor',[0.7 0 0])
+plot(zeros(8,1)-0.525,pfr(wruIdx,1),'ksquare','MarkerFaceColor',[0 0 0.7])
 plot(-0.475,median(pfr(wruIdx,2)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
 plot(-0.475,median(pfr(wruIdx,2)),'ko','MarkerFaceColor',[1 1 1],'MarkerSize',6)
 plot(-0.525,median(pfr(wruIdx,1)),'w*','MarkerFaceColor',[0 0 0],'MarkerSize',6)
