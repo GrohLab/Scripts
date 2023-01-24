@@ -782,7 +782,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), {["Piezo", "Puff"];["Laser","Light"]});
     analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
         'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
-        'ConditionsNames', consCondNames);
+        'ConditionsNames', cellstr(consCondNames));
 end
 %{
 
