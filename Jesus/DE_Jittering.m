@@ -390,9 +390,20 @@ relSpkFileName =...
     sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
     expName, responseWindow*1e3, spontaneousWindow*1e3,...
     timeLapse*1e3, Conditions(chCond).name, filtStr);
+% Spontaneous firing rates
+Texp = Ns/fs;
+trainDuration = 1;
+AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
+[spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
+    [0, Texp], fs, trainDuration + delta_t + responseWindow(1));
+SpontaneousStruct = struct('Spikes', SpSpks, 'FR', ...
+    arrayfun(@(x) {x}, spFr), 'ISI', spIsi);
 if ~exist(relSpkFileName,'file')
     save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
-        'configStructure', 'firstSpkStruct')
+        'configStructure', 'firstSpkStruct', 'SpontaneousStruct')
+elseif all(~contains(who(matfile(fullfile(dataDir, relSpkFileName))), ...
+        'SpontaneousStruct'))
+    save(fullfile(dataDir, relSpkFileName), 'SpontaneousStruct', '-append')
 end
 
 %% Ordering PSTH
@@ -484,11 +495,6 @@ if numel(logFigs) > 1
     saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
 end
 
-%% Spontaneous firing rates
-trainDuration = 1;
-AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
-[spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
-    [0, Inf], fs, trainDuration + delta_t + responseWindow(1));
 %% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
