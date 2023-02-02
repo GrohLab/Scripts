@@ -30,6 +30,7 @@ if ~loadTriggerData(dataDir)
     return
 end
 fnOpts = {'UniformOutput', false};
+axOpts = {'Box','off','Color','none'};
 spk_file_vars = {'spike_times','gclID','Nt','Ns','goods'};
 %% Constructing the helper 'global' variables
 
@@ -476,6 +477,10 @@ for ccond = 1:Nccond
     figFilePath = fullfile(figureDir, figFileName);
     saveFigure(psthFigs(ccond), figFilePath);
 end
+allCondFig = figure('Name','All conditions', 'Color','w');
+PSTHall = squeeze(mean(PSTH./(binSz.*reshape(Na,1,1,Nccond)), 1));
+ax = axes('Parent',allCondFig, axOpts{:});
+plot(ax, psthTx, PSTHall)
 
 %% Log PSTH -- Generalise this part!!
 Nbin = 64;
