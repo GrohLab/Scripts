@@ -796,10 +796,14 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     % an awake experiment.
     behDir = fullfile(flds(behFoldFlag).folder,flds(behFoldFlag).name);
     fprintf(1, "Found %s!\n", behDir)
-    behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), {["Piezo", "Puff"];["Laser","Light"]});
-    analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
-        'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
-        'ConditionsNames', cellstr(consCondNames));
+    answ = questdlg('Analyse behaviour?','Behaviour','Yes','No','Yes');
+    if strcmpi(answ,'Yes')
+        behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), ...
+            {["Piezo", "Puff"];["Laser","Light"]});
+        analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
+            'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
+            'ConditionsNames', cellstr(consCondNames));
+    end
 end
 %{
 
