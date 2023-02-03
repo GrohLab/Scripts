@@ -477,11 +477,16 @@ for ccond = 1:Nccond
     figFilePath = fullfile(figureDir, figFileName);
     saveFigure(psthFigs(ccond), figFilePath);
 end
-allCondFig = figure('Name','All conditions', 'Color','w');
-PSTHall = squeeze(mean(PSTH./(binSz.*reshape(Na,1,1,Nccond)), 1));
-ax = axes('Parent',allCondFig, axOpts{:});
-plot(ax, psthTx, PSTHall)
-
+[ppFig, PSTHall] = compareCondPSTHs(PSTH, Na, binSz, timeLapse, ...
+    consCondNames); 
+ephysPttrn = 'Z-score all-units PSTH %s VW%.2f - %.2f ms Ntrials%s';
+ephysName = sprintf(ephysPttrn, sprintf('%s ', consCondNames{:}), ...
+    timeLapse*1e3, sprintf(' %d', Na));
+ephysFile = fullfile(figureDir, ephysName);
+if ~exist(ephysFile, 'file')
+    saveFigure(ppFig, ephysFile, 1);
+end
+clearvars ppFig ephysPttrn ephysName ephysFile
 %% Log PSTH -- Generalise this part!!
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
