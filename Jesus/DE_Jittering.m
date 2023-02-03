@@ -498,11 +498,18 @@ logFigs = plotLogPSTH(logPSTH);
 % Saving the figures
 lpFigName = sprintf('%s Log-likePSTH %s %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
     expName, logPSTH.Normalization, Nccond, responseWindow*1e3, Nbin, filtStr);
-saveFigure(logFigs(1), fullfile(figureDir, lpFigName))
+saveFigure(logFigs(1), fullfile(figureDir, lpFigName), true)
 if numel(logFigs) > 1
     lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
         expName, Nccond, responseWindow*1e3, Nbin, filtStr);
-    saveFigure(logFigs(2), fullfile(figureDir, lmiFigName))
+    saveFigure(logFigs(2), fullfile(figureDir, lmiFigName), true)
+    popEffects = logFigs(2).UserData; vrs = matfile(resFP);
+    if ~isfield(vrs,'popEffects')
+        save(resFP, 'popEffects','-append')
+    end
+    if ~isfield(vrs,'consCondNames')
+        save(resFP, 'consCondNames','-append')
+    end
 end
 
 %% Cluster population proportions
