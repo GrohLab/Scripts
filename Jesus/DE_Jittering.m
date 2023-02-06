@@ -448,10 +448,9 @@ psthFigs = gobjects(Nccond,1);
 Ntc = size(cst,2);
 for ccond = 1:Nccond
     figFileName =...
-        sprintf('%s %s VW%.1f-%.1f ms B%.1f ms RW%.1f-%.1f ms SW%.1f-%.1f ms %sset %s (%s)',...
+        sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
         expName, consCondNames{ccond}, timeLapse*1e3, binSz*1e3,...
-        responseWindow*1e3, spontaneousWindow*1e3, onOffStr, orderedStr,...
-        filtStr);
+        RW_key, SW_key, onOffStr, orderedStr, filtStr);
     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     if exist('cst', 'var') && ~isempty(cst)
@@ -503,12 +502,18 @@ if numel(logFigs) > 1
     lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
         expName, Nccond, responseWindow*1e3, Nbin, filtStr);
     saveFigure(logFigs(2), fullfile(figureDir, lmiFigName), true)
-    popEffects = logFigs(2).UserData; vrs = matfile(resFP);
-    if ~isfield(vrs,'popEffects')
+    popEffects = logFigs(2).UserData; vrs = fieldnames(matfile(resFP));
+    if ~any(ismember(vrs,'popEffects'))
+        fprintf(1,'Adding "popEffects" to %s\n', resFN)
         save(resFP, 'popEffects','-append')
     end
-    if ~isfield(vrs,'consCondNames')
+    if ~any(ismember(vrs,'consCondNames'))
+        fprintf(1,'Adding "consCondNames" to %s\n', resFN)
         save(resFP, 'consCondNames','-append')
+    end
+    if ~any(ismember(vrs,'logPSTH'))
+        fprintf(1,'Adding "logPSTH" to %s\n', resFN)
+        save(resFP, 'logPSTH','-append')
     end
 end
 
