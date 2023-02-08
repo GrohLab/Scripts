@@ -262,8 +262,7 @@ timeFlags = [sponActStackIdx;respActStackIdx];
 % Time window
 delta_t = diff(responseWindow);
 % Statistical tests
-[Results, Counts] = statTests(discStack, delayFlags, timeFlags,'test', ...
-    'wilcoxon');
+[Results, Counts] = statTests(discStack, delayFlags, timeFlags);
 
 indCondSubs = cumsum(Nccond:-1:1);
 consCondNames = condNames(consideredConditions);
