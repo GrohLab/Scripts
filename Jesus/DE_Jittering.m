@@ -125,12 +125,28 @@ end
 % to save (V2S)
 pcPttrn = "%s_ParameterConfiguration.mat";
 pcFN = sprintf(pcPttrn, expName); pcFP = fullfile(dataDir, pcFN);
-pcV2S = {'configStructure', 'confKeys'};
+pcV2S = {'configStructure', 'confKeys'}; pcSub = []; pcFlag = false;
 if exist(pcFP, 'file')
-    [configStructure, confKeys] = load(pcFP);
-else
-    % File doesn't exist. Create it.
-    configStructure = []; confKeys = [];
+    pcFlag = true;
+    load(pcFP, pcV2S{:});
+    pcSub = listdlg("ListString", join(confKeys,2), ...
+        "PromptString", ...
+        "Viewing       Response       Spontaneous     Trigger  "+ ...
+        "Conditions      On/Off  BinSize [ms]", ...
+        "name", "Configuration selection", ...
+        "ListSize", [700, size(confKeys,1)*25], ...
+        "CancelString", "New");
+end
+
+if isempty(pcSub)
+    % If user chose to create a new parameter configuration set or the file
+    % doesn't exist
+    if ~pcFlag
+        % File doesn't exist. Create it.
+        configStructure = []; confKeys = [];
+    else
+        pcV2S = [pcV2S(:)', {'-append'}];
+    end
     %% Select Time lapse, bin size, and spontaneous and response windows
     promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
         'Bin size [s]:'};
@@ -201,8 +217,8 @@ else
     % Choose the conditions to look at
     auxSubs = setdiff(1:numel(condNames), chCond);
     ccondNames = condNames(auxSubs);
-    [cchCond, iOk] = listdlg('ListString',ccondNames,'SelectionMode','multiple',...
-        'PromptString',...
+    [cchCond, iOk] = listdlg('ListString',ccondNames, ...
+        'SelectionMode', 'multiple', 'PromptString',...
         'Choose the condition(s) to look at (including whiskers):',...
         'ListSize', [350, numel(condNames)*16]);
     if ~iOk
@@ -224,7 +240,7 @@ else
     currentMapKey = {RW_key, SW_key, C_key, CC_key, O_key};
     VW_key = sprintf("VW%.2f-%.2f", timeLapse*1e3);
     BZ_key = sprintf("BZ%.3f",binSz*1e3); 
-    %% Configuration structure
+    %% Appending the new pc to the array and saving
     configStructure = [configStructure, struct('Experiment', ...
         fullfile(dataDir,expName), 'Viewing_window_s', timeLapse, ...
         'Response_window_s', responseWindow, ...
@@ -233,7 +249,36 @@ else
         'ConsideredConditions',{consCondNames})];
     newConfKey = [VW_key, string(currentMapKey), BZ_key];
     confKeys = [confKeys; newConfKey];
-    save(fullfile(dataDir, pcFN), pcV2S{:}, "-append")
+    save(fullfile(dataDir, pcFN), pcV2S{:})
+    configStructure = configStructure(end);
+else
+    %% Loading paramters to the workspace
+    % User chose a previous configuration
+    configStructure = configStructure(pcSub);
+    condNames = arrayfun(@(x) string(x.name), Conditions);
+    timeLapse = configStructure.Viewing_window_s;
+    responseWindow = configStructure.Response_window_s;
+    spontaneousWindow = configStructure.Spontaneous_window_s;
+    binSz = configStructure.BinSize_s;
+    chCond = find(condNames == string(configStructure.Trigger.Name));
+    onOffStr = configStructure.Trigger.Edge;
+    [~, consCondSubs] = find(condNames == ...
+        string(configStructure.ConsideredConditions)');
+    consCondNames = condNames(consCondSubs);
+    clearvars pcSub
+    %% Keys creation for parameter configuration comparison
+    CC_key = '';
+    for cc = 1:length(consCondNames)-1
+        CC_key = [CC_key, sprintf('%s-', consCondNames{cc})]; %#ok<AGROW>
+    end
+    CC_key = [CC_key, sprintf('%s', consCondNames{end})];
+    C_key = condNames{chCond};
+    SW_key = sprintf('SW%.2f-%.2f', spontaneousWindow*1e3);
+    RW_key = sprintf('RW%.2f-%.2f', responseWindow*1e3);
+    O_key = sprintf('%s', onOffStr);
+    currentMapKey = {RW_key, SW_key, C_key, CC_key, O_key};
+    VW_key = sprintf("VW%.2f-%.2f", timeLapse*1e3);
+    BZ_key = sprintf("BZ%.3f",binSz*1e3); 
 end
 %% Constructing the stack out of the user's choice
 % discStack - dicrete stack has a logical nature
@@ -271,12 +316,11 @@ fprintf('- ''%s''\n', consCondNames)
 % Subscript to indicate the conditions with all whisker stimulations, and
 % combinations
 allWhiskerStimulus = chCond;
-
 Nccond = length(consCondNames);
-%% Boolean flags
+%% Conditions' boolean flags
 delayFlags = false(NTa,Nccond);
 counter2 = 1;
-for ccond = consCondSubs
+for ccond = consCondSubs(:)'
     delayFlags(:,counter2) = ismember(Conditions(chCond).Triggers(:,1),...
         Conditions(ccond).Triggers(:,1));
     counter2 = counter2 + 1;
@@ -304,8 +348,7 @@ indCondSubs = cumsum(Nccond:-1:1);
 configureFigureToPDF(Figs);
 stFigBasename = fullfile(figureDir,[expName,' ']);
 stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
-    responseWindow(1)*1e3, responseWindow(2)*1e3, spontaneousWindow(1)*1e3,...
-    spontaneousWindow(2)*1e3);
+    responseWindow*1e3, spontaneousWindow*1e3);
 ccn = 1;
 
 for cc = 1:numel(Figs)
@@ -514,11 +557,11 @@ logFigs = plotLogPSTH(logPSTH);
 % Saving the figures
 lpFigName = sprintf('%s Log-likePSTH %s %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
     expName, logPSTH.Normalization, Nccond, responseWindow*1e3, Nbin, filtStr);
-saveFigure(logFigs(1), fullfile(figureDir, lpFigName), true)
+saveFigure(logFigs(1), fullfile(figureDir, lpFigName), true, true)
 if numel(logFigs) > 1
     lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
         expName, Nccond, responseWindow*1e3, Nbin, filtStr);
-    saveFigure(logFigs(2), fullfile(figureDir, lmiFigName), true)
+    saveFigure(logFigs(2), fullfile(figureDir, lmiFigName), true, true)
     popEffects = logFigs(2).UserData; vrs = fieldnames(matfile(resFP));
     MIStruct = struct('ConditionNames', consCondNames, ...
         'MI', arrayfun(@(x) struct('Comparative', ...
@@ -552,11 +595,11 @@ if size(spkSubs,1) < size(gclID,1)
 end
 NaCount = 1;
 % Experiment firing rate and ISI per considered condition
-spFrC = zeros(Ncl, size(consCondSubs,2), 'single');
-econdIsi = cell(Ncl, size(consCondSubs,2));
+spFrC = zeros(Ncl, size(consCondSubs(:),1), 'single');
+econdIsi = cell(Ncl, size(consCondSubs(:),1));
 econdSpks = econdIsi;
 trainDuration = 1;
-for ccond = consCondSubs
+for ccond = consCondSubs(:)'
     itiSub = mean(diff(Conditions(ccond).Triggers(:,1)));
     consTime = [Conditions(ccond).Triggers(1,1) - round(itiSub/2),...
         Conditions(ccond).Triggers(Na(NaCount),2) + round(itiSub/2)]...
