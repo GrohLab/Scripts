@@ -93,7 +93,7 @@ end
 continuousSignals(continuousNameSub == 0) = [];
 continuousNameSub(continuousNameSub == 0) = [];
 trigNames = trigNames(continuousNameSub);
-fnOpts = {'UniformOutput', false};
+
 %% Inter-spike intervals
 isiFile = fullfile(dataDir,[expName,'_ISIvars.mat']);
 if ~exist(isiFile,'file')
@@ -119,75 +119,122 @@ end
 % for ccl = 1:Ncl
 %     ISIsignal(ccl,spkSubs2{ccl}) = ISIVals{ccl};
 % end
+
 %% User controlling variables
-% Time lapse, bin size, and spontaneous and response windows
-promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
-    'Bin size [s]:'};
-defInputs = {'-0.1, 0.1', '0.002, 0.05', '0.001'};
-answ = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
-if isempty(answ)
-    fprintf(1,'Cancelling...\n')
-    return
+% Parameter configuration (pc) file name (FN), file path (FP) and variables
+% to save (V2S)
+pcPttrn = "%s_ParameterConfiguration.mat";
+pcFN = sprintf(pcPttrn, expName); pcFP = fullfile(dataDir, pcFN);
+pcV2S = {'configStructure', 'confKeys'};
+if exist(pcFP, 'file')
+    [configStructure, confKeys] = load(pcFP);
 else
-    timeLapse = str2num(answ{1}); %#ok<*ST2NM>
-    if numel(timeLapse) ~= 2
-        timeLapse = str2num(inputdlg('Please provide the time window [s]:',...
-            'Time window',[1, 30], '-0.1, 0.1'));
-        if isnan(timeLapse) || isempty(timeLapse)
-            fprintf(1,'Cancelling...')
-            return
+    % File doesn't exist. Create it.
+    configStructure = []; confKeys = [];
+    %% Select Time lapse, bin size, and spontaneous and response windows
+    promptStrings = {'Viewing window (time lapse) [s]:','Response window [s]',...
+        'Bin size [s]:'};
+    defInputs = {'-0.1, 0.1', '0.002, 0.05', '0.001'};
+    answ = inputdlg(promptStrings,'Inputs', [1, 30],defInputs);
+    if isempty(answ)
+        fprintf(1,'Cancelling...\n')
+        return
+    else
+        timeLapse = str2num(answ{1}); %#ok<*ST2NM>
+        if numel(timeLapse) ~= 2
+            timeLapse = str2num(inputdlg('Please provide the time window [s]:',...
+                'Time window',[1, 30], '-0.1, 0.1'));
+            if isnan(timeLapse) || isempty(timeLapse)
+                fprintf(1,'Cancelling...')
+                return
+            end
+        end
+        responseWindow = str2num(answ{2});
+        binSz = str2double(answ(3));
+    end
+    fprintf(1,'Time window: %.2f - %.2f ms\n',timeLapse*1e3)
+    fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow*1e3)
+    fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
+    sponAns = questdlg('Mirror the spontaneous window?','Spontaneous window',...
+        'Yes','No','Yes');
+    spontaneousWindow = -flip(responseWindow);
+    if strcmpi(sponAns,'No')
+        spontPrompt = "Time before the trigger in [s] (e.g. -0.8, -0.6 s)";
+        sponDef = string(sprintf('%.3f, %.3f',spontaneousWindow(1),...
+            spontaneousWindow(2)));
+        sponStr = inputdlg(spontPrompt, 'Inputs',[1,30],sponDef);
+        if ~isempty(sponStr)
+            spontAux = str2num(sponStr{1});
+            if length(spontAux) ~= 2 || spontAux(1) > spontAux(2) || ...
+                    spontAux(1) < timeLapse(1)
+                fprintf(1, 'The given input was not valid.\n')
+                fprintf(1, 'Keeping the mirror version!\n')
+            else
+                spontaneousWindow = spontAux;
+            end
         end
     end
-    responseWindow = str2num(answ{2});
-    binSz = str2double(answ(3));
-end
-fprintf(1,'Time window: %.2f - %.2f ms\n',timeLapse*1e3)
-fprintf(1,'Response window: %.2f - %.2f ms\n',responseWindow*1e3)
-fprintf(1,'Bin size: %.3f ms\n', binSz*1e3)
-sponAns = questdlg('Mirror the spontaneous window?','Spontaneous window',...
-    'Yes','No','Yes');
-spontaneousWindow = -flip(responseWindow);
-if strcmpi(sponAns,'No')
-    spontPrompt = "Time before the trigger in [s] (e.g. -0.8, -0.6 s)";
-    sponDef = string(sprintf('%.3f, %.3f',spontaneousWindow(1),...
-        spontaneousWindow(2)));
-    sponStr = inputdlg(spontPrompt, 'Inputs',[1,30],sponDef);
-    if ~isempty(sponStr)
-        spontAux = str2num(sponStr{1});
-        if length(spontAux) ~= 2 || spontAux(1) > spontAux(2) || ...
-                spontAux(1) < timeLapse(1)
-            fprintf(1, 'The given input was not valid.\n')
-            fprintf(1, 'Keeping the mirror version!\n')
-        else
-            spontaneousWindow = spontAux;
-        end
+    fprintf(1,'Spontaneous window: %.2f to %.2f ms before the trigger\n',...
+        spontaneousWindow(1)*1e3, spontaneousWindow(2)*1e3)
+    %% Select a condition to build the stack
+    condNames = arrayfun(@(x) string(x.name),Conditions);
+    condGuess = contains(condNames, ["whiskerall";"puffall"], ...
+        'IgnoreCase', true);
+    % Choose the conditions to create the stack upon
+    [chCond, iOk] = listdlg('ListString',condNames,'SelectionMode','single',...
+        'PromptString',...
+        'Choose the condition which has all whisker triggers: (one condition)',...
+        'InitialValue', find(condGuess), 'ListSize', [350, numel(condNames)*16]);
+    if ~iOk
+        fprintf(1,'Cancelling...\n')
+        return
     end
+    %% Select the onset or the offset of a trigger
+    fprintf(1,'Condition ''%s''\n', Conditions(chCond).name)
+    onOffStr = questdlg('Trigger on the onset or on the offset?','Onset/Offset',...
+        'on','off','Cancel','on');
+    if strcmpi(onOffStr,'Cancel')
+        fprintf(1,'Cancelling...\n')
+        return
+    end
+    %% Considered conditions selection
+    % Choose the conditions to look at
+    auxSubs = setdiff(1:numel(condNames), chCond);
+    ccondNames = condNames(auxSubs);
+    [cchCond, iOk] = listdlg('ListString',ccondNames,'SelectionMode','multiple',...
+        'PromptString',...
+        'Choose the condition(s) to look at (including whiskers):',...
+        'ListSize', [350, numel(condNames)*16]);
+    if ~iOk
+        fprintf(1,'Cancelling...\n')
+        return
+    end
+    consCondSubs = auxSubs(cchCond);
+    consCondNames = condNames(consCondSubs);
+    %% Keys creation for parameter configuration comparison
+    CC_key = '';
+    for cc = 1:length(consCondNames)-1
+        CC_key = [CC_key, sprintf('%s-', consCondNames{cc})]; %#ok<AGROW>
+    end
+    CC_key = [CC_key, sprintf('%s', consCondNames{end})];
+    C_key = condNames{chCond};
+    SW_key = sprintf('SW%.2f-%.2f', spontaneousWindow*1e3);
+    RW_key = sprintf('RW%.2f-%.2f', responseWindow*1e3);
+    O_key = sprintf('%s', onOffStr);
+    currentMapKey = {RW_key, SW_key, C_key, CC_key, O_key};
+    VW_key = sprintf("VW%.2f-%.2f", timeLapse*1e3);
+    BZ_key = sprintf("BZ%.3f",binSz*1e3); 
+    %% Configuration structure
+    configStructure = [configStructure, struct('Experiment', ...
+        fullfile(dataDir,expName), 'Viewing_window_s', timeLapse, ...
+        'Response_window_s', responseWindow, ...
+        'Spontaneous_window_s', spontaneousWindow, 'BinSize_s', binSz, ...
+        'Trigger', struct('Name', condNames{chCond}, 'Edge',onOffStr), ...
+        'ConsideredConditions',{consCondNames})];
+    newConfKey = [VW_key, string(currentMapKey), BZ_key];
+    confKeys = [confKeys; newConfKey];
+    save(fullfile(dataDir, pcFN), pcV2S{:}, "-append")
 end
-fprintf(1,'Spontaneous window: %.2f to %.2f ms before the trigger\n',...
-    spontaneousWindow(1)*1e3, spontaneousWindow(2)*1e3)
-%% Condition triggered stacks
-condNames = arrayfun(@(x) string(x.name),Conditions);
-condGuess = contains(condNames, ["whiskerall";"puffall"], ...
-    'IgnoreCase', true);
-% Choose the conditions to create the stack upon
-[chCond, iOk] = listdlg('ListString',condNames,'SelectionMode','single',...
-    'PromptString',...
-    'Choose the condition which has all whisker triggers: (one condition)',...
-    'InitialValue', find(condGuess), 'ListSize', [350, numel(condNames)*16]);
-if ~iOk
-    fprintf(1,'Cancelling...\n')
-    return
-end
-
-% Select the onset or the offset of a trigger
-fprintf(1,'Condition ''%s''\n', Conditions(chCond).name)
-onOffStr = questdlg('Trigger on the onset or on the offset?','Onset/Offset',...
-    'on','off','Cancel','on');
-if strcmpi(onOffStr,'Cancel')
-    fprintf(1,'Cancelling...\n')
-    return
-end
-
 %% Constructing the stack out of the user's choice
 % discStack - dicrete stack has a logical nature
 % cst - continuous stack has a numerical nature
@@ -217,33 +264,19 @@ end
 [Ne, Nt, NTa] = size(discStack);
 % Computing the time axis for the stack
 tx = (0:Nt - 1)/fs + timeLapse(1);
-%% Considered conditions selection
-% Choose the conditions to look at
-auxSubs = setdiff(1:numel(condNames), chCond);
-ccondNames = condNames(auxSubs);
-[cchCond, iOk] = listdlg('ListString',ccondNames,'SelectionMode','multiple',...
-    'PromptString',...
-    'Choose the condition(s) to look at (including whiskers):',...
-    'ListSize', [350, numel(condNames)*16]);
-if ~iOk
-    fprintf(1,'Cancelling...\n')
-    return
-end
-
 % Select the onset or the offset of a trigger
 fprintf(1,'Condition(s):\n')
-fprintf('- ''%s''\n', Conditions(auxSubs(cchCond)).name)
+fprintf('- ''%s''\n', consCondNames)
 
 % Subscript to indicate the conditions with all whisker stimulations, and
 % combinations
 allWhiskerStimulus = chCond;
-consideredConditions = auxSubs(cchCond);
 
-Nccond = length(consideredConditions);
+Nccond = length(consCondNames);
 %% Boolean flags
 delayFlags = false(NTa,Nccond);
 counter2 = 1;
-for ccond = consideredConditions
+for ccond = consCondSubs
     delayFlags(:,counter2) = ismember(Conditions(chCond).Triggers(:,1),...
         Conditions(ccond).Triggers(:,1));
     counter2 = counter2 + 1;
@@ -265,7 +298,6 @@ delta_t = diff(responseWindow);
 [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
 
 indCondSubs = cumsum(Nccond:-1:1);
-consCondNames = condNames(consideredConditions);
 % Plotting statistical tests
 [Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
     delta_t, gclID);
@@ -295,12 +327,7 @@ if ~nnz(CtrlCond)
 end
 wruIdx = all(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
-%% Configuration structure
-configStructure = struct('Experiment', fullfile(dataDir,expName),...
-    'Viewing_window_s', timeLapse, 'Response_window_s', responseWindow,...
-    'Spontaneous_window_s', spontaneousWindow, 'BinSize_s', binSz, ...
-    'Trigger', struct('Name', condNames{chCond}, 'Edge',onOffStr), ...
-    'ConsideredConditions',{consCondNames});
+
 %% Results directory
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
@@ -313,17 +340,6 @@ if ~exist(resDir, 'dir')
     end
 end
 %% Map prototype
-CC_key = '';
-for cc = 1:length(consCondNames)-1
-    CC_key = [CC_key, sprintf('%s-', consCondNames{cc})]; %#ok<AGROW>
-end
-CC_key = [CC_key, sprintf('%s', consCondNames{end})];
-C_key = condNames{chCond};
-SW_key = sprintf('SW%.2f-%.2f', spontaneousWindow*1e3);
-RW_key = sprintf('RW%.2f-%.2f', responseWindow*1e3);
-O_key = sprintf('%s', onOffStr);
-current_key = {RW_key, SW_key, C_key, CC_key, O_key};
-
 mapPttrn = "Map %s.mat";
 resMap_path = fullfile(resDir, sprintf(mapPttrn, expName));
 nmFlag = true;
@@ -341,20 +357,21 @@ if nmFlag
         keyCell = resMap_vars.keyCell; clearvars respMap_vars
         try
             % Testing if the current key combination exists
-            resMap_value = resMap(current_key{:});
+            resMap_value = resMap(currentMapKey{:});
             clearvars resMap_value
         catch
             fprintf(1, "Saving responsive unit flags\n")
-            resMap(current_key{:}) = wruIdx;
-            keyCell = cat(1, keyCell, current_key);
+            resMap(currentMapKey{:}) = wruIdx;
+            keyCell = cat(1, keyCell, currentMapKey);
         end
     else
         fprintf(1, "Saving responsive unit flags\n")
-        resMap(current_key{:}) = wruIdx;
-        keyCell = current_key;
+        resMap(currentMapKey{:}) = wruIdx;
+        keyCell = currentMapKey;
     end
     save(resMap_path, "resMap", "keyCell")
 end
+
 
 %% Saving statistical results
 % Not the best name, but works for now...
@@ -503,17 +520,14 @@ if numel(logFigs) > 1
         expName, Nccond, responseWindow*1e3, Nbin, filtStr);
     saveFigure(logFigs(2), fullfile(figureDir, lmiFigName), true)
     popEffects = logFigs(2).UserData; vrs = fieldnames(matfile(resFP));
-    if ~any(ismember(vrs,'popEffects'))
-        fprintf(1,'Adding "popEffects" to %s\n', resFN)
-        save(resFP, 'popEffects','-append')
-    end
-    if ~any(ismember(vrs,'consCondNames'))
-        fprintf(1,'Adding "consCondNames" to %s\n', resFN)
-        save(resFP, 'consCondNames','-append')
-    end
-    if ~any(ismember(vrs,'logPSTH'))
-        fprintf(1,'Adding "logPSTH" to %s\n', resFN)
-        save(resFP, 'logPSTH','-append')
+    MIStruct = struct('ConditionNames', consCondNames, ...
+        'MI', arrayfun(@(x) struct('Comparative', ...
+        string(consCondNames(popEffects(x,1)))+" vs "+...
+        string(consCondNames(popEffects(x,2))), 'Value', popEffects(x,3)), ...
+        1:size(popEffects,1), fnOpts{:}));
+    if ~any(ismember(vrs,'MIStruct'))
+        fprintf(1,'Adding "MIStruct" to %s\n', resFN)
+        save(resFP, 'MIStruct','-append')
     end
 end
 
@@ -538,11 +552,11 @@ if size(spkSubs,1) < size(gclID,1)
 end
 NaCount = 1;
 % Experiment firing rate and ISI per considered condition
-spFrC = zeros(Ncl, size(consideredConditions,2), 'single');
-econdIsi = cell(Ncl, size(consideredConditions,2));
+spFrC = zeros(Ncl, size(consCondSubs,2), 'single');
+econdIsi = cell(Ncl, size(consCondSubs,2));
 econdSpks = econdIsi;
 trainDuration = 1;
-for ccond = consideredConditions
+for ccond = consCondSubs
     itiSub = mean(diff(Conditions(ccond).Triggers(:,1)));
     consTime = [Conditions(ccond).Triggers(1,1) - round(itiSub/2),...
         Conditions(ccond).Triggers(Na(NaCount),2) + round(itiSub/2)]...
@@ -650,18 +664,18 @@ if strcmpi(rasAns,'Yes')
         rectColor = clrmap('Gray');
     end
     % Choose the conditions to be plotted
-    resCondNames = arrayfun(@(x) x.name, Conditions(consideredConditions),...
+    resCondNames = arrayfun(@(x) x.name, Conditions(consCondSubs),...
         'UniformOutput', 0);
     [rasCondSel, iOk] = listdlg('ListString', resCondNames,...
         'PromptString', 'Which conditions to plot?',...
-        'InitialValue', 1:length(consideredConditions),...
+        'InitialValue', 1:length(consCondSubs),...
         'CancelString', 'None',...
         'Name', 'Conditions for raster',...
         'SelectionMode', 'multiple');
     if ~iOk
         return
     end
-    rasCond = consideredConditions(rasCondSel);
+    rasCond = consCondSubs(rasCondSel);
     rasCondNames = consCondNames(rasCondSel);
     Nrcl = numel(clSel);
     % Reorganize the rasters in the required order.
