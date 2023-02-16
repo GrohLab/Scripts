@@ -1,13 +1,13 @@
 % 30.08.19 Jittering analysis by using the Data Explorer.
 clearvars
-%% Load the data
+%% Selecting experiment
 % Choosing the working directory
 dataDir = uigetdir('E:\Data\VPM\Jittering\Silicon Probes\',...
     'Choose a working directory');
-%%
 if dataDir == 0
     return
 end
+%% Loading data
 % Creating the figure directory
 figureDir = fullfile(dataDir,'Figures\');
 if ~exist(figureDir, "dir")
@@ -15,7 +15,7 @@ if ~exist(figureDir, "dir")
         error("Could not create figure directory!\n")
     end
 end
-
+%WARNING! Protocol getter is not fully stable!
 if isempty(dir(fullfile(dataDir, '*analysis.mat')))
     pgObj = ProtocolGetter(dataDir);
     pgObj.getConditionSignals;
