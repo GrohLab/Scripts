@@ -278,8 +278,20 @@ else
     O_key = sprintf('%s', onOffStr);
     currentMapKey = {RW_key, SW_key, C_key, CC_key, O_key};
     VW_key = sprintf("VW%.2f-%.2f", timeLapse*1e3);
-    BZ_key = sprintf("BZ%.3f",binSz*1e3); 
+    BZ_key = sprintf("BZ%.3f",binSz*1e3);
 end
+%% Creating ephys figure folder
+subFigDir = sprintf("Ephys %s %s %s", VW_key, RW_key, SW_key);
+subFigDir = fullfile(figureDir, subFigDir);
+metaNameFlag = false;
+if ~exist(subFigDir, "dir")
+    if ~mkdir(subFigDir)
+        fprintf(1, "Couldn't create %s!\n", subFigDir)
+        fprintf(1, "Keeping metadata in figure file names.\n")
+        metaNameFlag = true;
+    end
+end
+figureDir = subFigDir;
 %% Constructing the stack out of the user's choice
 % discStack - dicrete stack has a logical nature
 % cst - continuous stack has a numerical nature
@@ -338,29 +350,39 @@ respActStackIdx = tx >= responseWindow(1) & tx <= responseWindow(2);
 timeFlags = [sponActStackIdx;respActStackIdx];
 % Time window
 delta_t = diff(responseWindow);
-% Statistical tests
-[Results, Counts] = statTests(discStack, delayFlags, timeFlags);
 
-indCondSubs = cumsum(Nccond:-1:1);
-% Plotting statistical tests
-[Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
-    delta_t, gclID);
-configureFigureToPDF(Figs);
+% Results directory. Not the best name, but works for now...
+resPttrn = 'Res VW%.2f-%.2f ms %s ms %s ms %s.mat';
+resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
+resFP = fullfile(resDir, resFN);
+
+% Statistical scatter figure names
 stFigBasename = fullfile(figureDir,[expName,' ']);
 stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
     responseWindow*1e3, spontaneousWindow*1e3);
-ccn = 1;
 
-for cc = 1:numel(Figs)
-    if ~ismember(cc, indCondSubs)
-        altCondNames = strsplit(Figs(cc).Children(2).Title.String,': ');
-        altCondNames = altCondNames{2};
-    else
-        altCondNames = consCondNames{ccn};
-        ccn = ccn + 1;
+if exist(resFP,file)
+    load(resFP, "Results", "Counts")
+
+else
+    % Statistical tests
+    [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
+    indCondSubs = cumsum(Nccond:-1:1);
+    % Plotting statistical tests
+    [Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
+        delta_t, gclID); configureFigureToPDF(Figs);
+    ccn = 1;
+    for cc = 1:numel(Figs)
+        if ~ismember(cc, indCondSubs)
+            altCondNames = strsplit(Figs(cc).Children(2).Title.String,': ');
+            altCondNames = altCondNames{2};
+        else
+            altCondNames = consCondNames{ccn};
+            ccn = ccn + 1;
+        end
+        stFigName = [stFigBasename, altCondNames, stFigSubfix];
+        saveFigure(Figs(cc), stFigName)
     end
-    stFigName = [stFigBasename, altCondNames, stFigSubfix];
-    saveFigure(Figs(cc), stFigName)
 end
 [rclIdx, H, zH] = getSignificantFlags(Results);
 Htc = sum(H,2);
@@ -373,7 +395,6 @@ Nwru = nnz(wruIdx);
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 %% Results directory
-
 resDir = fullfile(dataDir, 'Results');
 if ~exist(resDir, 'dir')
     if ~mkdir(resDir)
@@ -417,10 +438,6 @@ end
 
 
 %% Saving statistical results
-% Not the best name, but works for now...
-resPttrn = 'Res VW%.2f-%.2f ms %s ms %s ms %s.mat';
-resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
-resFP = fullfile(resDir, resFN);
 if ~exist(resFP, "file")
     save(resFP, "Results", "Counts", "configStructure", "gclID")
 end
@@ -506,11 +523,12 @@ PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
 psthTx = (0:Nbn-1) * binSz + timeLapse(1);
 psthFigs = gobjects(Nccond,1);
 Ntc = size(cst,2);
-for ccond = 1:Nccond
-    figFileName =...
+figFileName =...
         sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
         expName, consCondNames{ccond}, timeLapse*1e3, binSz*1e3,...
         RW_key, SW_key, onOffStr, orderedStr, filtStr);
+for ccond = 1:Nccond
+    
     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     if exist('cst', 'var') && ~isempty(cst)
