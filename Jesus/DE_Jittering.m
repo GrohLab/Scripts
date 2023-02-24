@@ -370,10 +370,10 @@ if ~nnz(CtrlCond)
 end
 wruIdx = all(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
-
-%% Results directory
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
+%% Results directory
+
 resDir = fullfile(dataDir, 'Results');
 if ~exist(resDir, 'dir')
     if ~mkdir(resDir)
