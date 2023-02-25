@@ -239,7 +239,7 @@ if isempty(pcSub)
     O_key = sprintf('%s', onOffStr);
     currentMapKey = {RW_key, SW_key, C_key, CC_key, O_key};
     VW_key = sprintf("VW%.2f-%.2f", timeLapse*1e3);
-    BZ_key = sprintf("BZ%.3f",binSz*1e3); 
+    BZ_key = sprintf("BZ%.2f",binSz*1e3);
     %% Appending the new pc to the array and saving
     configStructure = [configStructure, struct('Experiment', ...
         fullfile(dataDir,expName), 'Viewing_window_s', timeLapse, ...
@@ -278,7 +278,7 @@ else
     O_key = sprintf('%s', onOffStr);
     currentMapKey = {RW_key, SW_key, C_key, CC_key, O_key};
     VW_key = sprintf("VW%.2f-%.2f", timeLapse*1e3);
-    BZ_key = sprintf("BZ%.3f",binSz*1e3);
+    BZ_key = sprintf("BZ%.2f",binSz*1e3);
 end
 %% Creating ephys figure folder
 subFigDir = sprintf("Ephys %s %s %s", VW_key, RW_key, SW_key);
@@ -353,26 +353,33 @@ delta_t = diff(responseWindow);
 
 % Results directory. Not the best name, but works for now...
 resDir = fullfile(dataDir, 'Results');
+if ~exist(resDir, 'dir')
+    if ~mkdir(resDir)
+        fprintf(1, "There was an issue creating %s!\n", resDir)
+        fprintf(1, "Saving results in main directory")
+        resDir = dataDir;
+    end
+end
 resPttrn = 'Res VW%.2f-%.2f ms %s ms %s ms %s.mat';
 resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
 resFP = fullfile(resDir, resFN);
 
 % Statistical scatter figure names
-stFigBasename = string(fullfile(figureDir,[expName,' ']));
+stFigBasename = string(fullfile(figureDir, expName));
 prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
 cmpCondNames = string(consCondNames(:));
 cmpCondNames = cat(1, cmpCondNames, arrayfun(@(x) ...
     consCondNames(prmSubs(x,1)) + " vs. " + ...
-    consCondNames(prmSubs(x,2)), 1:size(prmSubs, 1)));
+    consCondNames(prmSubs(x,2)), (1:size(prmSubs, 1))'));
 stFigSubfix = " Stat";
 if metaNameFlag
     stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
 end
-stFigFN = stFigBasename + cmpCondNames + stFigSubfix;
+stFigFN = stFigBasename + " " + cmpCondNames + stFigSubfix;
 
-if exist(resFP,file)
+if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
     load(resFP, "Results", "Counts")
-
+    arrayfun(@(x) uiopen(x + ".fig", true), stFigFN)
 else
     % Statistical tests
     [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
@@ -380,18 +387,8 @@ else
     % Plotting statistical tests
     [Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
         delta_t, gclID); configureFigureToPDF(Figs);
-    ccn = 1;
-    for cc = 1:numel(Figs)
-        if ~ismember(cc, indCondSubs)
-            altCondNames = strsplit(Figs(cc).Children(2).Title.String,': ');
-            altCondNames = altCondNames{2};
-        else
-            altCondNames = consCondNames{ccn};
-            ccn = ccn + 1;
-        end
-        stFigName = [stFigBasename, altCondNames, stFigSubfix];
-        saveFigure(Figs(cc), stFigName)
-    end
+    arrayfun(@(x,y) saveFigure(x,y), Figs, stFigFN)
+    save(resFP, "Results", "Counts", "configStructure", "gclID")
 end
 [rclIdx, H, zH] = getSignificantFlags(Results);
 Htc = sum(H,2);
@@ -403,14 +400,7 @@ wruIdx = all(H(:,CtrlCond),2);
 Nwru = nnz(wruIdx);
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
-%% Results directory
-if ~exist(resDir, 'dir')
-    if ~mkdir(resDir)
-        fprintf(1, "There was an issue creating %s!\n", resDir)
-        fprintf(1, "Saving results in main directory")
-        resDir = dataDir;
-    end
-end
+
 %% Map prototype
 mapPttrn = "Map %s.mat";
 resMap_path = fullfile(resDir, sprintf(mapPttrn, expName));
@@ -444,18 +434,13 @@ if nmFlag
     save(resMap_path, "resMap", "keyCell")
 end
 
-
-%% Saving statistical results
-if ~exist(resFP, "file")
-    save(resFP, "Results", "Counts", "configStructure", "gclID")
-end
 %% Filter question
 filterIdx = true(Ne,1);
 ansFilt = questdlg('Would you like to filter for significance?','Filter',...
     'Yes','No','Yes');
-filtStr = 'unfiltered';
+filtStr = 'unfiltered'; filtFlag = false;
 if strcmp(ansFilt,'Yes')
-    filterIdx = [true; wruIdx];
+    filterIdx = [true; wruIdx]; filtFlag = true;
     filtStr = 'filtered';
 end
 %% Getting the relative spike times for the whisker responsive units (wru)
@@ -465,31 +450,34 @@ end
 % cellLogicalIndexing = @(x,idx) x(idx);
 isWithinResponsiveWindow =...
     @(x) x > responseWindow(1) & x < responseWindow(2);
-
-rst = arrayfun(@(x) getRasterFromStack(discStack, ~delayFlags(:,x), ...
-    filterIdx(3:end), timeLapse, fs, true, true), 1:size(delayFlags,2), ...
-    fnOpts{:});
-relativeSpkTmsStruct = struct('name', cellstr(consCondNames), ...
-    'SpikeTimes', rst);
-firstSpkStruct = getFirstSpikeInfo(relativeSpkTmsStruct, configStructure);
-relSpkFileName =...
-    sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
-    expName, responseWindow*1e3, spontaneousWindow*1e3,...
-    timeLapse*1e3, Conditions(chCond).name, filtStr);
-% Spontaneous firing rates
-Texp = Ns/fs;
-trainDuration = 1;
-AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
-[spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
-    [0, Texp], fs, trainDuration + delta_t + responseWindow(1));
-SpontaneousStruct = struct('Spikes', SpSpks, 'FR', ...
-    arrayfun(@(x) {x}, spFr), 'ISI', spIsi);
-if ~exist(relSpkFileName,'file')
-    save(fullfile(dataDir, relSpkFileName), 'relativeSpkTmsStruct',...
-        'configStructure', 'firstSpkStruct', 'SpontaneousStruct')
-elseif all(~contains(who(matfile(fullfile(dataDir, relSpkFileName))), ...
-        'SpontaneousStruct'))
-    save(fullfile(dataDir, relSpkFileName), 'SpontaneousStruct', '-append')
+relSpkFN = string(expName) + " " + RW_key + " " + SW_key + " " + ...
+    VW_key + " ms " + C_key + " (" + string(filtStr) + ") RelSpkTms.mat";
+consVars = {'relativeSpkTmsStruct', 'firstSpkStruct', ...
+    'SpontaneousStruct', 'configStructure'}; 
+rspMF = matfile(fullfile(dataDir, relSpkFN)); 
+% relSpkFN =...
+%         sprintf('%s RW%.2f - %.2f ms SW%.2f - %.2f ms VW%.2f - %.2f ms %s (%s) exportSpkTms.mat',...
+%         expName, responseWindow*1e3, spontaneousWindow*1e3,...
+%         timeLapse*1e3, Conditions(chCond).name, filtStr);
+if ~exist(relSpkFN,'file') || any(~contains(who(rspMF), consVars))
+    rst = arrayfun(@(x) getRasterFromStack(discStack, ~delayFlags(:,x), ...
+        filterIdx(3:end), timeLapse, fs, true, true), 1:size(delayFlags,2), ...
+        fnOpts{:});
+    relativeSpkTmsStruct = struct('name', cellstr(consCondNames), ...
+        'SpikeTimes', rst);
+    firstSpkStruct = getFirstSpikeInfo(relativeSpkTmsStruct, configStructure);
+    
+    % Spontaneous firing rates
+    Texp = Ns/fs;
+    trainDuration = 1;
+    AllTriggs = unique(cat(1, Conditions.Triggers), 'rows', 'sorted');
+    [spFr, ~, SpSpks, spIsi] = getSpontFireFreq(spkSubs, AllTriggs,...
+        [0, Texp], fs, trainDuration + delta_t + responseWindow(1));
+    SpontaneousStruct = struct('Spikes', SpSpks, 'FR', ...
+        arrayfun(@(x) {x}, spFr), 'ISI', spIsi);
+    save(fullfile(dataDir, relSpkFN), consVars{:})
+else
+    load(fullfile(dataDir, relSpkFN), consVars{1:3})
 end
 
 %% Ordering PSTH
@@ -519,7 +507,6 @@ if strcmp(dans, 'Yes')
 end
 
 %% Plot PSTH
-goodsIdx = logical(clInfo.ActiveUnit);
 if exist('Triggers', 'var')
     csNames = fieldnames(Triggers);
 end
@@ -527,16 +514,26 @@ Nbn = diff(timeLapse)/binSz;
 if (Nbn - round(Nbn)) ~= 0
     Nbn = ceil(Nbn);
 end
-PSTH = zeros(nnz(filterIdx) - 1, Nbn, Nccond);
-psthTx = (0:Nbn-1) * binSz + timeLapse(1);
-psthFigs = gobjects(Nccond,1);
-Ntc = size(cst,2);
-figFileName =...
-        sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
-        expName, consCondNames{ccond}, timeLapse*1e3, binSz*1e3,...
-        RW_key, SW_key, onOffStr, orderedStr, filtStr);
+
+%psthTx = (0:Nbn-1) * binSz + timeLapse(1);
+ Ntc = size(cst,2);
+psthFN = string(expName) + " " + consCondNames(:) + " " + BZ_key + " " + ...
+    string(orderedStr);
+if filtFlag
+    psthFN = psthFN + " " + filtStr;
+end
+psthFP = fullfile(figureDir, psthFN);
+if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
+    [PSTH, trig] = arrayfun(@(x) ...
+        getPSTH(discStack(filterIdx,:,:), timeLapse, ~delayFlags(:,x), ...
+        binSz, fs), 1:Nccond, fnOpts{:}); PSTH = cat(3, PSTH{:});
+    psthFigs = gobjects(Nccond,1);
+end
+% psthFN =...
+%     sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
+%     expName, consCondNames(1), timeLapse*1e3, binSz*1e3,...
+%     RW_key, SW_key, onOffStr, orderedStr, filtStr);
 for ccond = 1:Nccond
-    
     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
         ~delayFlags(:,ccond),binSz,fs);
     if exist('cst', 'var') && ~isempty(cst)
@@ -559,11 +556,11 @@ for ccond = 1:Nccond
     psthFigs(ccond).Children(end).YLabel.String =...
         [psthFigs(ccond).Children(end).YLabel.String,...
         sprintf('^{%s}',orderedStr)];
-    figFilePath = fullfile(figureDir, figFileName);
+    figFilePath = fullfile(figureDir, psthFN);
     saveFigure(psthFigs(ccond), figFilePath);
 end
 [ppFig, PSTHall] = compareCondPSTHs(PSTH, Na, binSz, timeLapse, ...
-    consCondNames); 
+    consCondNames);
 ephysPttrn = 'Z-score all-units PSTH %s VW%.2f - %.2f ms Ntrials%s';
 ephysName = sprintf(ephysPttrn, sprintf('%s ', consCondNames{:}), ...
     timeLapse*1e3, sprintf(' %d', Na));
