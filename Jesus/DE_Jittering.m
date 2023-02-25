@@ -352,14 +352,23 @@ timeFlags = [sponActStackIdx;respActStackIdx];
 delta_t = diff(responseWindow);
 
 % Results directory. Not the best name, but works for now...
+resDir = fullfile(dataDir, 'Results');
 resPttrn = 'Res VW%.2f-%.2f ms %s ms %s ms %s.mat';
 resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
 resFP = fullfile(resDir, resFN);
 
 % Statistical scatter figure names
-stFigBasename = fullfile(figureDir,[expName,' ']);
-stFigSubfix = sprintf(' Stat RW%.1f-%.1fms SW%.1f-%.1fms',...
-    responseWindow*1e3, spontaneousWindow*1e3);
+stFigBasename = string(fullfile(figureDir,[expName,' ']));
+prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
+cmpCondNames = string(consCondNames(:));
+cmpCondNames = cat(1, cmpCondNames, arrayfun(@(x) ...
+    consCondNames(prmSubs(x,1)) + " vs. " + ...
+    consCondNames(prmSubs(x,2)), 1:size(prmSubs, 1)));
+stFigSubfix = " Stat";
+if metaNameFlag
+    stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
+end
+stFigFN = stFigBasename + cmpCondNames + stFigSubfix;
 
 if exist(resFP,file)
     load(resFP, "Results", "Counts")
@@ -395,7 +404,6 @@ Nwru = nnz(wruIdx);
 fprintf('%d responding clusters:\n', Nwru);
 fprintf('- %s\n',gclID{wruIdx})
 %% Results directory
-resDir = fullfile(dataDir, 'Results');
 if ~exist(resDir, 'dir')
     if ~mkdir(resDir)
         fprintf(1, "There was an issue creating %s!\n", resDir)
