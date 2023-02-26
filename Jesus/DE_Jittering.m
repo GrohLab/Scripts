@@ -517,50 +517,68 @@ end
 
 %psthTx = (0:Nbn-1) * binSz + timeLapse(1);
  Ntc = size(cst,2);
-psthFN = string(expName) + " " + consCondNames(:) + " " + BZ_key + " " + ...
-    string(orderedStr);
+psthFN = "PSTH " + string(expName) + " " + consCondNames(:) + " " + ...
+    BZ_key + " " + string(orderedStr);
 if filtFlag
     psthFN = psthFN + " " + filtStr;
 end
+% PSTH construction
 psthFP = fullfile(figureDir, psthFN);
 if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     [PSTH, trig] = arrayfun(@(x) ...
         getPSTH(discStack(filterIdx,:,:), timeLapse, ~delayFlags(:,x), ...
-        binSz, fs), 1:Nccond, fnOpts{:}); PSTH = cat(3, PSTH{:});
-    psthFigs = gobjects(Nccond,1);
-end
-% psthFN =...
-%     sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
-%     expName, consCondNames(1), timeLapse*1e3, binSz*1e3,...
-%     RW_key, SW_key, onOffStr, orderedStr, filtStr);
-for ccond = 1:Nccond
-    [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
-        ~delayFlags(:,ccond),binSz,fs);
+        binSz, fs), 1:Nccond, fnOpts{:});
     if exist('cst', 'var') && ~isempty(cst)
-        stims = mean(cst(:,:,delayFlags(:,ccond)),3);
-        stims = stims - median(stims,2);
-        for cs = 1:size(stims,1)
-            if abs(log10(var(stims(cs,:),[],2))) < 13
-                [m,b] = lineariz(stims(cs,:),1,0);
-                stims(cs,:) = m*stims(cs,:) + b;
-            else
-                stims(cs,:) = zeros(1,Ntc);
-            end
-        end
+        % Take into account covariance for signals.
+        stims = arrayfun(@(x) mean(cst(:,:,delayFlags(:,x)),3), 1:Nccond, ...
+            fnOpts{:}); stims = cellfun(@(x) zscore(x, 0, 'all'), stims, fnOpts{:});
     else
-        stims = zeros(1, Ntc);
+        stims = repmat({zeros(1,Ntc)}, Nccond, 1);
     end
-    psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
-        sweeps, timeLapse, binSz, [consCondNames(ccond); pclID(ordSubs)],...
-        strrep(expName,'_',' '), stims, csNames);
-    psthFigs(ccond).Children(end).YLabel.String =...
-        [psthFigs(ccond).Children(end).YLabel.String,...
-        sprintf('^{%s}',orderedStr)];
-    figFilePath = fullfile(figureDir, psthFN);
-    saveFigure(psthFigs(ccond), figFilePath);
+    psthFigs = cellfun(@(p,t,n,ids, s) plotClusterReactivity(p(ordSubs,:), t,...
+        n, timeLapse, binSz, [ids; pclID(ordSubs)], strrep(expName,'_',' '), ...
+        s, csNames), PSTH, trig, num2cell(Na), cellstr(consCondNames), stims);
+    arrayfun(@(f) ylabel(f.Children(end), ...
+        [f.Children(end).YLabel.String, sprintf('^{%s}',orderedStr)]), ...
+        psthFigs);
+    arrayfun(@(f, fn) saveFigure(f, fn), psthFigs(:), psthFP(:));
+else
+   arrayfun(@(f) uiopen(f + ".fig", true), psthFP) 
 end
-[ppFig, PSTHall] = compareCondPSTHs(PSTH, Na, binSz, timeLapse, ...
-    consCondNames);
+
+% % psthFN =...
+% %     sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
+% %     expName, consCondNames(1), timeLapse*1e3, binSz*1e3,...
+% %     RW_key, SW_key, onOffStr, orderedStr, filtStr);
+% for ccond = 1:Nccond
+%     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
+%         ~delayFlags(:,ccond),binSz,fs);
+%     if exist('cst', 'var') && ~isempty(cst)
+%         stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+%         stims = stims - median(stims,2);
+%         for cs = 1:size(stims,1)
+%             if abs(log10(var(stims(cs,:),[],2))) < 13
+%                 [m,b] = lineariz(stims(cs,:),1,0);
+%                 stims(cs,:) = m*stims(cs,:) + b;
+%             else
+%                 stims(cs,:) = zeros(1,Ntc);
+%             end
+%         end
+%     else
+%         stims = zeros(1, Ntc);
+%     end
+%     psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
+%         sweeps, timeLapse, binSz, [consCondNames(ccond); pclID(ordSubs)],...
+%         strrep(expName,'_',' '), stims, csNames);
+%     psthFigs(ccond).Children(end).YLabel.String =...
+%         [psthFigs(ccond).Children(end).YLabel.String,...
+%         sprintf('^{%s}',orderedStr)];
+%     figFilePath = fullfile(figureDir, psthFN);
+%     saveFigure(psthFigs(ccond), figFilePath);
+% end
+%%
+[ppFig, PSTHall] = compareCondPSTHs(cat(3,PSTH{:}), Na, binSz, ...
+    timeLapse, consCondNames);
 ephysPttrn = 'Z-score all-units PSTH %s VW%.2f - %.2f ms Ntrials%s';
 ephysName = sprintf(ephysPttrn, sprintf('%s ', consCondNames{:}), ...
     timeLapse*1e3, sprintf(' %d', Na));
