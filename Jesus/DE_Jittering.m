@@ -806,7 +806,7 @@ respIdx = isWithinResponsiveWindow(btx);
 % Window defined by the response in the population PSTH
 % twIdx = btx >= 2e-3 & btx <= 30e-3;
 % respTmWin = [2, 30]*1e-3;
-[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH(:,:,1), btx, responseWindow);
+[mdls, r2, qVals, qDiff] = exponentialSpread(PSTH{1}, btx, responseWindow);
 mdls(mdls(:,2) == 0, 2) = 1;
 %% Cross-correlations
 ccrAns = questdlg(['Get cross-correlograms?',...
