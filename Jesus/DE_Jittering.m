@@ -365,17 +365,16 @@ resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
 resFP = fullfile(resDir, resFN);
 
 % Statistical scatter figure names
-stFigBasename = string(fullfile(figureDir, expName));
 prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
 cmpCondNames = string(consCondNames(:));
 cmpCondNames = cat(1, cmpCondNames, arrayfun(@(x) ...
     consCondNames(prmSubs(x,1)) + " vs. " + ...
     consCondNames(prmSubs(x,2)), (1:size(prmSubs, 1))'));
-stFigSubfix = " Stat";
+stFigSubfix = "";
 if metaNameFlag
     stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
 end
-stFigFN = stFigBasename + " " + cmpCondNames + stFigSubfix;
+stFigFN = fullfile(figureDir, "Stat " + cmpCondNames + stFigSubfix);
 
 if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
     load(resFP, "Results", "Counts")
@@ -517,8 +516,7 @@ end
 
 %psthTx = (0:Nbn-1) * binSz + timeLapse(1);
  Ntc = size(cst,2);
-psthFN = "PSTH " + string(expName) + " " + consCondNames(:) + " " + ...
-    BZ_key + " " + string(orderedStr);
+psthFN = "PSTH " + consCondNames(:) + " " + BZ_key + " " + string(orderedStr);
 if filtFlag
     psthFN = psthFN + " " + filtStr;
 end
@@ -545,76 +543,61 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
 else
    arrayfun(@(f) uiopen(f + ".fig", true), psthFP) 
 end
-
-% % psthFN =...
-% %     sprintf("%s %s VW%.1f-%.1f B%.1f %s %s ms %sset %s (%s)",...
-% %     expName, consCondNames(1), timeLapse*1e3, binSz*1e3,...
-% %     RW_key, SW_key, onOffStr, orderedStr, filtStr);
-% for ccond = 1:Nccond
-%     [PSTH(:,:,ccond), trig, sweeps] = getPSTH(discStack(filterIdx,:,:),timeLapse,...
-%         ~delayFlags(:,ccond),binSz,fs);
-%     if exist('cst', 'var') && ~isempty(cst)
-%         stims = mean(cst(:,:,delayFlags(:,ccond)),3);
-%         stims = stims - median(stims,2);
-%         for cs = 1:size(stims,1)
-%             if abs(log10(var(stims(cs,:),[],2))) < 13
-%                 [m,b] = lineariz(stims(cs,:),1,0);
-%                 stims(cs,:) = m*stims(cs,:) + b;
-%             else
-%                 stims(cs,:) = zeros(1,Ntc);
-%             end
-%         end
-%     else
-%         stims = zeros(1, Ntc);
-%     end
-%     psthFigs(ccond) = plotClusterReactivity(PSTH(ordSubs,:,ccond), trig,...
-%         sweeps, timeLapse, binSz, [consCondNames(ccond); pclID(ordSubs)],...
-%         strrep(expName,'_',' '), stims, csNames);
-%     psthFigs(ccond).Children(end).YLabel.String =...
-%         [psthFigs(ccond).Children(end).YLabel.String,...
-%         sprintf('^{%s}',orderedStr)];
-%     figFilePath = fullfile(figureDir, psthFN);
-%     saveFigure(psthFigs(ccond), figFilePath);
-% end
-%%
-[ppFig, PSTHall] = compareCondPSTHs(cat(3,PSTH{:}), Na, binSz, ...
-    timeLapse, consCondNames);
-ephysPttrn = 'Z-score all-units PSTH %s VW%.2f - %.2f ms Ntrials%s';
+% Z-score PSTH for all units
+ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s';
 ephysName = sprintf(ephysPttrn, sprintf('%s ', consCondNames{:}), ...
-    timeLapse*1e3, sprintf(' %d', Na));
+    sprintf(' %d', Na));
 ephysFile = fullfile(figureDir, ephysName);
 if ~exist(ephysFile, 'file')
+    [ppFig, PSTHall] = compareCondPSTHs(cat(3,PSTH{:}), Na, binSz, ...
+        timeLapse, consCondNames);
     saveFigure(ppFig, ephysFile, 1);
+else
+    uiopen(ephysFile, true);
 end
 clearvars ppFig ephysPttrn ephysName ephysFile
-%% Log PSTH -- Generalise this part!!
+%% Log PSTH
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
 
 logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
     'tmWin', responseWindow, 'Offset', 2.5e-3, 'Nbin', Nbin,...
     'normalization', 'fr');
-logFigs = plotLogPSTH(logPSTH);
-% Saving the figures
-lpFigName = sprintf('%s Log-likePSTH %s %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
-    expName, logPSTH.Normalization, Nccond, responseWindow*1e3, Nbin, filtStr);
-saveFigure(logFigs(1), fullfile(figureDir, lpFigName), true, true)
-if numel(logFigs) > 1
-    lmiFigName = sprintf('%s LogMI %d-conditions RW%.1f-%.1f ms NB%d (%s)',...
-        expName, Nccond, responseWindow*1e3, Nbin, filtStr);
-    saveFigure(logFigs(2), fullfile(figureDir, lmiFigName), true, true)
-    popEffects = logFigs(2).UserData; vrs = fieldnames(matfile(resFP));
-    MIStruct = struct('ConditionNames', consCondNames, ...
-        'MI', arrayfun(@(x) struct('Comparative', ...
-        string(consCondNames(popEffects(x,1)))+" vs "+...
-        string(consCondNames(popEffects(x,2))), 'Value', popEffects(x,3)), ...
-        1:size(popEffects,1), fnOpts{:}));
-    if ~any(ismember(vrs,'MIStruct'))
-        fprintf(1,'Adding "MIStruct" to %s\n', resFN)
-        save(resFP, 'MIStruct','-append')
+lpFN = sprintf("Log-likePSTH %s %d-conditions NB%d",...
+    logPSTH.Normalization, Nccond, Nbin);
+if Nccond > 1
+    lmiFN = sprintf("LogMI %d-conditions NB%d", Nccond, Nbin);
+    lmiFP = fullfile(figureDir, lmiFN);
+end
+if filtFlag
+    lpFN = lpFN + " (" + filtStr + ")";
+    if Nccond > 1 
+        lmiFP = lmiFP + " (" + filtStr + ")";
     end
 end
-
+lpFP = fullfile(figureDir, lpFN);
+if ~exist(lpFP+".fig", "file")
+    logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true)
+    if numel(logFigs) > 1
+        saveFigure(logFigs(2), lmiFP, true)
+        popEffects = logFigs(2).UserData; vrs = who(matfile(resFP));
+        MIStruct = struct('ConditionNames', consCondNames, ...
+            'MI', arrayfun(@(x) struct('Comparative', ...
+            string(consCondNames(popEffects(x,1)))+" vs "+...
+            string(consCondNames(popEffects(x,2))), 'Value', popEffects(x,3)), ...
+            1:size(popEffects,1), fnOpts{:}));
+        if ~any(ismember(vrs,'MIStruct'))
+            fprintf(1,'Adding "MIStruct" to %s\n', resFN)
+            save(resFP, 'MIStruct','-append')
+        end
+    end
+else
+    uiopen(lpFP+".fig", true)
+    load(resFP, "MIstruct")
+    if Nccond > 1
+        uiopen(lmiFP+".fig",true)
+    end
+end
 %% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
@@ -660,8 +643,8 @@ pObj = findobj(respFig, "Type", "Patch");
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
 arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x+2,:)), 1:length(pObj))
 propPieFileName = fullfile(figureDir,...
-    sprintf("Whisker responsive proportion pie RW%.1f - %.1f ms (%dC, %dR)",...
-    responseWindow*1e3, [Ntn-Nrn, Nrn]));
+    sprintf("Whisker responsive proportion pie %s (%dC, %dR)",...
+    C_key, [Ntn-Nrn, Nrn]));
 saveFigure(respFig, propPieFileName, 1);
 % Potentiated, depressed and unmodulated clusters pie
 if Nccond == 2
@@ -672,8 +655,8 @@ if Nccond == 2
     arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
     arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
     modPropPieFigFileName = fullfile(figureDir,...
-        sprintf("Modulation proportions pie RW%.1f - %.1f ms (%dR, %dP, %dD)",...
-        responseWindow*1e3, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
+        sprintf("Modulation proportions pie %s (%dR, %dP, %dD)",...
+        C_key, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
     saveFigure(potFig, modPropPieFigFileName, 1)
     % Modulation index histogram
     MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on;
@@ -682,7 +665,7 @@ if Nccond == 2
     ylabel("Cluster proportion"); lgnd = legend("show");
     set(lgnd, "Box", "off", "Location", "best")
     saveFigure(MIFig, fullfile(figureDir,...
-        "Modulation index dist evoked & after induction"), 1)
+        "Modulation index dist evoked & after induction "+C_key), 1)
 end
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
@@ -903,7 +886,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     if strcmpi(answ,'Yes')
         behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), ...
             {["Piezo", "Puff"];["Laser","Light"]});
-        analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
+        behRes = analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
             'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
             'ConditionsNames', cellstr(consCondNames));
     end
