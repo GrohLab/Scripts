@@ -98,13 +98,13 @@ trigNames = trigNames(continuousNameSub);
 isiFile = fullfile(dataDir,[expName,'_ISIvars.mat']);
 if ~exist(isiFile,'file')
     spkSubs2 = cellfun(@(x) round(x.*fs), sortedData(goods,2),...
-        'UniformOutput', false);
+        fnOpts{:});
     ISIVals = cellfun(@(x) [x(1)/fs; diff(x)/fs], spkSubs2,...
-        'UniformOutput', 0);
+        fnOpts{:});
     NnzvPcl = cellfun(@numel,ISIVals);
     Nnzv = sum(NnzvPcl);
     rows = cell2mat(arrayfun(@(x,y) repmat(x,y,1), (1:Ncl)', NnzvPcl,...
-        'UniformOutput', 0));
+        fnOpts{:}));
     cols = cell2mat(spkSubs2);
     vals = cell2mat(ISIVals);
     try
