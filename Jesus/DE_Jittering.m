@@ -366,6 +366,7 @@ resFP = fullfile(resDir, resFN);
 
 % Statistical scatter figure names
 prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
+snglSubs = cumsum(Nccond:-1:1); cmbSubs = setdiff(1:Nsf, snglSubs);
 cmpCondNames = string(consCondNames(:));
 cmpCondNames = cat(1, cmpCondNames, arrayfun(@(x) ...
     consCondNames(prmSubs(x,1)) + " vs. " + ...
@@ -375,6 +376,7 @@ if metaNameFlag
     stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
 end
 stFigFN = fullfile(figureDir, "Stat " + cmpCondNames + stFigSubfix);
+cmpCondNames_aux([snglSubs, cmbSubs]) = stFigFN; stFigFN = cmpCondNames_aux;
 
 if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
     load(resFP, "Results", "Counts")
@@ -382,11 +384,10 @@ if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
 else
     % Statistical tests
     [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
-    indCondSubs = cumsum(Nccond:-1:1);
     % Plotting statistical tests
     [Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
         delta_t, gclID); configureFigureToPDF(Figs);
-    arrayfun(@(x,y) saveFigure(x,y), Figs, stFigFN)
+    arrayfun(@(x,y) saveFigure(x,y,true), Figs, stFigFN(:))
     save(resFP, "Results", "Counts", "configStructure", "gclID")
 end
 [rclIdx, H, zH] = getSignificantFlags(Results);
