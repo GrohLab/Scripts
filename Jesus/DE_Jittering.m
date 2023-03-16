@@ -9,9 +9,9 @@ if dataDir == 0
 end
 %% Loading data
 % Creating the figure directory
-figureDir = fullfile(dataDir,'Figures\');
-if ~exist(figureDir, "dir")
-    if ~mkdir(figureDir)
+FigureDir = fullfile(dataDir,'Figures\');
+if ~exist(FigureDir, "dir")
+    if ~mkdir(FigureDir)
         error("Could not create figure directory!\n")
     end
 end
@@ -282,16 +282,17 @@ else
 end
 %% Creating ephys figure folder
 subFigDir = sprintf("Ephys %s %s %s", VW_key, RW_key, SW_key);
-subFigDir = fullfile(figureDir, subFigDir);
+subFigDir = fullfile(FigureDir, subFigDir);
+ephFigDir = subFigDir;
 metaNameFlag = false;
 if ~exist(subFigDir, "dir")
     if ~mkdir(subFigDir)
         fprintf(1, "Couldn't create %s!\n", subFigDir)
         fprintf(1, "Keeping metadata in figure file names.\n")
         metaNameFlag = true;
+        ephFigDir = FigureDir;
     end
 end
-figureDir = subFigDir;
 %% Constructing the stack out of the user's choice
 % discStack - dicrete stack has a logical nature
 % cst - continuous stack has a numerical nature
@@ -375,7 +376,7 @@ stFigSubfix = "";
 if metaNameFlag
     stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
 end
-stFigFN = fullfile(figureDir, "Stat " + cmpCondNames + stFigSubfix);
+stFigFN = fullfile(ephFigDir, "Stat " + cmpCondNames + stFigSubfix);
 cmpCondNames_aux([snglSubs, cmbSubs]) = stFigFN; stFigFN = cmpCondNames_aux;
 
 if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
@@ -524,7 +525,9 @@ if filtFlag
     psthFN = psthFN + " " + filtStr;
 end
 % PSTH construction
-psthFP = fullfile(figureDir, psthFN);
+psthFP = fullfile(ephFigDir, psthFN);
+[PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
+    timeLapse, ~delayFlags(:,x), binSz, fs), 1:Nccond, fnOpts{:});
 if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     [PSTH, trig] = arrayfun(@(x) ...
         getPSTH(discStack(filterIdx,:,:), timeLapse, ~delayFlags(:,x), ...
@@ -550,7 +553,7 @@ end
 ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s';
 ephysName = sprintf(ephysPttrn, sprintf('%s ', consCondNames{:}), ...
     sprintf(' %d', Na));
-ephysFile = fullfile(figureDir, ephysName);
+ephysFile = fullfile(ephFigDir, ephysName);
 if ~exist(ephysFile, 'file')
     [ppFig, PSTHall] = compareCondPSTHs(cat(3,PSTH{:}), Na, binSz, ...
         timeLapse, consCondNames);
@@ -570,7 +573,7 @@ lpFN = sprintf("Log-likePSTH %s %d-conditions NB%d",...
     logPSTH.Normalization, Nccond, Nbin);
 if Nccond > 1
     lmiFN = sprintf("LogMI %d-conditions NB%d", Nccond, Nbin);
-    lmiFP = fullfile(figureDir, lmiFN);
+    lmiFP = fullfile(ephFigDir, lmiFN);
 end
 if filtFlag
     lpFN = lpFN + " (" + filtStr + ")";
@@ -578,7 +581,7 @@ if filtFlag
         lmiFP = lmiFP + " (" + filtStr + ")";
     end
 end
-lpFP = fullfile(figureDir, lpFN);
+lpFP = fullfile(ephFigDir, lpFN);
 if ~exist(lpFP+".fig", "file")
     logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true)
     if numel(logFigs) > 1
@@ -645,7 +648,7 @@ pie([Ntn-Nrn, Nrn], [0, 1], {'Unresponsive', 'Responsive'});
 pObj = findobj(respFig, "Type", "Patch");
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
 arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x+2,:)), 1:length(pObj))
-propPieFileName = fullfile(figureDir,...
+propPieFileName = fullfile(ephFigDir,...
     sprintf("Whisker responsive proportion pie %s (%dC, %dR)",...
     C_key, [Ntn-Nrn, Nrn]));
 saveFigure(respFig, propPieFileName, 1);
@@ -657,7 +660,7 @@ if Nccond == 2
     pObj = findobj(potFig, "Type", "Patch");
     arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
     arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x,:)), 1:length(pObj))
-    modPropPieFigFileName = fullfile(figureDir,...
+    modPropPieFigFileName = fullfile(ephFigDir,...
         sprintf("Modulation proportions pie %s (%dR, %dP, %dD)",...
         C_key, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
     saveFigure(potFig, modPropPieFigFileName, 1)
@@ -667,7 +670,7 @@ if Nccond == 2
     title("Modulation index distribution"); xlabel("MI");
     ylabel("Cluster proportion"); lgnd = legend("show");
     set(lgnd, "Box", "off", "Location", "best")
-    saveFigure(MIFig, fullfile(figureDir,...
+    saveFigure(MIFig, fullfile(ephFigDir,...
         "Modulation index dist evoked & after induction "+C_key), 1)
 end
 %% Get significantly different clusters
@@ -798,7 +801,7 @@ if strcmpi(rasAns,'Yes')
     rasFigName = sprintf('%s R-%scl_%sVW%.1f-%.1f ms', expName,...
         sprintf('%s ', rasCondNames{:}), sprintf('%s ', pclID{clSel}),...
         timeLapse*1e3);
-    rasFigPath = fullfile(figureDir, rasFigName);
+    rasFigPath = fullfile(ephFigDir, rasFigName);
     arrayfun(@(x) set(x,'Color','none'), ax);
     saveFigure(rasFig, rasFigPath, 1);
     clearvars ax rasFig
@@ -890,7 +893,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), ...
             {["Piezo", "Puff"];["Laser","Light"]});
         behRes = analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
-            'PairedFlags', delayFlags, 'FigureDirectory', figureDir, ...
+            'PairedFlags', delayFlags, 'FigureDirectory', FigureDir, ...
             'ConditionsNames', cellstr(consCondNames));
     end
 end
