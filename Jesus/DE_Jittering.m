@@ -866,8 +866,15 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     if strcmpi(answ,'Yes')
         behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), ...
             {["Piezo", "Puff"];["Laser","Light"]});
-        behRes = analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
+        [behRes, behFigDir] = analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
             'PairedFlags', delayFlags, 'FigureDirectory', FigureDir, ...
             'ConditionsNames', cellstr(consCondNames));
+        biFigPttrn = "BehIndex%s";
+        biFigPttrn = sprintf(biFigPttrn, sprintf(" %s (%%.3f)", consCondNames));
+        [pAreas, ~, behAreaFig] = createBehaviourIndex(behRes);
+        behRes = arrayfun(@(bs, ba) setfield(bs,'BehIndex', ba), behRes, pAreas);
+        
+        biFN = sprintf(biFigPttrn, pAreas);
+        saveFigure(behAreaFig, fullfile(behFigDir, biFN), true);
     end
 end
