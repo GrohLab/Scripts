@@ -20,7 +20,7 @@ yy=[deeplabcut.position.y deeplabcut.position.y];
 zz=[AsocPos1 AsocPos1];
 zsczz(1:size(AsocPos1,1),i)=AsocPos1;%zscore(AsocPos1);
 AsocPosAll(:,i)=AsocPos1;
-sp=[deeplabcut.speed deeplabcut.speed];
+%sp=[deeplabcut.speed deeplabcut.speed];
 %idj1=AsocPos1>2;
 end
 figure
