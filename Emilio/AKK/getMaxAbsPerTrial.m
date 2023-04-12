@@ -23,8 +23,9 @@ responseFlags = timeAxis >= responseWindow;
 responseFlags = xor(responseFlags(:,1), responseFlags(:,2));
 
 % mavpt = max(abs(inStack(responseFlags, :)-median(inStack,1)));
-[~, ps] = max(abs(inStack(responseFlags,:) - median(inStack(timeAxis<0,:),1)));
-mavpt = arrayfun(@(mp, tr) ...
-    inStack(find(responseFlags,1,'first')+mp-1, tr), ps(:), (1:Ntg)');
+[mavpt, ps] = max(abs(inStack(responseFlags,:) - ...
+    median(inStack(timeAxis<0,:),1)));
+% mavpt = arrayfun(@(mp, tr) ...
+%     inStack(find(responseFlags,1,'first')+mp-1, tr), ps(:), (1:Ntg)');
 mxT = timeAxis(ps+find(responseFlags,1,"first")-1);
 end
