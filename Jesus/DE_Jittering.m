@@ -873,6 +873,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         biFigPttrn = sprintf(biFigPttrn, sprintf(" %s (%%.3f)", consCondNames));
         [pAreas, ~, behAreaFig] = createBehaviourIndex(behRes);
         behRes = arrayfun(@(bs, ba) setfield(bs,'BehIndex', ba), behRes, pAreas);
+        set(behAreaFig, 'UserData', behRes)
         
         biFN = sprintf(biFigPttrn, pAreas);
         saveFigure(behAreaFig, fullfile(behFigDir, biFN), true);
