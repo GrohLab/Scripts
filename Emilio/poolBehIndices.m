@@ -1,29 +1,36 @@
 %#ok<*AGROW,*SAGROW> 
+%% Auxiliary variables and functions
 fnOpts = {'UniformOutput', false};
 expandName = @(x) fullfile(x.folder, x.name);
-
+animalPattern = '[A-Za-z]+\d{2,}';
+rsOpts = {animalPattern, 'SearchType', 'expression'};
+ctOpts = {'IgnoreCase', true};
+%% Assuming 1 level of animal organisation i.e.
+% BatchX/FolderA/Animal001
+% BatchX/FolderB/Animal002
 batchDir = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch11_ephys.MC";
+childFolders = dir(batchDir);
 
-animalDirs = dir(batchDir);
-pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), animalDirs);
-nonAnFlag = arrayfun(@(x) isempty(regexp(x.name, ...
-    '[a-zA-Z]+[0-9]+\S','match')), animalDirs);
-animalDirs(pointFlag | nonAnFlag) = [];
+pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), childFolders);
+childFolders(pointFlag) = [];
+animalFolders = arrayfun(@(d) recursiveFolderSearch(expandName(d), ...
+    rsOpts{:}), childFolders, fnOpts{:}); animalFolders = cat(1, animalFolders{:});
+%% Looping animals
 oldMouse = "";
 mc = 0; mice = [];
-for cad = animalDirs(:)'
-    currMouse = cad.name;
+for cad = animalFolders(:)'
+    [~, currMouse] = fileparts(cad);
     if string(oldMouse) ~= string(currMouse)
         oldMouse = currMouse;
         mice = [mice; struct('Name', currMouse, 'Sessions',[])];
         mc = mc + 1;
         sc = 0; oldSess = "";
     end
-    sessDirs = getSubFolds(expandName(cad));
+    sessDirs = getSubFolds(cad);
     % Just date sessions
-    onlyDateSessFlag = regexp(arrayfun(@(x) string(x.name), sessDirs), ...
-        '[0-9]{6}', 'match');
-    sessDirs(isempty(onlyDateSessFlag)) = [];
+    onlyDateSessFlag = arrayfun(@(x) string(regexp(x.name, '[0-9]{6}', ...
+        'match')), sessDirs, fnOpts{:}); 
+    sessDirs(cellfun(@isempty, onlyDateSessFlag)) = [];
     for csd = sessDirs(:)'
         currSess = csd.name;
         behFigDir = recursiveFolderSearch(expandName(csd),...
@@ -40,12 +47,13 @@ for cad = animalDirs(:)'
         end
         behRes = get(behIdxFig, 'UserData'); close(behIdxFig)
         consCondNames = arrayfun(@(x) string(x.ConditionName), behRes);
-        ctrFlag = contains(consCondNames, 'control','IgnoreCase',true);
-        mscFlag = contains(consCondNames, 'muscimol','IgnoreCase',true);
+        % TODO: fix the condition names and run the loop
+        ctrFlag = contains(consCondNames, 'control', ctOpts{:});
+        delFlag = contains(consCondNames, 'delay', ctOpts{:});
         if string(oldSess) ~= string(currSess)
             oldSess = currSess; auxStruct = struct('Date', currSess, ...
                 'Control', behRes(ctrFlag).BehIndex, ...
-                'Muscimol', behRes(mscFlag).BehIndex);
+                'Muscimol', behRes(delFlag).BehIndex);
             if ~isfield(mice, 'Sessions')
                 mice(mc).Sessions = auxStruct;
             else
