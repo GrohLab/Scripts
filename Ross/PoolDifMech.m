@@ -213,27 +213,29 @@ for cexpt = 1:nExpts
 
     [discStack, cst] = getStacks(spkLog,Conditions(chCond).Triggers,onOffStr,...
         timeLapse,fs,fs,spkSubs,continuousSignals);
-    nTrials = size(discStack, 3);
     if cexpt == 1
-        nTrialsStacks = size(discStack, 3);
+        nTriggerscst = size(cst, 1);
+    end
+
+
+
+    while size(cst, 1) > nTriggerscst
+        cst(end,:,:) = [];
+    end
+
+
+
+
+    while size(cst, 1) < nTriggerscst
+        csts(end,:,:) = [];
     end
 
 
     tic
-    while nTrials > nTrialsStacks
-        discStack(:,:,end) = [];
-    end
-    toc
-
-
-    tic
-    while nTrials < nTrialsStacks
-        discStacks(:,:,end) = [];
-    end
-    toc
-
     discStacks = cat(1, discStacks, discStack);
-    csts = cat(3, csts, cst);
+    toc
+    csts = cat(1, csts, cst);
+    
 end
 
 discStack = discStacks; clear discStacks
