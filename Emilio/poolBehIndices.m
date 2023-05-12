@@ -11,7 +11,7 @@ tblOpts = {'VariableNames', {'Conditions', 'BehaviourIndices'}};
 %% Assuming 1 level of animal organisation i.e.
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
-batchDir = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch11_ephys.MC";
+batchDir = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch10_ephys.e";
 childFolders = dir(batchDir);
 
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), childFolders);
