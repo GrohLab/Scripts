@@ -876,6 +876,6 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         set(behAreaFig, 'UserData', behRes)
         
         biFN = sprintf(biFigPttrn, pAreas);
-        saveFigure(behAreaFig, fullfile(behFigDir, biFN), true);
+        saveFigure(behAreaFig, fullfile(behFigDir, biFN), true, true);
     end
 end
