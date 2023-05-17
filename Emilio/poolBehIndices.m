@@ -11,7 +11,7 @@ tblOpts = {'VariableNames', {'Conditions', 'BehaviourIndices'}};
 %% Assuming 1 level of animal organisation i.e.
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
-batchDir = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch10_ephys.e";
+batchDir = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch12_ephys.e";
 childFolders = dir(batchDir);
 
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), childFolders);
@@ -40,22 +40,16 @@ for cad = animalFolders(:)'
         currSess = char(regexp(csd.name, '\d{6}', 'match'));
         childFolders = getSubFolds(curDir);
         sessOrgDirs = arrayfun(@(d) string(d.name), childFolders);
-        sessOrgDirs(contains(sessOrgDirs, {'behaviour', 'ephys', 'figures'}, ...
-            ctOpts{:})) = [];
+        sessOrgDirs(contains(sessOrgDirs, {'behaviour', 'ephys', ...
+            'figures', 'opto'}, ctOpts{:})) = [];
         behFigDir = arrayfun(@(d) recursiveFolderSearch(expandName(d), ...
             behFF), childFolders, fnOpts{:}); behFigDir = cat(1, behFigDir{:});
-        %{
-        if isempty(ephDir)
-            fprintf(1, "This session didn't have ephys!\n")
-            fprintf(1, "Skipping\n")
+        behIdxFiles = arrayfun(@(d) dir(fullfile(d, "BehIndex*.fig")), ...
+            behFigDir, fnOpts{:}); behIdxFiles = cat(1, behIdxFiles{:});
+        if isempty(behIdxFiles)
+            fprintf(1, 'No new behaviour analysis done! Skipping %s!\n', curDir)
             continue
-        else
-            behFigDir = recursiveFolderSearch(ephDir,...
-                "Beh V-0.25 - 0.50 s R5.00 - 400.00 ms");
         end
-        ephDir = expandName(ephDir);
-        %}
-        behIdxFiles = arrayfun(@(d) dir(fullfile(d, "BehIndex*.fig")), behFigDir);
         behIdxFig = arrayfun(@(x) openfig(expandName(x), 'invisible'), ...
                 behIdxFiles); behRes = arrayfun(@(x) get(x, 'UserData'), ...
                 behIdxFig, fnOpts{:}); arrayfun(@close, behIdxFig)
@@ -83,26 +77,6 @@ for cad = animalFolders(:)'
             oldSess = currSess; 
             auxStruct = struct('Date', currSess, ...
                 'DataTable', dataTable, 'Type', sessType);
-            %{
-            if any(xor(delFlag, frqFlag))
-                auxStruct.Laser_continuous = behRes(xor(delFlag, ...
-                    frqFlag)).BehIndex;
-            end
-            if any(frqFlag)
-                auxStruct.Laser_freq = behRes(frqFlag).BehIndex;
-            end
-            if any(musFlag)
-                auxStruct.Muscimol = behRes(musFlag).BehIndex;
-            end
-            if any(ptxFlag)
-                auxStruct.PTX = behRes(ptxFlag).BehIndex;
-            end
-            if ~isfield(mice, 'Sessions')
-                mice(mc).Sessions = auxStruct;
-            else
-                mice(mc).Sessions = [mice(mc).Sessions; auxStruct];
-            end
-            %}
             if ~isfield(mice, 'Sessions')
                 mice(mc).Sessions = auxStruct;
             else
