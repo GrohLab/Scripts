@@ -165,6 +165,8 @@ for cad = animalFolders(:)'
         %}
     end
 end
+btchName = regexp(batchDir, 'Batch\d+','match');
+save(fullfile(batchDir, btchName+"_BehaviourIndex.mat"), 'mice')
 %%
 jittDist = makedist('Normal', 'mu', 0, 'sigma', 1/9);
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
