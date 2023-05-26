@@ -828,6 +828,7 @@ end
 
 
 %% PopPSTH By Group
+colours = [0,0,0.75; 0, 0.75, 0; 0.75, 0, 0.75];
 figure('Name','DifMech_PopPSTH', 'Color','white'); hold on
 [Ncl, Npt, Nconds] = size(PSTH);
 psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
@@ -839,7 +840,7 @@ for ccond = 1:length(consideredConditions)
     popPSTH = sum(PSTH(:,:,ccond),1,'omitnan')/(Ncl * sweeps * binSz);
     %         popPSTH = popPSTH-medPSTH;
     popPSTH = smooth(popPSTH, 5);
-    plot(psthTX,popPSTH, 'LineWidth',1.5)
+    plot(psthTX,popPSTH, 'LineWidth',1.5, 'Color',colours(ccond,:));
 
 
 end
@@ -925,7 +926,7 @@ if ~mkdir(rasterDir)
     fprintf(1,'There was an issue with the figure folder...\n');
 end
 
-colours = [0,0,0.75; 0, 0.75, 0; 0.75, 0, 0.75];
+colours = [0,0,0.75; 0, 0.25, 0; 0.5, 0, 0.5];
 cs = 2;
 
 clIDind =  pclID;
@@ -951,7 +952,7 @@ for a = 1:lngth
     clSub = clSub(rasOrd(rasIdx));
     clSel = clSel(rasOrd(rasOrd ~= 0));
     Nma = min(Na(rasCondSel));
-    rasFig = figure;
+    rasFig = figure('Color','white');
     Nrcond = length(rasCond);
     ax = gobjects(4*Nrcond*Nrcl,1);
     lidx = 1;
@@ -964,9 +965,140 @@ for a = 1:lngth
         trigAlSubs = Conditions(rasCond(cc)).Triggers(trigSubset,:);
         timeDur = round(diff(trigAlSubs, 1, 2)/fs, 3);
         trigChange = find(diff(timeDur) ~= 0);
-        for ccl = 1:Nrcl
 
-           stims = mean(cst(:,:,delayFlags(:,rasCondSel(cc))),3);
+        for ccl = 1:Nrcl
+            ax(lidx) = subplot(6*Nrcond, Nrcl, lidx:lidx+1);
+            %  subplot( Nrcl, Nrcond, lidx); % to plot the other way around
+            %             title(ax(lidx),sprintf(rasCondNames{cc}), 'Interpreter', 'none') % ,pclID{clSel(ccl)}
+
+            plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
+                timeLapse, fs,'',ax(lidx));
+            ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
+            ax(lidx).YAxis.Label.String = 'Trials';
+
+            xlabel(ax(lidx), 'Time [s]')
+            initSub = 0;
+            optsRect = {'EdgeColor','none','FaceColor','none'};
+            for ctr = 1:numel(trigChange)
+                rectangle('Position',[0, initSub,...
+                    timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
+                initSub = trigChange(ctr);
+            end
+            rectangle('Position', [0, initSub, timeDur(Nma),...
+                Nma - initSub],optsRect{:})
+
+            ax(lidx).XAxis.Visible = 'off';
+            ax(lidx).YAxis.Visible = 'off';
+
+            lidx = lidx + 2;
+
+
+
+
+            ax(lidx) = subplot(6*Nrcond, Nrcl, lidx:lidx+3);
+            stims = mean(cst(:,:,delayFlags(:,rasCondSel(cc))),3);
+            if abs(log10(var(stims(cs,:),[],2))) < 15
+                stims(cs,:) = m*stims(cs,:) + b;
+                stims(cs,:) = stims(cs,:) - min(stims(cs,:));
+
+                stims(cs,:) = smooth(stims(cs,:),10^4);
+            else
+                stims(cs,:) = zeros(1,Nt);
+            end
+            stim = [0, diff(stims(cs,:))];
+            stim = smooth(stim, 10^4);
+            %             stim = stim - min(stim);
+
+            yyaxis right
+            plot(trigTX,stim, 'Color',colours(rasCondSel(cc),:), 'LineWidth',1.5)
+            ylim([-10^-4, 10^-4]);
+
+
+
+            yyaxis left
+            if exist('IDs','var')
+                area(trigTX,stims(cs,:), 'FaceColor', [0.75,0.75,0.75], 'LineStyle','none')
+
+
+            else
+                area(trigTX,stim(cs,:), 'FaceColor', [0.75,0.75,0.75], 'LineStyle','none')
+
+            end
+            ax(lidx).Visible = 'off';
+            ylim([-1,1]);
+
+
+
+            if cs == 1
+                ax2.NextPlot = 'add';
+            end
+
+        end
+
+
+
+
+
+
+
+
+
+
+
+        lidx = lidx + 4;
+
+
+    end
+
+
+
+
+
+
+    rasConds = rasCondNames{1};
+    if length(rasCondNames) > 1
+        for r = 2:length(rasCondNames)
+            rasConds = [rasConds, '+', rasCondNames{r}];
+        end
+    end
+
+
+
+
+
+    linkaxes(ax,'x')
+    rasFigName = ['Unit_', cell2mat(cl), '_', ];
+    rasFig.Name = rasFigName;
+    configureFigureToPDF (rasFig);
+    saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds,'_', num2str(timeLapse(1)), '_to_', num2str(timeLapse(2)),'.emf']));
+    %savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
+    savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
+end
+%% Pressures vs PopPSTHs
+colours = [0,0,0.75; 0, 0.25, 0; 0.5, 0, 0.5];
+[Ncl, Npt, Nconds] = size(PSTH);
+psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+cs = 2;
+lidx = 1;
+fig = figure('Color','white', 'Name', 'PopPSTHwithPressures');
+for ccond = 1:length(consideredConditions)
+    ax(lidx) = subplot(6*Nccond, 1, lidx:lidx+1);
+    medPSTH = median(sum(PSTH(:,1:40,ccond),1,'omitnan')/(Ncl * sweeps * binSz));
+    popPSTH = sum(PSTH(:,:,ccond),1,'omitnan')/(Ncl * sweeps * binSz);
+    %         popPSTH = popPSTH-medPSTH;
+    popPSTH = smooth(popPSTH, 5);
+    plot(psthTX,popPSTH, 'LineWidth',1.5, 'Color',colours(ccond,:))
+    ylim([ax(lidx).YLim(1), 4]);
+
+    ax(lidx).XAxis.Visible = 'off';
+    
+
+
+
+    lidx = lidx + 2;
+
+    ax(lidx) = subplot(6*Nccond, 1, lidx:lidx+3);
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
     if abs(log10(var(stims(cs,:),[],2))) < 15
         stims(cs,:) = m*stims(cs,:) + b;
         stims(cs,:) = stims(cs,:) - min(stims(cs,:));
@@ -977,92 +1109,52 @@ for a = 1:lngth
     end
     stim = [0, diff(stims(cs,:))];
     stim = smooth(stim, 10^4);
+    %             stim = stim - min(stim);
+
+    yyaxis right
+    plot(trigTX,stim, 'Color',[0,0,0], 'LineWidth',1.5)
+    ylim([-10^-4, 10^-4]);
 
 
 
+    yyaxis left
+    if exist('IDs','var')
+        area(trigTX,stims(cs,:), 'FaceColor', [0.75,0.75,0.75], 'LineStyle','none')
 
 
-
-            ax(lidx) = subplot(4*Nrcond, Nrcl, lidx);
-            if exist('IDs','var')
-                plot(trigTX,stims(cs,:), 'LineStyle','-','LineWidth', 1,...
-                    'DisplayName', IDs{cs}, 'Color',colours(rasCondSel(cc),:));
-
-            else
-                plot(trigTX,stim(cs,:),'LineStyle','-','LineWidth', 1, 'color', colours(rasCondSel(cc),:));
-
-            end
-            ax(lidx).Visible = 'off';
-
-
-
-
-            if cs == 1
-                ax2.NextPlot = 'add';
-            end
-
-        end
-
-        lidx = lidx + 1;
-
-
-        ax(lidx) = subplot(4*Nrcond, Nrcl, lidx:lidx+2);       %  subplot( Nrcl, Nrcond, lidx); % to plot the other way around
-        title(ax(lidx),sprintf(rasCondNames{cc}), 'Interpreter', 'none') % ,pclID{clSel(ccl)}
-
-        plotRasterFromStack(discStack([1,clSub(ccl)],:,tSubs),...
-            timeLapse, fs,'',ax(lidx));
-        ax(lidx).YAxisLocation = 'origin';ax(lidx).YAxis.TickValues = Nma;
-        ax(lidx).YAxis.Label.String = 'Trials';
-
-        xlabel(ax(lidx), 'Time [s]')
-        initSub = 0;
-        optsRect = {'EdgeColor','none','FaceColor','none'};
-        for ctr = 1:numel(trigChange)
-            rectangle('Position',[0, initSub,...
-                timeDur(trigChange(ctr)), trigChange(ctr)],optsRect{:})
-            initSub = trigChange(ctr);
-        end
-        rectangle('Position', [0, initSub, timeDur(Nma),...
-            Nma - initSub],optsRect{:})
-
-        ax(lidx).XAxis.Visible = 'off';
-        ax(lidx).YAxis.Visible = 'off';
-        stims = mean(cst(:,:,delayFlags(:,rasCondSel(cc))),3);
-
-
-        stims = stims - median(stims,2);
-
-
-
-
-
-        lidx = lidx + 3;
-
+    else
+        area(trigTX,stim(cs,:), 'FaceColor', [0.75,0.75,0.75], 'LineStyle','none')
 
     end
+    ax(lidx).Visible = 'off';
+    ylim([-1,1]);
 
 
 
 
 
 
-rasConds = rasCondNames{1};
-if length(rasCondNames) > 1
-    for r = 2:length(rasCondNames)
-        rasConds = [rasConds, '+', rasCondNames{r}];
-    end
+
+
+
+
+
+
+
+
+
+
+
+    lidx = lidx + 4;
+
+
 end
 
 
 
 
 
-linkaxes(ax,'x')
-rasFigName = ['Unit_', cell2mat(cl), '_', ];
-rasFig.Name = [rasFigName, '_', num2str(pwr), 'mW'];
-configureFigureToPDF (rasFig);
-set(rasFig, 'Position', get(0, 'ScreenSize')/2);
-saveas(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds,'_', num2str(timeLapse(1)), '_to_', num2str(timeLapse(2)),'.emf']));
-%savefig(rasFig,fullfile(rasterDir, [rasFigName, ' ', num2str(pwr), 'mW.fig']));
-savefig(rasFig,fullfile(rasterDir, [rasFigName,'_',rasConds, '.fig']));
-end
+
+
+
+
