@@ -1099,7 +1099,7 @@ for ccond = 1:length(consideredConditions)
     ylim([ax(lidx).YLim(1), 4]);
 
     ax(lidx).XAxis.Visible = 'off';
-    
+
 
 
 
@@ -1173,7 +1173,7 @@ colours = [0,0,0.75; 0, 0.25, 0; 0.5, 0, 0.5];
 [Ncl, Npt, Nconds] = size(PSTH);
 psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
 
-figure('Color','white', 'Name', 'Pressures');
+fig = figure('Color','white', 'Name', 'Pressures');
 
 yyaxis right
 
@@ -1198,7 +1198,7 @@ yyaxis left
 hold on
 
 for ccond = 1:length(consideredConditions)
-     medPSTH = median(sum(PSTH(:,1:40,ccond),1,'omitnan')/(Ncl * sweeps * binSz));
+    medPSTH = median(sum(PSTH(:,1:40,ccond),1,'omitnan')/(Ncl * sweeps * binSz));
     popPSTH = sum(PSTH(:,:,ccond),1,'omitnan')/(Ncl * sweeps * binSz);
     %         popPSTH = popPSTH-medPSTH;
     popPSTH = smooth(popPSTH, 5);
@@ -1218,3 +1218,6 @@ ax.FontSize = 25;
 leg.Location = 'northeast';
 set(gca, 'SortMethod', 'depth');
 
+configureFigureToPDF (fig);
+saveas(fig,fullfile(figureDir, 'MechPressure+PopPSTHs.emf'));
+savefig(fig,fullfile(figureDir, 'MechPressure+PopPSTHs.fig'));
