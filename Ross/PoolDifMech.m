@@ -851,10 +851,11 @@ leg.FontName = 'Arial';
 ax = gca;
 ax.FontSize = 25;
 leg.Location = 'northeast';
-
+ax.XTickLabel = ax.XTick*binSz-2;
 
 %% Absolute Pressure Difference Comparison
-
+trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+colours = [0,0,0.75; 0, 0.75, 0; 0.75, 0, 0.75];
 cs = 2;
 stims = mean(cst,3);
 [m,b] = lineariz(stims(cs,:),1,0);
@@ -876,9 +877,16 @@ for ccond = 1:Nccond
     else
         stims(cs,:) = zeros(1,Nt);
     end
-    plot(stims(cs,:))
+    plot(trigTX, stims(cs,:), 'Color',colours(ccond,:), 'LineWidth',2)
 end
 
+leg = legend;
+leg.String = consCondNames;
+leg.Box = 'off';
+leg.FontName = 'Arial';
+ax = gca;
+ax.FontSize = 25;
+leg.Location = 'northeast';
 
 %% Delta Pressure Difference Comparison
 
@@ -1151,10 +1159,62 @@ for ccond = 1:length(consideredConditions)
 end
 
 
+%% Abs pressure vs PopPTH overlay
+
+%% Absolute Pressure Difference Comparison
+trigTX = linspace(timeLapse(1),timeLapse(2),size(trig,2));
+pressurecolours = [0.8,0.8,0.8; 0.7, 0.7, 0.7; 0.9, 0.9, 0.9];
+
+cs = 2;
+stims = mean(cst,3);
+[m,b] = lineariz(stims(cs,:),1,0);
+stims(cs,:) = m*stims(cs,:) + b;
+colours = [0,0,0.75; 0, 0.25, 0; 0.5, 0, 0.5];
+[Ncl, Npt, Nconds] = size(PSTH);
+psthTX = linspace(timeLapse(1),timeLapse(2),Npt);
+
+figure('Color','white', 'Name', 'Pressures');
+
+yyaxis right
+
+hold on
+
+for ccond = [3, 1, 2]
+    stims = mean(cst(:,:,delayFlags(:,ccond)),3);
+    if abs(log10(var(stims(cs,:),[],2))) < 15
+        stims(cs,:) = m*stims(cs,:) + b;
+        stims(cs,:) = stims(cs,:) - min(stims(cs,:));
+
+        stims(cs,:) = smooth(stims(cs,:),10^4);
+    else
+        stims(cs,:) = zeros(1,Nt);
+    end
+    area(trigTX,stims(cs,:), 'FaceColor', pressurecolours(ccond,:), 'LineStyle','none')
+end
 
 
 
+yyaxis left
+hold on
+
+for ccond = 1:length(consideredConditions)
+     medPSTH = median(sum(PSTH(:,1:40,ccond),1,'omitnan')/(Ncl * sweeps * binSz));
+    popPSTH = sum(PSTH(:,:,ccond),1,'omitnan')/(Ncl * sweeps * binSz);
+    %         popPSTH = popPSTH-medPSTH;
+    popPSTH = smooth(popPSTH, 5);
+    plot(psthTX,popPSTH, 'LineWidth',2, 'Color',colours(ccond,:), 'LineStyle', '-')
+end
 
 
-
+leg = legend;
+leg.String = [consCondNames{3}, consCondNames{1}, consCondNames{2}, consCondNames];
+leg.Box = 'off';
+leg.FontName = 'Arial';
+ax = gca;
+ax.XLabel.String = 'Time [secs]';
+ax.YAxis(2).Visible = 'off';
+ax.YAxis(1).Label.String = 'Spike Frequency[Hz]';
+ax.FontSize = 25;
+leg.Location = 'northeast';
+set(gca, 'SortMethod', 'depth');
 
