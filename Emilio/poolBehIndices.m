@@ -181,7 +181,69 @@ xticks(ax, 1:max(rSz));
 lgObj = legend(ax, mNames); 
 set(lgObj, "Box", 'off', 'Color', 'none', 'Location', 'best', 'AutoUpdate', 'off')
 
+%% single
+singFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "single", ...
+    m.Sessions), mice, fnOpts{:});
+behTable = arrayfun(@(m, f) m.Sessions(f{:}).DataTable, mice, singFlag, ...
+    fnOpts{:}); behTable = cat(1, behTable{:});
+ctrl = behTable{behTable.Conditions == "Control Puff", "BehaviourIndices"};
+ptx = behTable{behTable.Conditions == "PTX", "BehaviourIndices"};
+figure; scatter(ones(size(ptx, 1),2).*[1,2], [ctrl, ptx])
+hold on; plot(ones(2,size(ptx, 1)).*[1;2], [ctrl, ptx]', 'k:')
+behTable = [behTable; mice(5).Sessions(2).DataTable]
+ctrl = behTable{behTable.Conditions == "Control Puff", "BehaviourIndices"}
+ptx = behTable{behTable.Conditions == "PTX", "BehaviourIndices"}
+figure; scatter(ones(size(ptx, 1),2).*[1,2], [ctrl, ptx])
+hold on; plot(ones(2,size(ptx, 1)).*[1;2], [ctrl, ptx]', 'k:')
+ptx = behTable{contains(behTable.Conditions, "PTX"), "BehaviourIndices"}
+figure; scatter(ones(size(ptx, 1),2).*[1,2], [ctrl, ptx])
+xlim([0,3])
+xticks(1:2)
+hold on; plot(ones(2,size(ptx, 1)).*[1;2], [ctrl, ptx]', 'k:')
+[p, h] = ranksum(ctrl, ptx)
+[p, h] = ranksum(ctrl(setdiff(1:6,3)), ptx(setdiff(1:6,3)))
+koFlag = true(size(ctrl));
+koFlag(3) = false;
+[p, h] = ranksum(ctrl(koFlag), ptx(koFlag))
+[ctrl, ptx]
+[ctrl, ptx, koFlag]
+[p, h] = ranksum(ctrl(koFlag), ptx(koFlag), "tail", "right")
+[p, h] = ranksum(ctrl(koFlag), ptx(koFlag), "tail", "left")
+[p, h] = ranksum(ctrl, ptx, "tail", "left")
+[p, h] = ranksum(ctrl(koFlag), ptx(koFlag), "tail", "left")
+ylim([0,1])
+ylabel('Behaviour index')
+xticks(1:2)
+xticklabels({'Control', 'PTX'})
+hold on; plot([1,2], max([ctrl, ptx], [], "all")*([1,1]+0.1), 'k')
+text(1.5, max([ctrl, ptx],[], "all")*1.1, '\ast', "HorizontalAlignment", 'center', "VerticalAlignment", "bottom")
+title(["PTX [60 \muM] in SC";"Significance: left tail"])
+configureFigureToPDF(gcf)
+figure; scatter(ones(sum(koFlag),2).*[1,2], [ctrl(koFlag), ptx(koFlag)])
+hold on; plot([1,2], max([ctrl(koFlag), ptx(koFlag)], [], "all")*([1,1]+0.1), 'k')
+hold on; plot(ones(2,sum(koFlag)).*[1;2], [ctrl(koFlag), ptx(koFlag)]', 'k:')
+xlim([0,3])
+xticks(1:2)
+xticklabels({'Control', 'PTX'})
+ylim([0,1])
+ylabel('Behaviour index')
+title(["PTX [60 \muM] in SC";"Significance: left tail"])
+configureFigureToPDF(gcf)
+saveFigure(gcf, fullfile("Z:\Emilio\SuperiorColliculusExperiments\Roller\GenFigures", "PTX effect"), true);
+text(1.5, max([ctrl, ptx],[], "all")*1.1, '\ast', "HorizontalAlignment", 'center', "VerticalAlignment", "bottom")
 %%
+muscFlag = arrayfun(@(m) arrayfun(@(s) cellfun(@(c) ...
+    any(contains(c, 'musc', ctOpts{:}),2), s.DataTable.Conditions), ...
+    m.Sessions, fnOpts{:}), mice, fnOpts{:});
+sessFlag = cellfun(@(f) cellfun(@any, f), muscFlag, fnOpts{:});
+behTable2 = arrayfun(@(m, f1) m.Sessions(f1{:}).DataTable, ...
+    mice, sessFlag, fnOpts{:});
+multFlag = cellfun(@(t) ~isstring(t.Conditions), behTable2);
+behTableM = cellfun(@(t, f, s) t(f{s},:), behTable2(multFlag), ...
+    muscFlag(multFlag), sessFlag(multFlag), fnOpts{:});
+behTableM = cellfun(@(t) table(t.Conditions{:}(:), t.BehaviourIndices{:}(:), ...
+   'VariableNames', t.Properties.VariableNames), behTableM, fnOpts{:});
+behTable2 = cat(1, behTableM{:}, behTable2{~multFlag});
 %{
 dateFlag = arrayfun(@(m) arrayfun(@(s) ~contains(fieldnames(s), 'Date'), ...
     m.Sessions, fnOpts{:}), mice, fnOpts{:});
