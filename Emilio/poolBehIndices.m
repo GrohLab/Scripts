@@ -23,10 +23,12 @@ animalFolders = arrayfun(@(d) recursiveFolderSearch(expandName(d), ...
 oldMouse = "";
 mc = 0; mice = [];
 for cad = animalFolders(:)'
-    [~, currMouse] = fileparts(cad);
+    [structPath, currMouse] = fileparts(cad);
+    [~, structName] = fileparts(structPath);
     if string(oldMouse) ~= string(currMouse)
         oldMouse = currMouse;
-        mice = [mice; struct('Name', currMouse, 'Sessions',[])];
+        mice = [mice; struct('Name', currMouse, 'Sessions',[], ...
+            'Structure', structName)];
         mc = mc + 1;
         sc = 0; oldSess = "";
     end
@@ -140,8 +142,8 @@ for cad = animalFolders(:)'
     end
 end
 btchName = regexp(batchDir, 'Batch\d+','match');
-save(fullfile(batchDir, btchName+"_BehaviourIndex.mat"), 'mice')
-%%
+save(fullfile(batchDir, btchName+"_BehaviourIndex.mat"), 'mice', "-append")
+%% multiple
 jittDist = makedist('Normal', 'mu', 0, 'sigma', 1/9);
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
     m.Sessions), mice, fnOpts{:});
