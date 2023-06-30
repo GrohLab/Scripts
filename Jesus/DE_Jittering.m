@@ -864,6 +864,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
     fprintf(1, "Found %s!\n", behDir)
     answ = questdlg('Analyse behaviour?','Behaviour','Yes','No','Yes');
     if strcmpi(answ,'Yes')
+        hstOpts = {'BinMethod', 'integers', 'BinLimits', [-0.5,4.5]};
         behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), ...
             {["Piezo", "Puff"];["Laser","Light"]});
         [behRes, behFigDir] = analyseBehaviour(behDir, 'Condition', possNames(behChCond), ...
@@ -877,5 +878,27 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         
         biFN = sprintf(biFigPttrn, pAreas);
         saveFigure(behAreaFig, fullfile(behFigDir, biFN), true, true);
+
+        trMvFlag = arrayfun(@(cr) behRes(1).Results(cr).MovStrucure.MovmentFlags, ...
+            1:size(behRes(1).Results,2), fnOpts{:}); trMvFlag = cat(3, trMvFlag{:});
+        BIscaleMat = sum(trMvFlag,3);
+        BIscale = arrayfun(@(cc) BIscaleMat(pairedStim(:,cc), cc), 1:Nccond, ...
+            fnOpts{:});
+        [hg, hg_bin] = cellfun(@(c) histcounts(c, hstOpts{:}), ...
+            BIscale, fnOpts{:}); 
+        hg = cat(1, hg{:}); hg_bin = cat(1, hg_bin{:});
+        %%
+        figure; bar(0:4, hg./sum(hg,2), 'EdgeColor', 'none'); hold on;
+        ylim([0,1]); set(gca, axOpts{:}); 
+        legend(consCondNames, 'AutoUpdate','off', lgOpts{:})
+        lmbdaHeight = 0.95-(0.15/Nccond)*(0:Nccond-1);
+        arrayfun(@(pd) scatter(poaDist(pd).lambda, lmbdaHeight(pd), '|',...
+            'MarkerEdgeColor', clrMap(pd,:)), 1:Nccond)
+        
+        arrayfun(@(pd) line(paramci(poaDist(pd)), ...
+            lmbdaHeight([pd,pd]), 'Color', clrMap(pd,:), ...
+            'Marker', '|'), 1:Nccond)
+        title(strrep(expName, '_',' ')); xlabel('Moving body parts')
+        ylabel('Trial proportion')
     end
 end
