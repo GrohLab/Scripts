@@ -889,7 +889,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         hg = cat(1, hg{:}); hg_bin = cat(1, hg_bin{:});
 
 
-        [p_amp, h_amp] = ranksum(cat(1, zamp{1,:}), cat(1, zamp{2,:}));
+        % [p_amp, h_amp] = ranksum(cat(1, zamp{1,:}), cat(1, zamp{2,:}));
         %%
         clrMap = lines(Nccond);
         countFig = figure; ax(1) = subplot(10,1,1:8);
