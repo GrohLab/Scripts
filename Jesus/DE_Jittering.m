@@ -366,18 +366,25 @@ resFN = sprintf(resPttrn, timeLapse*1e3, RW_key, SW_key, C_key);
 resFP = fullfile(resDir, resFN);
 
 % Statistical scatter figure names
-prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
-snglSubs = cumsum(Nccond:-1:1); cmbSubs = setdiff(1:Nsf, snglSubs);
-cmpCondNames = string(consCondNames(:));
-cmpCondNames = cat(1, cmpCondNames, arrayfun(@(x) ...
-    consCondNames(prmSubs(x,1)) + " vs. " + ...
-    consCondNames(prmSubs(x,2)), (1:size(prmSubs, 1))'));
 stFigSubfix = "";
 if metaNameFlag
     stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
 end
+
+cmbSubs = 0; snglSubs = 1; 
+cmpCondNames = string(consCondNames(:)); prmSubs = ones(1,2);
+if Nccond > 1
+    prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
+    snglSubs = cumsum(Nccond:-1:1); cmbSubs = setdiff(1:Nsf, snglSubs);
+    cmpCondNames = cat(1, cmpCondNames, arrayfun(@(x) ...
+        consCondNames(prmSubs(x,1)) + " vs. " + ...
+        consCondNames(prmSubs(x,2)), (1:size(prmSubs, 1))'));
+end
 stFigFN = fullfile(ephFigDir, "Stat " + cmpCondNames + stFigSubfix);
-cmpCondNames_aux([snglSubs, cmbSubs]) = stFigFN; stFigFN = cmpCondNames_aux;
+if cmbSubs
+    cmpCondNames_aux([snglSubs, cmbSubs]) = stFigFN; 
+    stFigFN = cmpCondNames_aux;
+end
 
 if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
     load(resFP, "Results", "Counts")
