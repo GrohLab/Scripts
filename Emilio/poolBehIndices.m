@@ -189,8 +189,9 @@ set(lgObj, "Box", 'off', 'Color', 'none', 'Location', 'best', 'AutoUpdate', 'off
 %% single
 singFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "single", ...
     m.Sessions), mice, fnOpts{:});
-behTable = arrayfun(@(m, f) m.Sessions(f{:}).DataTable, mice, singFlag, ...
-    fnOpts{:}); behTable = cat(1, behTable{:});
+behTable = arrayfun(@(m, f) {m.Sessions(f{:}).DataTable}, mice, singFlag, ...
+    fnOpts{:}); behTable = arrayfun(@(t) cat(1, t{:}{:}), behTable, fnOpts{:});
+behTable = cat(1, behTable{:});
 ctrl = behTable{behTable.Conditions == "Control Puff", "BehaviourIndices"};
 ptx = behTable{behTable.Conditions == "PTX", "BehaviourIndices"};
 figure; scatter(ones(size(ptx, 1),2).*[1,2], [ctrl, ptx])
