@@ -142,7 +142,12 @@ for cad = animalFolders(:)'
     end
 end
 btchName = regexp(batchDir, 'Batch\d+','match');
-save(fullfile(batchDir, btchName+"_BehaviourIndex.mat"), 'mice', "-append")
+behFP = fullfile(batchDir, btchName+"_BehaviourIndex.mat");
+svOpts = {'-mat'};
+if exist(behFP, "file")
+    svOpts = {'-append'};
+end
+save(behFP, "mice", svOpts{:})
 %% multiple
 jittDist = makedist('Normal', 'mu', 0, 'sigma', 1/9);
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
