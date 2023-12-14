@@ -900,7 +900,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         %%
         clrMap = lines(Nccond);
         countFig = figure; ax(1) = subplot(10,1,1:8);
-        bar(ax(1), 0:4, hg./sum(hg,2), 'EdgeColor', 'none'); hold on;
+        bar(ax(1), (0:4)', (hg./sum(hg,2))', 'EdgeColor', 'none'); hold on;
         poaDist = cellfun(@(bi) fitdist(bi,"Poisson"), BIscale);
         ylim(ax(1), [0,1]); set(ax(1), axOpts{:}); 
         legend(ax(1), consCondNames, 'AutoUpdate','off', lgOpts{:})
