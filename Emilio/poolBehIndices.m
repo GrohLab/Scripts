@@ -91,59 +91,6 @@ for cad = animalFolders(:)'
             end
             sc = sc + 1;
         end
-        %{
-        if numel(behIdxFiles) > 1
-            fprintf(1, "Found more than 1 file! Estimating the correct\n")
-            Ncond = arrayfun(@(m) arrayfun(@(s) numel(fieldnames(s))-1, ...
-                m.Sessions), mice, fnOpts{:}); Ncond = cat(1, Ncond{:});
-            [~, whr] = min(Ncond - brSz',[],"all"); 
-            if std(brSz)
-                [~, c] = ind2sub([numel(Ncond), numel(brSz)], whr);
-            else
-                posCCN = cellfun(@(bc) arrayfun(@(bs) ...
-                    string(bs.ConditionName), bc), behRes, fnOpts{:});
-                c = cellfun(@(nms) any(contains(nms, 'delay', ctOpts{:})), posCCN);
-            end
-            fprintf(1, "Chose the following conditions:\n")
-            fprintf(1, " - %s\n", arrayfun(@(x) string(x.ConditionName), ...
-                behRes{c}))
-        elseif isempty(behIdxFig)
-            fprintf(1, "Found no BehIndex figure!\n")
-            continue
-        end
-        behRes = behRes{c};
-        arrayfun(@close, behIdxFig)
-        consCondNames = arrayfun(@(x) string(x.ConditionName), behRes);
-        % TODO: fix the condition names and run the loop
-        ctrFlag = contains(consCondNames, 'control', ctOpts{:});
-        delFlag = contains(consCondNames, 'delay', ctOpts{:});
-        frqFlag = ~cellfun(@isempty,regexp(consCondNames, lsOpts{:}));
-        musFlag = contains(consCondNames, 'muscimol', ctOpts{:});
-        ptxFlag = contains(consCondNames, 'ptx', ctOpts{:});
-        if string(oldSess) ~= string(currSess)
-            oldSess = currSess; auxStruct = struct('Date', currSess, ...
-                'Control', behRes(ctrFlag).BehIndex);
-            if any(xor(delFlag, frqFlag))
-                auxStruct.Laser_continuous = behRes(xor(delFlag, ...
-                    frqFlag)).BehIndex;
-            end
-            if any(frqFlag)
-                auxStruct.Laser_freq = behRes(frqFlag).BehIndex;
-            end
-            if any(musFlag)
-                auxStruct.Muscimol = behRes(musFlag).BehIndex;
-            end
-            if any(ptxFlag)
-                auxStruct.PTX = behRes(ptxFlag).BehIndex;
-            end
-            if ~isfield(mice, 'Sessions')
-                mice(mc).Sessions = auxStruct;
-            else
-                mice(mc).Sessions = [mice(mc).Sessions; auxStruct];
-            end
-            sc = sc + 1;
-        end
-        %}
     end
 end
 btchName = regexp(batchDir, 'Batch\d+','match');
