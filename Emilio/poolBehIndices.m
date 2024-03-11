@@ -30,7 +30,7 @@ for cad = animalFolders(:)'
         mice = [mice; struct('Name', currMouse, 'Sessions',[], ...
             'Structure', structName)];
         mc = mc + 1;
-        sc = 0; oldSess = "";
+        sc = 0; oldSess = ""; oldDepth = "";
     end
     sessDirs = getSubFolds(cad);
     % Just date sessions
@@ -39,7 +39,9 @@ for cad = animalFolders(:)'
     sessDirs(cellfun(@isempty, onlyDateSessFlag)) = [];
     for csd = sessDirs(:)'
         curDir = expandName(csd);
-        currSess = char(regexp(csd.name, '\d{6}', 'match'));
+        sessDateDepth = regexp(csd.name, '(\d{6}).*_(\d{4})', 'tokens', 'once');
+        currSess = sessDateDepth{1};
+        depthSess = sessDateDepth{2};
         childFolders = getSubFolds(curDir);
         sessOrgDirs = arrayfun(@(d) string(d.name), childFolders);
         sessOrgDirs(contains(sessOrgDirs, {'behaviour', 'ephys', ...
@@ -49,7 +51,7 @@ for cad = animalFolders(:)'
         behIdxFiles = arrayfun(@(d) dir(fullfile(d, "BehIndex*.fig")), ...
             behFigDir, fnOpts{:}); behIdxFiles = cat(1, behIdxFiles{:});
         if isempty(behIdxFiles)
-            fprintf(1, 'No new behaviour analysis done! Skipping %s!\n', curDir)
+            fprintf(1, 'No behaviour analysis done! Skipping %s!\n', curDir)
             continue
         end
         behIdxFig = arrayfun(@(x) openfig(expandName(x), 'invisible'), ...
@@ -75,10 +77,13 @@ for cad = animalFolders(:)'
                 dataTable = table(condNames, behIdx, tblOpts{:});
             end
         end
-        if string(oldSess) ~= string(currSess)
-            oldSess = currSess; 
+        if ( string(oldSess) ~= string(currSess) ) || ...
+                ( string(oldDepth) ~= string(depthSess) )
+            oldSess = currSess;
+            oldDepth = depthSess;
             auxStruct = struct('Date', currSess, ...
-                'DataTable', dataTable, 'Type', sessType);
+                'DataTable', dataTable, 'Type', sessType, ...
+                'Depth', depthSess);
             if ~isfield(mice, 'Sessions')
                 mice(mc).Sessions = auxStruct;
             else
