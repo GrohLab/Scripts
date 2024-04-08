@@ -1,4 +1,4 @@
-%#ok<*AGROW,*SAGROW> 
+%#ok<*AGROW,*SAGROW>
 %% Auxiliary variables and functions
 fnOpts = {'UniformOutput', false};
 expandName = @(x) fullfile(x.folder, x.name);
@@ -11,7 +11,10 @@ tblOpts = {'VariableNames', {'Conditions', 'BehaviourIndices'}};
 %% Assuming 1 level of animal organisation i.e.
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
-batchDir = "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch12_ephys.e";
+batchDir = fullfile( "Z:\Emilio\SuperiorColliculusExperiments", ...
+    "Roller", "Batch18_ephys");
+%Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch15_ephys
+
 childFolders = dir(batchDir);
 
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), childFolders);
@@ -35,13 +38,26 @@ for cad = animalFolders(:)'
     sessDirs = getSubFolds(cad);
     % Just date sessions
     onlyDateSessFlag = arrayfun(@(x) string(regexp(x.name, '[0-9]{6}', ...
-        'match')), sessDirs, fnOpts{:}); 
+        'match')), sessDirs, fnOpts{:});
     sessDirs(cellfun(@isempty, onlyDateSessFlag)) = [];
     for csd = sessDirs(:)'
         curDir = expandName(csd);
-        sessDateDepth = regexp(csd.name, '(\d{6}).*_(\d{4})', 'tokens', 'once');
-        currSess = sessDateDepth{1};
-        depthSess = sessDateDepth{2};
+        sessDateDepth = regexp(csd.name, '(\d{6}).*_(\d{4})?', 'tokens', 'once');
+        if ~isempty( sessDateDepth )
+            currSess = sessDateDepth{1};
+            if isempty( sessDateDepth{2} )
+                depthSess = '';
+            else
+                depthSess = sessDateDepth{2};
+            end
+        else
+            currSess = regexp(csd.name, '(\d{6})', 'tokens', 'once');
+            if isempty(currSess)
+                fprintf( 1, "Unable to get session date and depth\n" );
+                fprintf( 1, "Skipping: %s %s\n", currMouse, csd.name )
+                continue
+            end
+        end
         childFolders = getSubFolds(curDir);
         sessOrgDirs = arrayfun(@(d) string(d.name), childFolders);
         sessOrgDirs(contains(sessOrgDirs, {'behaviour', 'ephys', ...
@@ -55,8 +71,8 @@ for cad = animalFolders(:)'
             continue
         end
         behIdxFig = arrayfun(@(x) openfig(expandName(x), 'invisible'), ...
-                behIdxFiles); behRes = arrayfun(@(x) get(x, 'UserData'), ...
-                behIdxFig, fnOpts{:}); arrayfun(@close, behIdxFig)
+            behIdxFiles); behRes = arrayfun(@(x) get(x, 'UserData'), ...
+            behIdxFig, fnOpts{:}); arrayfun(@close, behIdxFig)
         condNames = cellfun(@(x) arrayfun(@(y) string(y.ConditionName), x), ...
             behRes, fnOpts{:}); behIdx = cellfun(@(x) arrayfun(@(y) ...
             y.BehIndex, x), behRes, fnOpts{:});
@@ -112,8 +128,8 @@ Ncc = cellfun(@(x) cellfun(@(y) numel(y), x), pBehIdx, fnOpts{:});
 rSz = cellfun(@(x) max(cellfun(@(y) numel(y), x)), pBehIdx);
 cSz = cellfun(@numel, pBehIdx);
 resBehIdx = arrayfun(@(x,y) nan(x,y), rSz, cSz, fnOpts{:});
-resTable = cell(numel(mice), 1); Nm = numel(mice); 
-mNames = arrayfun(@(m) m.Name, mice); clrMap = roma(Nm); 
+resTable = cell(numel(mice), 1); Nm = numel(mice);
+mNames = arrayfun(@(m) m.Name, mice); clrMap = roma(Nm);
 habFig = figure('Name', 'Intensity v.s. index', 'Color', 'w');
 ax = axes('Parent', habFig, 'Color', 'none', 'Box', 'off', 'NextPlot', 'add');
 x = []; y = [];
@@ -133,9 +149,9 @@ for m = 1:Nm
         mean(resTable{m}.BehaviourIndices,2,'omitnan')', [], clrMap(m,:), ...
         "filled", "MarkerFaceAlpha", 0.5)
 end
-xticks(ax, 1:max(rSz)); 
+xticks(ax, 1:max(rSz));
 
-lgObj = legend(ax, mNames); 
+lgObj = legend(ax, mNames);
 set(lgObj, "Box", 'off', 'Color', 'none', 'Location', 'best', 'AutoUpdate', 'off')
 
 %% single
@@ -200,7 +216,7 @@ multFlag = cellfun(@(t) ~isstring(t.Conditions), behTable2);
 behTableM = cellfun(@(t, f, s) t(f{s},:), behTable2(multFlag), ...
     muscFlag(multFlag), sessFlag(multFlag), fnOpts{:});
 behTableM = cellfun(@(t) table(t.Conditions{:}(:), t.BehaviourIndices{:}(:), ...
-   'VariableNames', t.Properties.VariableNames), behTableM, fnOpts{:});
+    'VariableNames', t.Properties.VariableNames), behTableM, fnOpts{:});
 behTable2 = cat(1, behTableM{:}, behTable2{~multFlag});
 %{
 dateFlag = arrayfun(@(m) arrayfun(@(s) ~contains(fieldnames(s), 'Date'), ...
