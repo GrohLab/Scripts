@@ -31,6 +31,7 @@ if ~loadTriggerData(dataDir)
 end
 fnOpts = {'UniformOutput', false};
 axOpts = {'Box','off','Color','none'};
+fgOpts = {'new', 'visible'};
 spk_file_vars = {'spike_times','gclID','Nt','Ns','goods'};
 %% Constructing the helper 'global' variables
 
@@ -388,7 +389,7 @@ end
 
 if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
     load(resFP, "Results", "Counts")
-    arrayfun(@(x) uiopen(x + ".fig", true), stFigFN)
+    arrayfun(@(x) openfig(x + ".fig", fgOpts{:}), stFigFN)
 else
     % Statistical tests
     [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
@@ -551,7 +552,7 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
         psthFigs);
     arrayfun(@(f, fn) saveFigure(f, fn), psthFigs(:), psthFP(:));
 else
-   arrayfun(@(f) uiopen(f + ".fig", true), psthFP) 
+    arrayfun(@(f) openfig(f + ".fig", 'visible'), psthFP)
 end
 % Z-score PSTH for all units
 ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s';
