@@ -52,6 +52,7 @@ for cad = animalFolders(:)'
             end
         else
             currSess = regexp(csd.name, '(\d{6})', 'tokens', 'once');
+            depthSess = '';
             if isempty(currSess)
                 fprintf( 1, "Unable to get session date and depth\n" );
                 fprintf( 1, "Skipping: %s %s\n", currMouse, csd.name )
