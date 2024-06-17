@@ -120,6 +120,7 @@ for cad = animalFolders(:)'
 end
 btchName = regexp(batchDir, 'Batch\d+','match');
 behFP = fullfile(batchDir, btchName+"_BehaviourIndex.mat");
+mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
