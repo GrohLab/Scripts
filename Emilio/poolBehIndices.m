@@ -6,13 +6,14 @@ animalPattern = '[A-Za-z]+\d{1,}';
 rsOpts = {animalPattern, 'SearchType', 'expression'};
 ctOpts = {'IgnoreCase', true};
 lsOpts = {'L\d+.\d+', 'match'};
-behFF = "Beh V-0.25 - 0.50 s R5.00 - 400.00 ms";
-tblOpts = {'VariableNames', {'Conditions', 'BehaviourIndices'}};
+behFF = "Beh V-0.45 - 0.50 s R25.00 - 350.00 ms";
+tblOpts = {'VariableNames', {'Conditions', 'Trial_and_Amp_Indices', 'PolygonUnfold'}};
+tocol = @(x) x(:);
 %% Assuming 1 level of animal organisation i.e.
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
 batchDir = fullfile( "Z:\Emilio\SuperiorColliculusExperiments", ...
-    "Roller", "Batch18_ephys");
+    "Roller", "Batch11_ephys.MC" );
 %Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch15_ephys
 
 childFolders = dir(batchDir);
@@ -118,9 +119,9 @@ for cad = animalFolders(:)'
         end
     end
 end
-btchName = regexp(batchDir, 'Batch\d+','match');
-behFP = fullfile(batchDir, btchName+"_BehaviourIndex.mat");
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
+btchName = regexp( batchDir, 'Batch\d+','match' );
+behFP = fullfile( batchDir, btchName+"_BehaviourIndex.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
