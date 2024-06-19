@@ -13,7 +13,7 @@ tocol = @(x) x(:);
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
 batchDir = fullfile( "Z:\Emilio\SuperiorColliculusExperiments", ...
-    "Roller", "Batch11_ephys.MC" );
+    "Roller", "Batch13_beh" );
 %Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch15_ephys
 
 childFolders = dir(batchDir);
@@ -97,10 +97,10 @@ for cad = animalFolders(:)'
             if numel(sessOrgDirs) == Nbix
                 % Same folders and measurements. Ideal situation for
                 % several measurements.
-                dataTable = table(condNames, behIdx, tblOpts{:}, ...
+                dataTable = table(condNames, behIdx, pol_unfold, tblOpts{:}, ...
                     'RowNames', sessOrgDirs);
             else
-                dataTable = table(condNames, behIdx, tblOpts{:});
+                dataTable = table(condNames, behIdx, pol_unfold, tblOpts{:});
             end
         end
         if ( string(oldSess) ~= string(currSess) ) || ...
@@ -127,6 +127,7 @@ if exist(behFP, "file")
     svOpts = {'-append'};
 end
 save(behFP, "mice", svOpts{:})
+%{
 %% multiple
 jittDist = makedist('Normal', 'mu', 0, 'sigma', 1/9);
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
@@ -229,7 +230,7 @@ behTableM = cellfun(@(t, f, s) t(f{s},:), behTable2(multFlag), ...
 behTableM = cellfun(@(t) table(t.Conditions{:}(:), t.BehaviourIndices{:}(:), ...
     'VariableNames', t.Properties.VariableNames), behTableM, fnOpts{:});
 behTable2 = cat(1, behTableM{:}, behTable2{~multFlag});
-%{
+
 dateFlag = arrayfun(@(m) arrayfun(@(s) ~contains(fieldnames(s), 'Date'), ...
     m.Sessions, fnOpts{:}), mice, fnOpts{:});
 mCatg = arrayfun(@(mn) categorical(regexp(mn.Name, '[A-Za-z]{2}', ...
