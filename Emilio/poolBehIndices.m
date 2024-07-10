@@ -97,7 +97,7 @@ for cad = animalFolders(:)'
         bDist = cell( Nbr, 1 );
 
         for cc = 1:Nbr
-            for ccond = 1:Nconds
+            for ccond = 1:Nconds(cc)
                 for cbp = 1:numel( behRes{cc}(ccond).Results )
                     bDist{cc}(cbp, ccond) = fitdist( my_zscore( ...
                         behRes{cc}(ccond).Results(cbp).Baseline_L2, ...
