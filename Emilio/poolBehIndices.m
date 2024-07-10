@@ -168,6 +168,9 @@ if exist(behFP, "file")
     svOpts = {'-append'};
 end
 save(behFP, "mice", svOpts{:})
+habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
+    m.Sessions), mice, fnOpts{:});
+cat( 1, habFlag{:} )
 %{
 %% multiple
 jittDist = makedist('Normal', 'mu', 0, 'sigma', 1/9);
