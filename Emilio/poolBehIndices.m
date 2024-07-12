@@ -15,7 +15,7 @@ tocol = @(x) x(:);
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
 batchDir = fullfile( "Z:\Emilio\SuperiorColliculusExperiments", ...
-    "Roller", "Batch1_ephys" );
+    "Roller", "Mock" );
 %Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch15_ephys
 
 childFolders = dir(batchDir);
