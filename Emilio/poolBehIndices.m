@@ -2,7 +2,7 @@
 %% Auxiliary variables and functions
 fnOpts = {'UniformOutput', false};
 expandName = @(x) fullfile(x.folder, x.name);
-animalPattern = '[A-Za-z]+\d{1,}';
+animalPattern = '[A-Z][a-z]+\d{1,}';
 rsOpts = {animalPattern, 'SearchType', 'expression'};
 ctOpts = {'IgnoreCase', true};
 lsOpts = {'L\d+.\d+', 'match'};
