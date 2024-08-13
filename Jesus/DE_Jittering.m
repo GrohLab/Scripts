@@ -520,8 +520,8 @@ if exist('Triggers', 'var')
     csNames = fieldnames(Triggers);
 end
 Nbn = diff(timeLapse)/binSz;
-if (Nbn - round(Nbn)) ~= 0
-    Nbn = ceil(Nbn);
+if (Nbn - round( Nbn )) ~= 0
+    Nbn = ceil( Nbn );
 end
 
 %psthTx = (0:Nbn-1) * binSz + timeLapse(1);
@@ -556,6 +556,7 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
             sprintf('^{%s}',orderedStr)])
         set( psthFigs(cf), 'UserData', PSTH{cf} )
         saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
+        %{
     psthFigs = cellfun(@(p,t,n,ids,s) plotClusterReactivity(p(ordSubs,:), t,...
         n, timeLapse, binSz, [ids; pclID(ordSubs)], strrep(expName,'_',' '), ...
         s, csNames), PSTH, trig, num2cell(Na), cellstr(consCondNames), stims);
@@ -580,7 +581,7 @@ if ~exist(ephysFile, 'file')
 else
     uiopen(ephysFile, true);
 end
-clearvars ppFig ephysPttrn ephysName ephysFile
+clearvars ppFig ephysPttrn ephysName ephysFile aux*
 %% Log PSTH
 Nbin = 64;
 ncl = size(relativeSpkTmsStruct(1).SpikeTimes,1);
@@ -604,21 +605,22 @@ lpFP = fullfile(ephFigDir, lpFN);
 if ~exist(lpFP+".fig", "file")
     logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true, owFlag )
     if numel(logFigs) > 1
-        saveFigure(logFigs(2), lmiFP, true)
-        popEffects = logFigs(2).UserData; vrs = who(matfile(resFP));
+        popEffects = logFigs(2).UserData; 
         MIStruct = struct('ConditionNames', consCondNames, ...
             'MI', arrayfun(@(x) struct('Comparative', ...
             string(consCondNames(popEffects(x,1)))+" vs "+...
             string(consCondNames(popEffects(x,2))), 'Value', popEffects(x,3)), ...
             1:size(popEffects,1), fnOpts{:}));
+        set( logFigs(2), 'UserData', MIStruct );
         saveFigure(logFigs(2), lmiFP, true, owFlag )
+        vrs = who(matfile(resFP));
         if ~any(ismember(vrs,'MIStruct'))
             fprintf(1,'Adding "MIStruct" to %s\n', resFN)
             save(resFP, 'MIStruct','-append')
         end
     end
 else
-    uiopen(lpFP+".fig", true)
+    logFigs = uiopen(lpFP+".fig", true);
     load(resFP, "MIstruct")
     if Nccond > 1
         uiopen(lmiFP+".fig",true)
