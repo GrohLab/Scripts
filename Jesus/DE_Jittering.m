@@ -397,7 +397,9 @@ else
     % Plotting statistical tests
     [Figs, Results] = scatterSignificance(Results, Counts, consCondNames,...
         delta_t, gclID); configureFigureToPDF(Figs);
-    arrayfun(@(x,y) saveFigure(x,y,true), Figs, stFigFN(:))
+    parfor cf = 1:numel(Figs)
+        saveFigure( Figs(cf), stFigFN(cf), true, owFlag )
+    end
     save(resFP, "Results", "Counts", "configStructure", "gclID")
 end
 [rclIdx, H, zH] = getSignificantFlags(Results);
@@ -545,6 +547,19 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     else
         stims = repmat({zeros(1,Ntc)}, Nccond, 1);
     end
+    psthFigs = gobjects( numel(PSTH), 1 );
+    auxID = pclID(ordSubs); auxStack = discStack(filterIdx,:,:);
+    PSTH = cell(Nccond,1); trig = PSTH;
+    parfor cf = 1:Nccond
+        [PSTH{cf}, trig{cf}] = getPSTH(auxStack, timeLapse, ...
+            ~delayFlags(:,cf), binSz, fs);
+        psthFigs(cf) = plotClusterReactivity(PSTH{cf}(ordSubs,:), trig{cf},...
+            Na(cf), timeLapse, binSz, [consCondNames(cf); auxID], strrep(expName,'_',' '), ...
+            stims{cf}, csNames);
+        ylabel(psthFigs(cf).Children(end), ...
+            [psthFigs(cf).Children(end).YLabel.String, ...
+            sprintf('^{%s}',orderedStr)])
+        set( psthFigs(cf), 'UserData', PSTH{cf} )
         saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
     psthFigs = cellfun(@(p,t,n,ids,s) plotClusterReactivity(p(ordSubs,:), t,...
         n, timeLapse, binSz, [ids; pclID(ordSubs)], strrep(expName,'_',' '), ...
