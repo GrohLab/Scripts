@@ -33,6 +33,7 @@ fnOpts = {'UniformOutput', false};
 axOpts = {'Box','off','Color','none'};
 fgOpts = {'new', 'visible'};
 spk_file_vars = {'spike_times','gclID','Nt','Ns','goods'};
+owFlag = true;
 %% Constructing the helper 'global' variables
 
 spkPttrn = "%s_Spike_Times.mat";
@@ -544,15 +545,18 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     else
         stims = repmat({zeros(1,Ntc)}, Nccond, 1);
     end
+        saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
     psthFigs = cellfun(@(p,t,n,ids,s) plotClusterReactivity(p(ordSubs,:), t,...
         n, timeLapse, binSz, [ids; pclID(ordSubs)], strrep(expName,'_',' '), ...
         s, csNames), PSTH, trig, num2cell(Na), cellstr(consCondNames), stims);
     arrayfun(@(f) ylabel(f.Children(end), ...
         [f.Children(end).YLabel.String, sprintf('^{%s}',orderedStr)]), ...
         psthFigs);
-    arrayfun(@(f, fn) saveFigure(f, fn), psthFigs(:), psthFP(:));
+        %}
+    end
 else
-    arrayfun(@(f) openfig(f + ".fig", 'visible'), psthFP)
+    psthFigs = arrayfun(@(f) openfig(f + ".fig", 'visible'), psthFP);
+    PSTH = arrayfun(@(f) get( f, 'UserData' ), psthFigs, fnOpts{:} );
 end
 % Z-score PSTH for all units
 ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s';
@@ -562,7 +566,7 @@ ephysFile = fullfile(ephFigDir, ephysName);
 if ~exist(ephysFile, 'file')
     [ppFig, PSTHall] = compareCondPSTHs(cat(3,PSTH{:}), Na, binSz, ...
         timeLapse, consCondNames);
-    saveFigure(ppFig, ephysFile, 1);
+    saveFigure(ppFig, ephysFile, 1, owFlag );
 else
     uiopen(ephysFile, true);
 end
@@ -588,7 +592,7 @@ if filtFlag
 end
 lpFP = fullfile(ephFigDir, lpFN);
 if ~exist(lpFP+".fig", "file")
-    logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true)
+    logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true, owFlag )
     if numel(logFigs) > 1
         saveFigure(logFigs(2), lmiFP, true)
         popEffects = logFigs(2).UserData; vrs = who(matfile(resFP));
@@ -597,6 +601,7 @@ if ~exist(lpFP+".fig", "file")
             string(consCondNames(popEffects(x,1)))+" vs "+...
             string(consCondNames(popEffects(x,2))), 'Value', popEffects(x,3)), ...
             1:size(popEffects,1), fnOpts{:}));
+        saveFigure(logFigs(2), lmiFP, true, owFlag )
         if ~any(ismember(vrs,'MIStruct'))
             fprintf(1,'Adding "MIStruct" to %s\n', resFN)
             save(resFP, 'MIStruct','-append')
@@ -656,7 +661,7 @@ arrayfun(@(x) set(pObj(x), "FaceColor", clrMap(x+2,:)), 1:length(pObj))
 propPieFileName = fullfile(ephFigDir,...
     sprintf("Whisker responsive proportion pie %s (%dC, %dR)",...
     C_key, [Ntn-Nrn, Nrn]));
-saveFigure(respFig, propPieFileName, 1);
+saveFigure(respFig, propPieFileName, 1, owFlag );
 % Potentiated, depressed and unmodulated clusters pie
 if Nccond == 2
     potFig = figure("Color", "w");
@@ -668,7 +673,7 @@ if Nccond == 2
     modPropPieFigFileName = fullfile(ephFigDir,...
         sprintf("Modulation proportions pie %s (%dR, %dP, %dD)",...
         C_key, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
-    saveFigure(potFig, modPropPieFigFileName, 1)
+    saveFigure(potFig, modPropPieFigFileName, 1, owFlag )
     % Modulation index histogram
     MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on;
     histogram(MIevok, hsOpts{:}, "Evoked"); set(gca, axOpts{:});
@@ -676,7 +681,7 @@ if Nccond == 2
     ylabel("Cluster proportion"); lgnd = legend("show");
     set(lgnd, "Box", "off", "Location", "best")
     saveFigure(MIFig, fullfile(ephFigDir,...
-        "Modulation index dist evoked & after induction "+C_key), 1)
+        "Modulation index dist evoked & after induction "+C_key), 1, owFlag )
 end
 %% Get significantly different clusters
 gcans = questdlg(['Do you want to get the waveforms from the',...
@@ -785,7 +790,7 @@ if strcmpi(rasAns,'Yes')
         timeLapse*1e3);
     rasFigPath = fullfile(ephFigDir, rasFigName);
     arrayfun(@(x) set(x,'Color','none'), ax);
-    saveFigure(rasFig, rasFigPath, 1);
+    saveFigure(rasFig, rasFigPath, 1, owFlag );
     clearvars ax rasFig
 end
 %% Response speed characterization
@@ -927,7 +932,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         countFigName = sprintf("Count distributions P%s", ...
             sprintf(" %.3f", p(:)));
         %%
-        saveFigure(behAreaFig, fullfile(behFigDir, biFN), true, true);
-        saveFigure(countFig, fullfile(behFigDir, countFigName), true);
+        saveFigure(behAreaFig, fullfile(behFigDir, biFN), true, true, owFlag );
+        saveFigure(countFig, fullfile(behFigDir, countFigName), true, owFlag );
     end
 end
