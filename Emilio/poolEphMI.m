@@ -7,7 +7,7 @@ rsOpts = {animalPattern, 'SearchType', 'expression'};
 ctOpts = {'IgnoreCase', true};
 lsOpts = {'L\d+.\d+', 'match'};
 ephFF = 'Ephys VW(-?\d+\.\d+)-(\d+\.\d+) RW20.00-200.00 SW(-?\d+\.\d+)-(-?\d+\.\d+)';
-tblOpts = {'VariableNames', {'Conditions', 'Trial_and_Amp_Indices', 'PolygonUnfold','BaselineL2'}};
+tblOpts = {'VariableNames', {'Conditions', 'MI'}};
 my_zscore = @(x, m, s) ( x - m ) ./ ( s .* (s~=0) + 1 .* (s==0) );
 total_var_dist = @(dmat) integral( @(x) abs( pdf( dmat(1), x ) - pdf( dmat(2), x ) ), -5, 5 );
 tocol = @(x) x(:);
@@ -15,7 +15,7 @@ tocol = @(x) x(:);
 % BatchX/FolderA/Animal001
 % BatchX/FolderB/Animal002
 batchDir = fullfile( "Z:\Emilio\SuperiorColliculusExperiments", ...
-    "Roller", "Batch11_ephys.MC");
+    "Roller", "Batch17_ephys.MC");
 %Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch15_ephys
 
 childFolders = dir(batchDir);
@@ -77,75 +77,21 @@ for cad = animalFolders(:)'
         end
         miIdxFig = arrayfun(@(x) openfig(expandName(x), 'invisible'), ...
             miIdxFiles); 
-        MI = arrayfun(@(x) get(x, 'UserData'), miIdxFig, fnOpts{:}); 
-        arrayfun(@close, miIdxFig)
-        condNames = cellfun(@(x) arrayfun(@(y) string(y.ConditionName), x), ...
-            MI, fnOpts{:}); 
-        behIdx = cellfun(@(x) arrayfun(@(y) [y.Trial_proportion, ...
-            y.Amplitude_index], x, fnOpts{:} ), MI, fnOpts{:} );
-        pol_unfold = cellfun(@(x) arrayfun(@(y) ...
-            [ reshape( [y.Results.MovProbability], [], 1 ), ...
-            reshape( [y.Results.AmplitudeIndex], [], 1 ) ], ...
-            x, fnOpts{:} ), MI, fnOpts{:} );
-
-        % Assuming first condition as control!!
-        [~, mu_c, sig_c] = cellfun(@(c) arrayfun(@(bp) ...
-            zscore( bp.Baseline_L2 ), ...
-            c(1).Results, fnOpts{:} ), ...
-            MI , fnOpts{:});
-        
-        Nconds = cellfun(@numel, MI );
-        Nbr = numel( MI );
-        bDist = cell( Nbr, 1 );
-
-        for cc = 1:Nbr
-            for ccond = 1:Nconds(cc)
-                for cbp = 1:numel( MI{cc}(ccond).Results )
-                    bDist{cc}(cbp, ccond) = fitdist( my_zscore( ...
-                        MI{cc}(ccond).Results(cbp).Baseline_L2, ...
-                        mu_c{cc}{cbp}, sig_c{cc}{cbp} ), "Kernel", ...
-                        "Kernel", "normal" );
-                end
-            end
+        MI = arrayfun(@(x) get(x, 'UserData'), miIdxFig, fnOpts{:} );
+        arrayfun(@close, miIdxFig); 
+        switch class(MI{1})
+            case 'cell'
+                condNames = string( cat( 1, MI{:}(1:2) ) );
+                condNames = join( [condNames(1), "vs", condNames(2)] );
+                miVal = cat( 1, MI{:}{3} );
+            case 'struct'
+                condNames = cellfun( @(m) m.MI.Comparative, MI );
+                miVal = cellfun( @(m) m.MI.Value, MI );
         end
-        prmSubs = arrayfun(@(x) nchoosek(1:x,2), Nconds , fnOpts{:} );
-        Ncombs = cellfun(@(pr) size( pr, 1 ), prmSubs );
-        Nbs = cellfun(@(d) size( d, 1), bDist );
-        tvd = cell( Nbr, 1);
-        for cc = 1:Nbr
-            if Nconds(cc) > 1
-                tvd{cc} = zeros( Nbs(cc), Ncombs(cc) );
-                for cr = 1:Ncombs(cc)
-                    ps = prmSubs{cc}(cr,:);
-                    for cbp = 1:Nbs(cc)
-                        tvd{cc}(cbp, cr) = total_var_dist( bDist{cc}(cbp, ps) );
-                    end
-                end
-            else
-                fprintf(1, 'Unsure what to do\n')
-            end
-        end
-        brSz = cellfun(@numel, MI); c = 1; Nbix = numel(brSz);
+        Nbix = numel(MI); c = 1;
         sessType = 'single';
-        if Nbix == 1
-            behIdx = behIdx{:};
-            pol_unfold = pol_unfold{:};
-            bDist = bDist{:}';
-            dataTable = table( tocol( [condNames{:}] ), ...
-                cat( 1, behIdx{:} ), pol_unfold(:), bDist, tblOpts{:});
-        elseif Nbix > 1
-            % We need to check where are all of these different
-            % measurements are coming from.
-            sessType = 'multi';
-            if numel(sessOrgDirs) == Nbix
-                % Same folders and measurements. Ideal situation for
-                % several measurements.
-                dataTable = table(condNames, behIdx, pol_unfold, bDist, tblOpts{:}, ...
-                    'RowNames', sessOrgDirs);
-            else
-                dataTable = table(condNames, behIdx, pol_unfold,bDist, tblOpts{:});
-            end
-        end
+        dataTable = table( condNames, miVal, tblOpts{:} );
+
         if ( string(oldSess) ~= string(currSess) ) || ...
                 ( string(oldDepth) ~= string(depthSess) )
             oldSess = currSess;
@@ -164,7 +110,7 @@ for cad = animalFolders(:)'
 end
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 btchName = regexp( batchDir, 'Batch\d+','match' );
-behFP = fullfile( batchDir, btchName+"_BehaviourIndex.mat" );
+behFP = fullfile( batchDir, btchName+"_EphMI.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
