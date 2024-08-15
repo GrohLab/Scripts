@@ -570,7 +570,7 @@ else
     PSTH = arrayfun(@(f) get( f, 'UserData' ), psthFigs, fnOpts{:} );
 end
 % Z-score PSTH for all units
-ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s';
+ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s.fig';
 ephysName = sprintf(ephysPttrn, sprintf('%s ', consCondNames{:}), ...
     sprintf(' %d', Na));
 ephysFile = fullfile(ephFigDir, ephysName);
@@ -608,8 +608,8 @@ if ~exist(lpFP+".fig", "file")
         popEffects = logFigs(2).UserData; 
         MIStruct = struct('ConditionNames', consCondNames, ...
             'MI', arrayfun(@(x) struct('Comparative', ...
-            string(consCondNames(popEffects(x,1)))+" vs "+...
-            string(consCondNames(popEffects(x,2))), 'Value', popEffects(x,3)), ...
+            string(popEffects{x,1})+" vs "+...
+            string(popEffects{x,2}), 'Value', popEffects{x,3}), ...
             1:size(popEffects,1), fnOpts{:}));
         set( logFigs(2), 'UserData', MIStruct );
         saveFigure(logFigs(2), lmiFP, true, owFlag )
@@ -620,10 +620,10 @@ if ~exist(lpFP+".fig", "file")
         end
     end
 else
-    logFigs = uiopen(lpFP+".fig", true);
+    logFigs = openfig(lpFP+".fig");
     load(resFP, "MIstruct")
     if Nccond > 1
-        uiopen(lmiFP+".fig",true)
+        logFigs(2) = openfig(lmiFP+".fig");
     end
 end
 %% Cluster population proportions
