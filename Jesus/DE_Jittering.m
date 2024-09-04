@@ -545,7 +545,7 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     end
     psthFigs = gobjects( numel(PSTH), 1 );
     auxID = pclID(ordSubs); auxStack = discStack(filterIdx,:,:);
-    PSTH = cell(Nccond,1); trig = PSTH;
+    PSTH = cell(Nccond,1); %trig = PSTH;
     parfor cf = 1:Nccond
         [PSTH{cf}, trig{cf}] = getPSTH(auxStack, timeLapse, ...
             ~delayFlags(:,cf), binSz, fs);
@@ -557,14 +557,6 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
             sprintf('^{%s}',orderedStr)])
         set( psthFigs(cf), 'UserData', PSTH{cf} )
         saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
-        %{
-    psthFigs = cellfun(@(p,t,n,ids,s) plotClusterReactivity(p(ordSubs,:), t,...
-        n, timeLapse, binSz, [ids; pclID(ordSubs)], strrep(expName,'_',' '), ...
-        s, csNames), PSTH, trig, num2cell(Na), cellstr(consCondNames), stims);
-    arrayfun(@(f) ylabel(f.Children(end), ...
-        [f.Children(end).YLabel.String, sprintf('^{%s}',orderedStr)]), ...
-        psthFigs);
-        %}
     end
 else
     psthFigs = arrayfun(@(f) openfig(f + ".fig", 'visible'), psthFP);
@@ -852,7 +844,7 @@ end
 % Arranging the auto-correlograms out of the cross-correlograms into a
 % single matrix
 try
-    acorrs = cellfun(@(x) x(1,:), corrs, 'UniformOutput', 0);
+    acorrs = cellfun(@(x) x(1,:), corrs, fnOpts{:} );
 catch
     fprintf(1, 'No correlograms in the workspace!\n')
 end
