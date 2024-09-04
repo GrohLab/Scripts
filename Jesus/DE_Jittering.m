@@ -624,7 +624,9 @@ else
     end
 end
 
-logRF = fullfile( ephFigDir, "LogPSTH_Structure.mat" );
+logRF = fullfile( ephFigDir, ...
+    sprintf( "LogPSTH_Structure %s %d-conditions NB%d", ...
+    logPSTH.Normalization, Nccond, Nbin ) );
 if ~exist( logRF, 'file' )
     save( logRF, "logPSTH" )
 end
