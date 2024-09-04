@@ -9,6 +9,7 @@ lsOpts = {'L\d+.\d+', 'match'};
 ephFF = 'Ephys VW(-?\d+\.\d+)-(\d+\.\d+) RW20.00-200.00 SW(-?\d+\.\d+)-(-?\d+\.\d+)';
 tblOpts = {'VariableNames', {'Conditions', 'MI'}};
 my_zscore = @(x, m, s) ( x - m ) ./ ( s .* (s~=0) + 1 .* (s==0) );
+getMI = @(x,d) diff(x, 1, d)./sum(x, d);
 total_var_dist = @(dmat) integral( @(x) abs( pdf( dmat(1), x ) - pdf( dmat(2), x ) ), -5, 5 );
 tocol = @(x) x(:);
 %% Assuming 1 level of animal organisation i.e.
@@ -69,29 +70,26 @@ for cad = animalFolders(:)'
         miFigDir = arrayfun(@(d) recursiveFolderSearch(expandName(d), ...
             ephFF, 'SearchType', 'expression'), childFolders, fnOpts{:}); 
         miFigDir = cat(1, miFigDir{:});
-        miIdxFiles = arrayfun(@(d) dir(fullfile(d, "LogMI 2-conditions*.fig")), ...
-            miFigDir, fnOpts{:}); miIdxFiles = cat(1, miIdxFiles{:});
+        miIdxFiles = arrayfun(@(d) dir( fullfile( d, ...
+            "LogPSTH_Structure*.mat" ) ), miFigDir, fnOpts{:} ); 
+        miIdxFiles = cat( 1, miIdxFiles{:} );
         if isempty(miIdxFiles)
             fprintf(1, 'No ephys analysis done! Skipping %s!\n', curDir)
             continue
         end
-        miIdxFig = arrayfun(@(x) openfig(expandName(x), 'invisible'), ...
-            miIdxFiles); 
-        MI = arrayfun(@(x) get(x, 'UserData'), miIdxFig, fnOpts{:} );
-        arrayfun(@close, miIdxFig); 
-        switch class(MI{1})
-            case 'cell'
-                condNames = string( cat( 1, MI{:}(1:2) ) );
-                condNames = join( [condNames(1), "vs", condNames(2)] );
-                miVal = cat( 1, MI{:}{3} );
-            case 'struct'
-                condNames = cellfun( @(m) m.MI.Comparative, MI );
-                miVal = cellfun( @(m) m.MI.Value, MI );
-        end
-        Nbix = numel(MI); c = 1;
+        % miIdxStr = arrayfun(@(x) load( expandName(x), 'logPSTH' ), miIdxFiles);
+        load( expandName(miIdxFiles), 'logPSTH' );
+        lp_mu = squeeze( mean( ...
+            logPSTH.LogPSTH(:,:,logPSTH.indexMIComparison) ) );
+        muMI = getMI( lp_mu, 2 );
+        bmot_MI = mean( muMI( ~(logPSTH.TimeAxis < 5e-2) ) );
+        sens_MI = mean( muMI( logPSTH.TimeAxis < 5e-2) );
+        miVal = [sens_MI, bmot_MI];
+        condNames = logPSTH.ConditionNames( logPSTH.indexMIComparison );
+        condNames = join([condNames(1), "v", condNames(2)]);
+
         sessType = 'single';
         dataTable = table( condNames, miVal, tblOpts{:} );
-
         if ( string(oldSess) ~= string(currSess) ) || ...
                 ( string(oldDepth) ~= string(depthSess) )
             oldSess = currSess;
@@ -110,7 +108,7 @@ for cad = animalFolders(:)'
 end
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 btchName = regexp( batchDir, 'Batch\d+','match' );
-behFP = fullfile( batchDir, btchName+"_EphMI.mat" );
+behFP = fullfile( batchDir, btchName+"_EphMI_sm.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
