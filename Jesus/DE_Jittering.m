@@ -533,9 +533,9 @@ if filtFlag
 end
 % PSTH construction
 psthFP = fullfile(ephFigDir, psthFN);
-[PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
-    timeLapse, ~delayFlags(:,x), binSz, fs), 1:Nccond, fnOpts{:});
 if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
+    [PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
+    timeLapse, ~delayFlags(:,x), binSz, fs), 1:Nccond, fnOpts{:});
     if exist('cst', 'var') && ~isempty(cst)
         % Take into account covariance for signals.
         stims = arrayfun(@(x) mean(cst(:,:,delayFlags(:,x)),3), 1:Nccond, ...
@@ -569,6 +569,10 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
 else
     psthFigs = arrayfun(@(f) openfig(f + ".fig", 'visible'), psthFP);
     PSTH = arrayfun(@(f) get( f, 'UserData' ), psthFigs, fnOpts{:} );
+    if all(cellfun(@(c)isempty(c),PSTH))
+        [PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
+            timeLapse, ~delayFlags(:,x), binSz, fs), 1:Nccond, fnOpts{:});
+    end
 end
 % Z-score PSTH for all units
 ephysPttrn = 'Z-score all-units PSTH %s Ntrials%s.fig';
