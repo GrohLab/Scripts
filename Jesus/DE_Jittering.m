@@ -626,6 +626,11 @@ else
         logFigs(2) = openfig(lmiFP+".fig");
     end
 end
+
+logRF = fullfile( ephFigDir, "LogPSTH_Structure.mat" );
+if ~exist( logRF, 'file' )
+    save( logRF, "logPSTH" )
+end
 %% Cluster population proportions
 % Responsive and unresponsive cells, significantly potentiated or depressed
 % and unmodulated.
