@@ -33,7 +33,7 @@ fnOpts = {'UniformOutput', false};
 axOpts = {'Box','off','Color','none'};
 fgOpts = {'new', 'visible'};
 spk_file_vars = {'spike_times','gclID','Nt','Ns','goods'};
-owFlag = true;
+owFlag = false;
 %% Constructing the helper 'global' variables
 
 spkPttrn = "%s_Spike_Times.mat";
