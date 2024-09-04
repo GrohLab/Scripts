@@ -388,7 +388,7 @@ if cmbSubs
     stFigFN = cmpCondNames_aux;
 end
 
-if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN))
+if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN + ".fig"))
     load(resFP, "Results", "Counts")
     arrayfun(@(x) openfig(x + ".fig", fgOpts{:}), stFigFN)
 else
@@ -468,7 +468,8 @@ consVars = {'relativeSpkTmsStruct', 'firstSpkStruct', ...
     'SpontaneousStruct', 'configStructure'}; 
 rspMF = matfile(fullfile(dataDir, relSpkFN)); 
 
-if ~exist(relSpkFN,'file') || any(~contains(who(rspMF), consVars))
+if ~exist( fullfile( dataDir, relSpkFN ),'file') || ...
+        any(~contains(who(rspMF), consVars))
     rst = arrayfun(@(x) getRasterFromStack(discStack, ~delayFlags(:,x), ...
         [false; filterIdx(2:end)], timeLapse, fs, true, true), ...
         1:size(delayFlags,2), fnOpts{:});
