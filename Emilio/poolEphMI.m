@@ -29,7 +29,7 @@ animalFolders = arrayfun(@(d) recursiveFolderSearch(expandName(d), ...
 %% Looping animals
 oldMouse = "";
 mc = 0; mice = [];
-for cad = animalFolders(:)'
+for cad = tocol(animalFolders)'
     [structPath, currMouse] = fileparts(cad);
     [~, structName] = fileparts(structPath);
     if string(oldMouse) ~= string(currMouse)
