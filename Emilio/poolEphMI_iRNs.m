@@ -74,7 +74,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
         load( expandName(miIdxFiles), 'logPSTH' );
         lp_mu = squeeze( mean( ...
             logPSTH.LogPSTH(:,:,logPSTH.indexMIComparison) ) );
-        muMI = getMI( lp_mu, 2 );
+        muMI = getMI( lp_mu, 2 ); muMI(isnan( muMI )) = 0;
         bmot_MI = mean( muMI( ~(logPSTH.TimeAxis < 5e-2) ) );
         sens_MI = mean( muMI( logPSTH.TimeAxis < 5e-2) );
         miVal = [sens_MI, bmot_MI];
@@ -106,8 +106,7 @@ svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
 end
-save(behFP, "mice", svOpts{:})
+%save(behFP, "mice", svOpts{:})
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
     m.Sessions), mice, fnOpts{:});
 cat( 1, habFlag{:} )
-%{
