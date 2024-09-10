@@ -21,7 +21,7 @@ exclude_flags = contains( animalFolders, exclude_names );
 
 %% Looping animals
 oldMouse = "";
-mc = 0; mice = [];
+mc = 0; mice = []; lp_mu = []; lPSTH = [];
 for cad = tocol(animalFolders(~exclude_flags))'
     [structPath, currMouse] = fileparts(cad);
     [~, structName] = fileparts(structPath);
@@ -72,9 +72,10 @@ for cad = tocol(animalFolders(~exclude_flags))'
         end
         % miIdxStr = arrayfun(@(x) load( expandName(x), 'logPSTH' ), miIdxFiles);
         load( expandName(miIdxFiles), 'logPSTH' );
-        lp_mu = squeeze( mean( ...
-            logPSTH.LogPSTH(:,:,logPSTH.indexMIComparison) ) );
-        muMI = getMI( lp_mu, 2 ); muMI(isnan( muMI )) = 0;
+        lPSTH = cat( 1, lPSTH, {logPSTH.LogPSTH} );
+        lp_mu = cat( 3, lp_mu, squeeze( mean( ...
+            logPSTH.LogPSTH(:,:,logPSTH.indexMIComparison) ) ) );
+        muMI = getMI( lp_mu(:,:,end), 2 ); muMI(isnan( muMI )) = 0;
         bmot_MI = mean( muMI( ~(logPSTH.TimeAxis < 5e-2) ) );
         sens_MI = mean( muMI( logPSTH.TimeAxis < 5e-2) );
         miVal = [sens_MI, bmot_MI];
@@ -106,7 +107,7 @@ svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
 end
-%save(behFP, "mice", svOpts{:})
+% save(behFP, "mice", svOpts{:})
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
     m.Sessions), mice, fnOpts{:});
 cat( 1, habFlag{:} )
