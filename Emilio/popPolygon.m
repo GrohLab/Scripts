@@ -1,6 +1,16 @@
-aux = expMice.PolygonUnfoldAmplIndx([1,5],:,:,cons_mice);
+% iRNs
+expMice = summMice{1}(3);
+aux = expMice.PolygonUnfoldAmplIndx([1,5],:,:,cons_mice); 
+% cons_mice comes from the iegRNs_AmplitudeIndexPool.m script
+
+% eOPN3
+expMice = summMice{4}(2);
+aux = expMice.PolygonUnfoldAmplIndx([1,8],:,:,:);
+%%
+
 med_AI_pbp = squeeze( median( aux, 2, "omitmissing" ) );
 med_AI_all = median( med_AI_pbp, 3, "omitmissing" );
+clrMap = [0.15*ones(1,3); 0, 0.51, 1];
 Nb = 8;
 bodypart_names = ["Stim-whisker mean", "Stim-whisker fan arc", ...
 "Nonstim-whisker mean", "Nonstim-whisker fan arc", "Interwhisk arc", ...
