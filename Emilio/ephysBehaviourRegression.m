@@ -36,12 +36,14 @@ behSignals = [behDLCSignals, vf];
 mdl_btx = fit_poly( [1, size( behSignals, 1 )], [0, size( behSignals, 1 )/fr] + [1,-1] * (1/fr), 1 );
 btx = (1:size( behSignals, 1 ))'.^[1,0] * mdl_btx;
 my_xor = @(x) xor( x(:,1), x(:,2) );
+my_cat = @(x,d) cat( d, x{:} );
 
+m = 1e-3;
 % time_limits = [0, length(behSignals)/fr];
 cS = configStructure;
-rel_win = [-0.8, 0.8];
-del_win = [-50, 50]*1e-3;
-bin_size = 5e-3;
+rel_win = [-1, 1]*0.8;
+del_win = [-50, 50]*m;
+bin_size = 5*m;
 cS.BinSize_s = bin_size;
 Nb = ceil( diff( rel_win )/ bin_size );
 % Nb = ceil( diff( time_limits ) / bin_size );
@@ -77,9 +79,8 @@ bin_ax = cwin + linspace( del_win(1)+(bin_size/2), ...
     del_win(2)-(bin_size/2), Nd );
 % tr_ID = ceil( ( 1:(Nr*Nb) )' / Nb );
 parfor r = 1:(Nr*Nb)
-    tempC = arrayfun(@(u) interp1( bin_centres, binned_spikes(u,:), ...
-        bin_ax(r,:) ), 1:Nu, fnOpts{:} );
-    tempC = cat( 1, tempC{:} );
+    tempC = my_cat( arrayfun( @(u) interp1( bin_centres, binned_spikes(u,:), ...
+        bin_ax(r,:) ), 1:Nu, fnOpts{:} ), 1);
     auX( r, :, :) = tempC;
 end
 
@@ -97,14 +98,74 @@ for r = 1:Nr
     aux = cat( 2, aux{:} );
     y(idx,:) = aux;
 end
+%%
+tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
+rmse = zeros( 15 , 1 ); mdl = cell( size( rmse ) );
+parfor ii = 1:15
+    testTrials = sort( randperm( Nr, round( Nr*0.15 ) ) );
+    trainingTrials = setdiff( 1:Nr, testTrials );
+    trainingIdx = any( tr_ID == trainingTrials(:)', 2 );
+    testIdx = ~trainingIdx;
 
-tr_ID = tocol( ones( Nb, 1) * (1:Nr) );
-cv_kf = cvpartition( tr_ID, "KFold", 15 );
+    mdl{ii} = fitlm( X(trainingIdx,:), y(trainingIdx,1) );
+    y_pred = predict( mdl{ii}, X(testIdx,:) );
+    rmse(ii) = sqrt( mean( ( y(testIdx,1) - y_pred ).^2 ) );
+end
 
-[mdl, fitInfo] = lassoglm( X, Y, 'normal', ...
+[~, min_error] = min(rmse);
+y_all_pred = predict( mdl{min_error}, X );
+
+y_1 = reshape( y(:,1), Nb, Nr );
+y_all_pred = reshape( y_all_pred, Nb, Nr );
+%% Training
+
+ho_trials = randperm( Nr, round( Nr*0.1 ) );
+testIdx = any( tr_ID == sort(ho_trials), 2 );
+cv_kf = cvpartition( tr_ID( ~testIdx ), "KFold", 15 );
+
+Xtrain = X(~testIdx, :); ytrain = y(~testIdx,1);
+
+[mdl, fitInfo] = lassoglm( X(~testIdx,:), y(~testIdx,1), 'normal', ...
     'CV', cv_kf, 'Lambda', logspace( -5, 3, 64 ), ...
     'Options', statset('UseParallel', true ), ...
     'Alpha', eps );
+
+w_vec = [fitInfo.Intercept(fitInfo.IndexMinDeviance);
+    mdl(:,fitInfo.IndexMinDeviance)];
+y_pred = glmval( w_vec, X, "identity" );
+y_pred = reshape( y_pred, Nb, Nr );
+clrMap = [0.15*ones(1,3); 0.85,0.51,0.15 ];
+figure; lObj = line( 1:(Nb*numel( ho_trials )), [y(testIdx,1), y_pred(:)] );
+arrayfun(@(ii,x) set( x, 'Color', clrMap(ii,:) ), (1:numel(lObj))', lObj(:) )
+
+createtiles = @(f,nr,nc) tiledlayout( f, nr, nc, ...
+    'TileSpacing', 'Compact', 'Padding', 'tight');
+cleanAxis = @(x) set( x, "Box", "off", "Color", "none" );
+
+fig = figure( 'Color', 'w' ); t = createtiles( fig, 10, 2);
+nexttile([8, 1]);
+imagesc( ttx, [], y_1' - 90); colormap(inferno)
+xline(0, 'LineStyle', '--', 'Color', 0.85*ones(1,3) )
+nexttile([8, 1]);
+imagesc( ttx, [], y_pred' - 90); colormap(inferno)
+set( get( gca, 'YAxis' ), 'Visible', 'off' )
+nexttile(t);
+line( ttx, mean( y_1, 2 ) - 90, 'Color', 0.15*ones(1,3), 'LineWidth', 1.5 )
+nexttile(t);
+line( ttx, mean( y_pred, 2 ) - 90, 'Color', [0.85, 0.51, 0.15] , 'LineWidth', 1.5 )
+axs = get( t, "Children" );
+linkaxes( axs, 'x')
+xlim(ttx([1,end]))
+arrayfun(@(x) set( get( x, "XAxis" ), "Visible", "off" ), axs(3:4) )
+arrayfun(@(x) xticklabels( x, xticks(x) / m ), axs(1:2) )
+
+rmse = mean( ( y_1 - y_pred ).^2, 1 );
+
+
+wtx = (del_win(1) + bin_size/2):bin_size:(del_win(2) - bin_size/2);
+ttx = (rel_win(1) + bin_size/2):bin_size:(rel_win(2) - bin_size/2);
+
+figure; imagesc( wtx, [], reshape( w_vec(2:end), Nd, Nu )' )
 
 %% Design matrix for the whole experiment
 Nb = ceil( diff( bin_edges([1,end]) )/ bin_size );
