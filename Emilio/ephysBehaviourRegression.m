@@ -124,7 +124,7 @@ cvk = 15;
 Nk = round( Nr*0.15 );
 rmse = zeros( cvk , Ns ); 
 mdl = zeros( size( X, 2 ), size( y, 2 ), cvk );
-idxs = zeros( cvk, Nk ); [zy, y_mu, y_sig] = zscore(y, 0, 1);
+idxs = zeros( cvk, Nk ); %[zy, y_mu, y_sig] = zscore(y, 0, 1);
 parfor (ii = 1:cvk, 3)
     fprintf(1, 'K:%d\n', ii)
     testTrials = sort( randperm( Nr, Nk ) );
@@ -134,9 +134,9 @@ parfor (ii = 1:cvk, 3)
     testIdx = ~trainingIdx;
 
     mdl(:,:,ii) = mvregress( gpuArray( X(trainingIdx,:) ), ...
-        gpuArray( zy(trainingIdx,:) ) );
+        gpuArray( y(trainingIdx,:) ) );
     y_pred = X(testIdx,:) * mdl(:,:,ii);
-    rmse(ii,:) = sqrt( mean( ( zy(testIdx,:) - y_pred ).^2 ) );
+    rmse(ii,:) = sqrt( mean( ( y(testIdx,:) - y_pred ).^2 ) );
 end
 
 [~, min_error] = min(rmse,[],1);
