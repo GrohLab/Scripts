@@ -101,8 +101,9 @@ end
 %%
 tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
 rmse = zeros( 15 , 1 ); mdl = cell( size( rmse ) );
-parfor ii = 1:15
-    testTrials = sort( randperm( Nr, round( Nr*0.15 ) ) );
+Nk = round( Nr*0.15 ); 
+parfor ii = 1:Nk
+    testTrials = sort( randperm( Nr, Nk ) );
     trainingTrials = setdiff( 1:Nr, testTrials );
     trainingIdx = any( tr_ID == trainingTrials(:)', 2 );
     testIdx = ~trainingIdx;
@@ -117,6 +118,32 @@ y_all_pred = predict( mdl{min_error}, X );
 
 y_1 = reshape( y(:,1), Nb, Nr );
 y_all_pred = reshape( y_all_pred, Nb, Nr );
+
+%% 
+cvk = 15;
+Nk = round( Nr*0.15 );
+rmse = zeros( cvk , Ns ); 
+mdl = zeros( size( X, 2 ), size( y, 2 ), cvk );
+idxs = zeros( cvk, Nk ); [zy, y_mu, y_sig] = zscore(y, 0, 1);
+parfor (ii = 1:cvk, 3)
+    fprintf(1, 'K:%d\n', ii)
+    testTrials = sort( randperm( Nr, Nk ) );
+    idxs(ii,:) = testTrials;
+    trainingTrials = setdiff( 1:Nr, testTrials );
+    trainingIdx = any( tr_ID == trainingTrials, 2 );
+    testIdx = ~trainingIdx;
+
+    mdl(:,:,ii) = mvregress( gpuArray( X(trainingIdx,:) ), ...
+        gpuArray( zy(trainingIdx,:) ) );
+    y_pred = X(testIdx,:) * mdl(:,:,ii);
+    rmse(ii,:) = sqrt( mean( ( zy(testIdx,:) - y_pred ).^2 ) );
+end
+
+[~, min_error] = min(rmse,[],1);
+y_all_pred = X * squeeze( mean( mdl, 3 ) );
+
+y_trials = reshape( y, Nb, Nr, Ns );
+y_all_pred = reshape( y_all_pred, Nb, Nr, Ns );
 %% Training
 
 ho_trials = randperm( Nr, round( Nr*0.1 ) );
