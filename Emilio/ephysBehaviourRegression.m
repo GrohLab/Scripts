@@ -123,9 +123,10 @@ y_all_pred = reshape( y_all_pred, Nb, Nr );
 cvk = 15;
 Nk = round( Nr*0.15 );
 rmse = zeros( cvk , Ns ); 
-mdl = zeros( size( X, 2 ), size( y, 2 ), cvk );
+mdl = zeros( size( X, 2 )+Ns, size( y, 2 ), cvk );
 idxs = zeros( cvk, Nk ); %[zy, y_mu, y_sig] = zscore(y, 0, 1);
-parfor (ii = 1:cvk, 3)
+X2 = [[eye(Ns); zeros( size(X,1) - Ns, Ns )], X];
+for ii = 1:cvk
     fprintf(1, 'K:%d\n', ii)
     testTrials = sort( randperm( Nr, Nk ) );
     idxs(ii,:) = testTrials;
@@ -133,14 +134,14 @@ parfor (ii = 1:cvk, 3)
     trainingIdx = any( tr_ID == trainingTrials, 2 );
     testIdx = ~trainingIdx;
 
-    mdl(:,:,ii) = mvregress( gpuArray( X(trainingIdx,:) ), ...
+    mdl(:,:,ii) = mvregress( gpuArray( X2(trainingIdx,:) ), ...
         gpuArray( y(trainingIdx,:) ) );
-    y_pred = X(testIdx,:) * mdl(:,:,ii);
+    y_pred = X2(testIdx,:) * mdl(:,:,ii);
     rmse(ii,:) = sqrt( mean( ( y(testIdx,:) - y_pred ).^2 ) );
 end
 
 [~, min_error] = min(rmse,[],1);
-y_all_pred = X * squeeze( mean( mdl, 3 ) );
+y_all_pred = X2 * squeeze( mean( mdl, 3 ) );
 
 y_trials = reshape( y, Nb, Nr, Ns );
 y_all_pred = reshape( y_all_pred, Nb, Nr, Ns );
