@@ -31,6 +31,9 @@ load( fullfile( eph_path, ...
 load( fullfile( eph_path, "GADi43_C+F_2200analysis.mat" ) )
 load( fullfile( eph_path, "GADi43_C+F_2200_Spike_Times.mat" ) )
 stop_time = length( Triggers.Whisker )/ fs;
+bp_names = ["Stim-whisker mean", "Stim-whisker fan arc", ...
+    "Nonstim-whisker mean", "Nonstim-whisker fan arc", ...
+    "Interwhisker arc", "Symmetry", "Nose", "Roller speed"];
 %%
 behSignals = [behDLCSignals, vf];
 mdl_btx = fit_poly( [1, size( behSignals, 1 )], [0, size( behSignals, 1 )/fr] + [1,-1] * (1/fr), 1 );
@@ -99,25 +102,51 @@ for r = 1:Nr
     y(idx,:) = aux;
 end
 %%
+cvk = 15;
 tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
-rmse = zeros( 15 , 1 ); mdl = cell( size( rmse ) );
+rmse1v = zeros( cvk , 1 ); mdl1v = cell( size( rmse1v ) );
 Nk = round( Nr*0.15 ); 
-parfor ii = 1:Nk
+parfor ii = 1:cvk
     testTrials = sort( randperm( Nr, Nk ) );
     trainingTrials = setdiff( 1:Nr, testTrials );
     trainingIdx = any( tr_ID == trainingTrials(:)', 2 );
     testIdx = ~trainingIdx;
 
-    mdl{ii} = fitlm( X(trainingIdx,:), y(trainingIdx,1) );
-    y_pred = predict( mdl{ii}, X(testIdx,:) );
-    rmse(ii) = sqrt( mean( ( y(testIdx,1) - y_pred ).^2 ) );
+    mdl1v{ii} = fitlm( X(trainingIdx,:), y(trainingIdx,1) );
+    y_pred = predict( mdl1v{ii}, X(testIdx,:) );
+    rmse1v(ii) = sqrt( mean( ( y(testIdx,1) - y_pred ).^2 ) );
 end
 
-[~, min_error] = min(rmse);
-y_all_pred = predict( mdl{min_error}, X );
+[~, min_error] = min(rmse1v);
+y_1_pred = predict( mdl1v{min_error}, X );
 
 y_1 = reshape( y(:,1), Nb, Nr );
-y_all_pred = reshape( y_all_pred, Nb, Nr );
+y_1_pred = reshape( y_1_pred, Nb, Nr );
+
+%%
+cvk = 15; Nlambda = 64;
+tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
+rmse1v = zeros( cvk , Nlambda ); 
+mdl1v = zeros( size(X,2)+1, Nlambda, cvk );
+Nk = round( Nr*0.15 ); 
+lambdas = logspace( -3, 2, Nlambda);
+parfor ii = 1:cvk
+    testTrials = sort( randperm( Nr, Nk ) );
+    trainingTrials = setdiff( 1:Nr, testTrials );
+    trainingIdx = any( tr_ID == trainingTrials(:)', 2 );
+    testIdx = ~trainingIdx;
+
+    mdl1v(:,:,ii) = ridge( y(trainingIdx,1), ...
+        [ones( sum( trainingIdx ), 1 ), X(trainingIdx,:)], lambdas );
+    y_pred = [ones( Nk*Nb, 1), X(testIdx,:)] * mdl1v(:,:,ii);
+    rmse1v(ii,:) = sqrt( mean( ( y(testIdx,1) - y_pred ).^2 ) );
+end
+
+[~, min_error] = min(rmse1v);
+y_1_pred =  [ones( Nb*Nr, 1 ), X] * mdl1v;
+
+y_1 = reshape( y(:,1), Nb, Nr );
+y_1_pred = reshape( y_1_pred, Nb, Nr );
 
 %% 
 cvk = 15;
