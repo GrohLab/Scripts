@@ -19,17 +19,34 @@ end
 %%
 fnOpts = {'UniformOutput', false};
 tocol = @(x) x(:);
+getAbsPath = @(x) string( fullfile( x.folder, x.name ) );
 roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
-data_path = fullfile( roller_path, "Batch18_ephys\MC\GADi43\240227_C+F_2200" );
-eph_path = fullfile( data_path, "ephys_E1" );
+data_path = fullfile( roller_path, "Batch19_ephys\BC\GADi47\240427_C+F_2150" );
+eph_path = dir( fullfile( data_path, "ephys*" ) );
+if ~isempty( eph_path )
+    eph_path = getAbsPath( eph_path );
+else
+    fprintf(1, 'No ephys folder found!\n')
+    return
+end
 beh_path = fullfile( data_path, "Behaviour" );
-load( fullfile( beh_path, "BehaviourSignals2024-02-27T11_26_07+T11_43_01.mat" ) )
-load( fullfile( beh_path, "RollerSpeed2024-02-27T11_26_07+T11_43_01.mat" ) )
-% load( fullfile( eph_path, "GADi43_C+F_2200_all_channels.mat" ) )
-load( fullfile( eph_path, ...
-    "GADi43_C+F_2200 RW20.00-50.00 SW-180.00--150.00 VW-300.00-400.00 ms PuffAll (unfiltered) RelSpkTms.mat" ), "configStructure" )
-load( fullfile( eph_path, "GADi43_C+F_2200analysis.mat" ) )
-load( fullfile( eph_path, "GADi43_C+F_2200_Spike_Times.mat" ) )
+
+beh_pttrns = ["RollerSpeed*.mat", "BehaviourSignals*.mat"];
+bfs_paths = arrayfun(@(pt) dir( fullfile( beh_path, pt) ), beh_pttrns );
+if any( ~arrayfun(@(x) exist( getAbsPath(x), "file" ), bfs_paths ) )
+    fprintf(1, 'Not all necessary behaviour files exist!\n')
+    return
+end
+for x=bfs_paths, load( getAbsPath( x ) ), end
+
+eph_pttrns = ["*_Spike_Times.mat", "*analysis.mat"];
+efs_paths = arrayfun(@(pt) dir( fullfile( eph_path, pt) ), eph_pttrns );
+if any( ~arrayfun(@(x) exist( getAbsPath(x), "file" ), efs_paths ) )
+    fprintf(1, 'Not all necessary ephys files exist!\n')
+    return
+end
+for x=efs_paths, load( getAbsPath( x ) ), end
+
 stop_time = length( Triggers.Whisker )/ fs;
 bp_names = ["Stim-whisker mean", "Stim-whisker fan arc", ...
     "Nonstim-whisker mean", "Nonstim-whisker fan arc", ...
@@ -43,16 +60,18 @@ my_cat = @(x,d) cat( d, x{:} );
 
 m = 1e-3;
 % time_limits = [0, length(behSignals)/fr];
-cS = configStructure;
+
 rel_win = [-1, 1]*0.8;
-del_win = [-50, 50]*m;
-bin_size = 5*m;
-cS.BinSize_s = bin_size;
+del_win = [-100, 100]*m;
+bin_size = 10*m;
+
 Nb = ceil( diff( rel_win )/ bin_size );
 % Nb = ceil( diff( time_limits ) / bin_size );
 Nu = numel( spike_times );
 % cons_time = my_xor( btx > time_limits );
 Ns = size( behSignals, 2 );
+wtx = (del_win(1) + bin_size/2):bin_size:(del_win(2) - bin_size/2);
+ttx = (rel_win(1) + bin_size/2):bin_size:(rel_win(2) - bin_size/2);
 %%
 bin_edges = 0:bin_size:stop_time;
 bin_centres = mean( [bin_edges(1:end-1); bin_edges(2:end)] );
@@ -68,8 +87,9 @@ parfor b = 1:Ntb
     binned_beh(b,:) = mean( behSignals( idx , : ), 1 );
 end
 
-%% Design matrix for a set of trials
-time_limits = Conditions(3).Triggers(:,1)./fs + rel_win;
+%% Design matrix for a set of trials (Control)
+ctrl_sub = ismember( string( {Conditions.name} ), "Control Puff" );
+time_limits = Conditions(ctrl_sub).Triggers(:,1)./fs + rel_win;
 Nr = size( time_limits, 1 );
 Nd = ceil( diff( del_win ) / bin_size );
 auX = zeros( Nb*Nr, Nu, Nd );
@@ -87,9 +107,8 @@ parfor r = 1:(Nr*Nb)
     auX( r, :, :) = tempC;
 end
 
-X = reshape( auX, [], Nu*Nd ); clearvars auX;
-X2 = [ ones( Nb*Nr, 1), X];
-Xp = X2;
+X = reshape( auX, Nb*Nr, Nu*Nd ); clearvars auX;
+Xp = [ ones( Nb*Nr, 1), X];
 %% Multivariate regression response matrix
 %X2 = [ ones( Nb*Nr, 1), X];
 %lmObjs = cell( Ns, 1 );
@@ -101,7 +120,8 @@ for r = 1:Nr
     aux = cat( 2, aux{:} );
     y(idx,:) = aux;
 end
-%%
+%{
+%% Linear regression using fitlm
 cvk = 15;
 tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
 rmse1v = zeros( cvk , 1 ); mdl1v = cell( size( rmse1v ) );
@@ -123,32 +143,94 @@ y_1_pred = predict( mdl1v{min_error}, X );
 y_1 = reshape( y(:,1), Nb, Nr );
 y_1_pred = reshape( y_1_pred, Nb, Nr );
 
-%%
+%% Linear regression using ridge regularisation
 cvk = 15; Nlambda = 64;
 tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
 rmse1v = zeros( cvk , Nlambda ); 
 mdl1v = zeros( size(X,2)+1, Nlambda, cvk );
 Nk = round( Nr*0.15 ); 
-lambdas = logspace( -3, 2, Nlambda);
+lambdas = logspace( 3, 8, Nlambda);
 parfor ii = 1:cvk
     testTrials = sort( randperm( Nr, Nk ) );
     trainingTrials = setdiff( 1:Nr, testTrials );
     trainingIdx = any( tr_ID == trainingTrials(:)', 2 );
     testIdx = ~trainingIdx;
-
-    mdl1v(:,:,ii) = ridge( y(trainingIdx,1), ...
-        [ones( sum( trainingIdx ), 1 ), X(trainingIdx,:)], lambdas );
-    y_pred = [ones( Nk*Nb, 1), X(testIdx,:)] * mdl1v(:,:,ii);
+    
+    Xtrain = [ones( sum( trainingIdx ), 1 ), X(trainingIdx,:)];
+    Xtest = [ones( sum( testIdx ), 1 ), X(testIdx,:)];
+    % theta_0 = ( X2' * X2 ) \ ( X2' * y(trainingIdx,1) ) ;
+    mdl1v(:,:,ii) = ridge( y(trainingIdx,1), Xtrain, lambdas );
+    y_pred = Xtest * mdl1v(:,:,ii);
     rmse1v(ii,:) = sqrt( mean( ( y(testIdx,1) - y_pred ).^2 ) );
 end
 
-[~, min_error] = min(rmse1v);
-y_1_pred =  [ones( Nb*Nr, 1 ), X] * mdl1v;
+%}
+%% Linear regression for all behavioural signals using matrix multiplication
+cvk = 15;
+tr_ID = tocol( ones( Nb, 1 ) * (1:Nr) );
+rmseAll_ind = zeros( cvk, Ns );
+mdlAll_ind = zeros( size(X,2)+1, cvk, Ns );
+Nk = round( Nr*0.15 ); idxs = zeros( cvk, Nk );
+parfor ii = 1:cvk
+    testTrials = sort( randperm( Nr, Nk ) );
+    idxs(ii,:) = testTrials;
+    trainingTrials = setdiff( 1:Nr, testTrials );
+    trainingIdx = any( tr_ID == trainingTrials, 2 );
+    testIdx = ~trainingIdx;
 
-y_1 = reshape( y(:,1), Nb, Nr );
-y_1_pred = reshape( y_1_pred, Nb, Nr );
+    Xtrain = Xp(trainingIdx,:); Xtest = Xp(testIdx,:);
+    for cb = 1:Ns
+        ytrain = y(trainingIdx, cb); ytest = y(testIdx, cb);
+        mdlAll_ind(:,ii,cb) = ( Xtrain' * Xtrain ) \ ( Xtrain' * ytrain ) ;
+        %mdl1v(:,:,ii) = ridge( y(trainingIdx,1), Xtrain, lambdas );
+        y_pred = Xtest * mdlAll_ind(:,ii,cb);
+        rmseAll_ind(ii,cb) = sqrt( mean( ( ytest - y_pred ).^2 ) );
+    end
+end
 
-%% 
+save( fullfile( data_path, "Regression ephys2beh.mat"), "-v7.3" )
+%%
+createtiles = @(f,nr,nc) tiledlayout( f, nr, nc, ...
+    'TileSpacing', 'Compact', 'Padding', 'tight');
+cleanAxis = @(x) set( x, "Box", "off", "Color", "none" );
+figWeight = figure('Color', 'w'); t = createtiles( figWeight, 2, 4 );
+mdlAll_ind_norm = [mdlAll_ind(1,:,:);
+    mdlAll_ind(2:end,:,:) ./ vecnorm( mdlAll_ind(2:end,:,:), 2, 1 )];
+mdl_mu = squeeze( mean( mdlAll_ind_norm, 2 ) );
+for cb = 1:Ns
+    ax = nexttile(t);
+    imagesc( ax, wtx/m, [], reshape( mdl_mu(2:end,cb), Nu, Nd ) )
+    cleanAxis( ax ); yticks( ax, 1:Nu ); title( ax, bp_names( cb ) );
+    colormap( traffic ); clim( 1.3*max(abs(mdl_mu(2:end,cb)))*[-1,1] )
+    cbObj = colorbar( 'Box', 'off', 'AxisLocation', 'out', ...
+        'TickDirection', 'out', 'Location', 'northoutside' );
+end
+xlabel(ax, 'Time [ms]'); axs = findobj( t, "Type", "Axes" );
+ylabel( axs(end), 'Units' )
+title( t, 'Regression weights' )
+arrayfun(@(x) set( get( x, "YAxis" ), "Visible", "off" ), ...
+    axs(setdiff( 1:Ns, [4,8] )) )
+arrayfun(@(x) set( get( x, "XAxis" ), "Visible", "off" ), axs(5:8) )
+
+saveFigure( figWeight, fullfile( eph_path, "Figures", ...
+    sprintf( "Regression weights CW%.2f-%.2fms DW%.2f-%.2f BZ%.2f", ...
+    rel_win/m, del_win/m, bin_size/m ) ), true )
+%%
+errFig = figure("color", "w"); t = createtiles( errFig, 1, 1 );
+ax = nexttile(t);
+gray15pc = 0.15*ones(1,3);
+boxchart(ax, rmseAll_ind./range(y) , 'Notch', 'on', ...
+    'BoxFaceColor', gray15pc, 'JitterOutliers', 'on', ...
+    'MarkerStyle', '.', 'MarkerColor', gray15pc );
+xticklabels( ax, bp_names ); cleanAxis( ax ); 
+ylabel( ax, 'Normalised error' )
+title( ax, sprintf( '%d-kfold cross-validated error', cvk ) )
+
+saveFigure( errFig, fullfile( eph_path, "Figures", ...
+    sprintf( "%d-kfold cv error CW%.2f-%.2fms DW%.2f-%.2f BZ%.2f", ...
+    cvk, rel_win/m, del_win/m, bin_size/m ) ), true )
+%{
+%% Multiple output linear regression
 cvk = 15;
 Nk = round( Nr*0.15 );
 rmse = zeros( cvk , Ns ); 
@@ -174,6 +256,7 @@ y_all_pred = X2 * squeeze( mean( mdl, 3 ) );
 
 y_trials = reshape( y, Nb, Nr, Ns );
 y_all_pred = reshape( y_all_pred, Nb, Nr, Ns );
+
 %% Training
 
 ho_trials = randperm( Nr, round( Nr*0.1 ) );
@@ -239,3 +322,4 @@ end
 X = reshape( auX, [], Nu*Nd );
 X2 = [ ones( Nb*Nr, 1), X];
 Xa = X2;
+%}
