@@ -1,4 +1,3 @@
-
 %{
 res_gof = zeros( 15, 1 );
 % feps = zeros( 15, 1 );
@@ -51,6 +50,8 @@ stop_time = length( Triggers.Whisker )/ fs;
 bp_names = ["Stim-whisker mean", "Stim-whisker fan arc", ...
     "Nonstim-whisker mean", "Nonstim-whisker fan arc", ...
     "Interwhisker arc", "Symmetry", "Nose", "Roller speed"];
+
+analysis_pttrn = "CW%.2f-%.2fms DW%.2f-%.2f BZ%.2f";
 %%
 behSignals = [behDLCSignals, vf];
 mdl_btx = fit_poly( [1, size( behSignals, 1 )], [0, size( behSignals, 1 )/fr] + [1,-1] * (1/fr), 1 );
@@ -59,8 +60,6 @@ my_xor = @(x) xor( x(:,1), x(:,2) );
 my_cat = @(x,d) cat( d, x{:} );
 
 m = 1e-3;
-% time_limits = [0, length(behSignals)/fr];
-
 rel_win = [-1, 1]*0.8;
 del_win = [-100, 100]*m;
 bin_size = 10*m;
@@ -212,9 +211,9 @@ parfor ii = 1:cvk
         rmseAll_ind(ii,cb) = sqrt( mean( ( ytest - y_pred ).^2 ) );
     end
 end
-
-save( fullfile( data_path,  sprintf( "Regression CW%.2f-%.2fms DW%.2f-%.2f BZ%.2f.mat", ...
-    rel_win/m, del_win/m, bin_size/m ) ), "-v7.3" )
+analysis_key = sprintf( analysis_pttrn, rel_win/m, del_win/m, bin_size/m );
+save( fullfile( data_path,  join( ["Regression", analysis_key + ".mat"] ) ), ...
+    "-v7.3" )
 %%
 createtiles = @(f,nr,nc) tiledlayout( f, nr, nc, ...
     'TileSpacing', 'Compact', 'Padding', 'tight');
@@ -253,8 +252,7 @@ ylabel( ax, 'Normalised error' )
 title( ax, sprintf( '%d-kfold cross-validated error', cvk ) )
 
 saveFigure( errFig, fullfile( eph_path, "Figures", ...
-    sprintf( "%d-kfold cv error CW%.2f-%.2fms DW%.2f-%.2f BZ%.2f", ...
-    cvk, rel_win/m, del_win/m, bin_size/m ) ), true )
+    join( [sprintf( "%d-fold cv error", cvk ), analysis_key] ) ), true )
 %{
 %% Multiple output linear regression
 cvk = 15;
