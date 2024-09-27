@@ -213,8 +213,8 @@ parfor ii = 1:cvk
 end
 analysis_key = sprintf( analysis_pttrn, rel_win/m, del_win/m, bin_size/m );
 save( fullfile( data_path,  join( ["Regression", analysis_key + ".mat"] ) ), ...
-    "-v7.3" )
-%%
+    "mdlAll_ind", "DX", "params", "-v7.3" )
+%% Weight matrices
 createtiles = @(f,nr,nc) tiledlayout( f, nr, nc, ...
     'TileSpacing', 'Compact', 'Padding', 'tight');
 cleanAxis = @(x) set( x, "Box", "off", "Color", "none" );
@@ -240,7 +240,9 @@ arrayfun(@(x) set( get( x, "XAxis" ), "Visible", "off" ), axs(5:8) )
 saveFigure( figWeight, fullfile( eph_path, "Figures", ...
     sprintf( "Regression weights CW%.2f-%.2fms DW%.2f-%.2f BZ%.2f", ...
     rel_win/m, del_win/m, bin_size/m ) ), true )
-%%
+%% Reconstruction error (trial-wise)
+
+%% Total error per body part
 errFig = figure("color", "w"); t = createtiles( errFig, 1, 1 );
 ax = nexttile(t);
 gray15pc = 0.15*ones(1,3);
