@@ -109,30 +109,6 @@ end
 X = reshape( auX, Nb*Nr, Nu*Nd ); clearvars auX;
 Xp = [ ones( Nb*Nr, 1), X];
 
-%% Delay
-delay_sub = cellfun(@(x) ~isempty(x), regexp( string( {Conditions.name} ), ...
-    'Delay \d\.\d+\ss\s\+\sL' ) );
-
-time_limits = Conditions(delay_sub).Triggers(:,1)./fs + rel_win;
-Nr = size( time_limits, 1 );
-Nd = ceil( diff( del_win ) / bin_size );
-auX = zeros( Nb*Nr, Nu, Nd );
-
-cwin = arrayfun(@(x) linspace( time_limits(x,1) + (bin_size/2), ...
-    time_limits(x,2) - (bin_size/2), Nb )', (1:Nr)', fnOpts{:} );
-cwin = cat( 1, cwin{:} );
-
-bin_ax = cwin + linspace( del_win(1)+(bin_size/2), ...
-    del_win(2)-(bin_size/2), Nd );
-% tr_ID = ceil( ( 1:(Nr*Nb) )' / Nb );
-parfor r = 1:(Nr*Nb)
-    tempC = my_cat( arrayfun( @(u) interp1( bin_centres, binned_spikes(u,:), ...
-        bin_ax(r,:) ), 1:Nu, fnOpts{:} ), 1);
-    auX( r, :, :) = tempC;
-end
-
-X = reshape( auX, Nb*Nr, Nu*Nd ); clearvars auX;
-Xl = [ ones( Nb*Nr, 1), X];
 %% Multivariate regression response matrix
 %X2 = [ ones( Nb*Nr, 1), X];
 %lmObjs = cell( Ns, 1 );
@@ -255,6 +231,32 @@ title( ax, sprintf( '%d-kfold cross-validated error', cvk ) )
 
 saveFigure( errFig, fullfile( eph_path, "Figures", ...
     join( [sprintf( "%d-fold cv error", cvk ), analysis_key] ) ), true )
+
+%% Delay
+delay_sub = cellfun(@(x) ~isempty(x), regexp( string( {Conditions.name} ), ...
+    'Delay \d\.\d+\ss\s\+\sL' ) );
+
+time_limits = Conditions(delay_sub).Triggers(:,1)./fs + rel_win;
+Nr = size( time_limits, 1 );
+Nd = ceil( diff( del_win ) / bin_size );
+auX = zeros( Nb*Nr, Nu, Nd );
+
+cwin = arrayfun(@(x) linspace( time_limits(x,1) + (bin_size/2), ...
+    time_limits(x,2) - (bin_size/2), Nb )', (1:Nr)', fnOpts{:} );
+cwin = cat( 1, cwin{:} );
+
+bin_ax = cwin + linspace( del_win(1)+(bin_size/2), ...
+    del_win(2)-(bin_size/2), Nd );
+% tr_ID = ceil( ( 1:(Nr*Nb) )' / Nb );
+parfor r = 1:(Nr*Nb)
+    tempC = my_cat( arrayfun( @(u) interp1( bin_centres, binned_spikes(u,:), ...
+        bin_ax(r,:) ), 1:Nu, fnOpts{:} ), 1);
+    auX( r, :, :) = tempC;
+end
+
+X = reshape( auX, Nb*Nr, Nu*Nd ); clearvars auX;
+Xl = [ ones( Nb*Nr, 1), X];
+
 %{
 %% Multiple output linear regression
 cvk = 15;
