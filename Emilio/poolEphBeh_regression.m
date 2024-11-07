@@ -20,7 +20,10 @@ params = struct( 'relative_window', [-1,1]*800*m, 'delay_window', ...
 
 pc = parcluster('local');
 if ~strcmp( computer, 'PCWIN64')
-    HPC_setup;
+    home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
+    repo_paths = cellfun(@(x) char( fullfile( home_path, x) ), ...
+        {'NeuroNetzAnalysis', 'AuxiliaryFuncs', 'Scripts'},  fnOpts{:} );
+    addpath( repo_paths{:} )
     roller_path = "/mnt/sds-hd/sd19b001/Emilio/SuperiorColliculusExperiments/Roller";
     nprocs = str2double(getenv('SLURM_NPROCS'));
     parpool( pc, nprocs)
