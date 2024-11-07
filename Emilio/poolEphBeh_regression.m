@@ -25,12 +25,11 @@ if ~strcmp( computer, 'PCWIN64')
         {'NeuroNetzAnalysis', 'AuxiliaryFuncs', 'Scripts'},  fnOpts{:} );
     addpath( repo_paths{:} )
     roller_path = "/mnt/sds-hd/sd19b001/Emilio/SuperiorColliculusExperiments/Roller";
-    nprocs = str2double(getenv('SLURM_NPROCS'));
-    parpool( pc, nprocs)
 else
     roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
-    parpool( pc )
 end
+parpool( pc )
+
 iRN_mice = dir( fullfile( roller_path, "Batch*", "MC", "GADi*" ) );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
 exclude_flags = contains( animalFolders, exclude_names );
