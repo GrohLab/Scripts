@@ -80,10 +80,10 @@ for cad = tocol(animalFolders(~exclude_flags))'
         SSTt = squeeze( sum( ( y_trials - mean( y_trials, 1 ) ).^2, 1 ) );
         r_sq_trials = 1 - (SSEt./SSTt);
 
-        SSE = sum( (DX{1} - y_pred).^2 ); 
+        SSE = sum( (DX{1} - y_pred).^2 );
         SST = sum( (DX{1} - mean( DX{1}, 1 ) ).^2 );
         r_sq = 1 - ( SSE./ SST );
-        
+
         dataTable = table( r_sq, {r_sq_trials}, ...
             'VariableNames', {'R_squared', 'R_squared_trials'});
         if ( string(oldSess) ~= string(currSess) ) || ...
