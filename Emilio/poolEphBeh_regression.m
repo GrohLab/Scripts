@@ -15,11 +15,22 @@ tocol = @(x) x(:);
 m = 1e-3;
 exclude_names = {'GADi13', 'GADi15', 'GADi53'};
 
-iRN_mice = dir( "Z:\Emilio\SuperiorColliculusExperiments\Roller\Batch*\MC\GADi*" );
-animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
-exclude_flags = contains( animalFolders, exclude_names );
 params = struct( 'relative_window', [-1,1]*800*m, 'delay_window', ...
     [-1,1]*100*m, 'bin_size', 5*m, 'kfold', 20 );
+
+pc = parcluster('local');
+if ~strcmp( computer, 'PCWIN64')
+    HPC_setup;
+    roller_path = "/mnt/sds-hd/sd19b001/Emilio/SuperiorColliculusExperiments/Roller";
+    nprocs = str2double(getenv('SLURM_NPROCS'));
+    parpool( pc, nprocs)
+else
+    roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
+    parpool( pc )
+end
+iRN_mice = dir( fullfile( roller_path, "Batch*", "MC", "GADi*" ) );
+animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
+exclude_flags = contains( animalFolders, exclude_names );
 %% Looping animals
 oldMouse = "";
 mc = 0; mice = []; lp_mu = []; lPSTH = [];
