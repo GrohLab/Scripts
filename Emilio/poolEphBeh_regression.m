@@ -23,6 +23,7 @@ params = struct( 'relative_window', [-1,1]*800*m, 'delay_window', ...
 %% Looping animals
 oldMouse = "";
 mc = 0; mice = []; lp_mu = []; lPSTH = [];
+sessType = 'single';
 for cad = tocol(animalFolders(~exclude_flags))'
     [structPath, currMouse] = fileparts(cad);
     [~, structName] = fileparts(structPath);
@@ -67,6 +68,9 @@ for cad = tocol(animalFolders(~exclude_flags))'
         data_path = curDir;
 
         [mdl, params, DX] = regressEphysVSBehaviour( data_path, params );
+        if isempty(DX)
+            continue
+        end
         mdl_mu = squeeze( mean( mdl, 2 ) );
         y_trials = reshape( DX{1}, params.Nb, params.Nr, params.Ns );
         y_pred = DX{2} * mdl_mu;
@@ -96,6 +100,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
             end
             sc = sc + 1;
         end
+        close all
     end
 end
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
