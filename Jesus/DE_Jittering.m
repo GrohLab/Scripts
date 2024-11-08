@@ -534,8 +534,8 @@ end
 % PSTH construction
 psthFP = fullfile(ephFigDir, psthFN);
 if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
-    [PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
-    timeLapse, ~delayFlags(:,x), binSz, fs), 1:Nccond, fnOpts{:});
+    % [PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
+    % timeLapse, ~delayFlags(:,x), binSz, fs), 1:Nccond, fnOpts{:});
     if exist('cst', 'var') && ~isempty(cst)
         % Take into account covariance for signals.
         stims = arrayfun(@(x) mean(cst(:,:,delayFlags(:,x)),3), 1:Nccond, ...
@@ -543,7 +543,7 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     else
         stims = repmat({zeros(1,Ntc)}, Nccond, 1);
     end
-    psthFigs = gobjects( numel(PSTH), 1 );
+    psthFigs = gobjects( numel(psthFP), 1 );
     auxID = pclID(ordSubs); auxStack = discStack(filterIdx,:,:);
     PSTH = cell(Nccond,1); %trig = PSTH;
     parfor cf = 1:Nccond
