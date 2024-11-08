@@ -1,5 +1,5 @@
 tbl = [68, 33, 217;...
-    33, 35, 180];
+       33, 35, 180];
 sumCol = sum(tbl)';
 sumFil = sum(tbl,2)';
 multSum = (sumCol * sumFil)';
