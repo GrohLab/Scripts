@@ -81,7 +81,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
         data_path = curDir;
 
         [mdl, params, DX] = regressEphysVSBehaviour( data_path, params );
-        if isempty(DX)
+        if isempty(DX) || (sum( isnan(mdl), "all" ) / numel(mdl) ) > 0.05
             continue
         end
         mdl_mu = squeeze( mean( mdl, 2 ) );
