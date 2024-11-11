@@ -31,9 +31,14 @@ if ~loadTriggerData(dataDir)
 end
 fnOpts = {'UniformOutput', false};
 axOpts = {'Box','off','Color','none'};
-fgOpts = {'new', 'visible'};
+ofgOpts = {'new', 'visible'};
 spk_file_vars = {'spike_times','gclID','Nt','Ns','goods'};
 owFlag = false;
+figOpts = {'Visible','on'};
+if ~strcmp( computer, 'PCWIN64' )
+    figOpts(2) = {'off'};
+    ofgOpts(2) = {'invisible'};
+end
 %% Constructing the helper 'global' variables
 
 spkPttrn = "%s_Spike_Times.mat";
@@ -390,7 +395,7 @@ end
 
 if exist(resFP,"file") && all(arrayfun(@(x) exist(x, "file"), stFigFN + ".fig"))
     load(resFP, "Results", "Counts")
-    arrayfun(@(x) openfig(x + ".fig", fgOpts{:}), stFigFN)
+    arrayfun(@(x) openfig(x + ".fig", ofgOpts{:}), stFigFN)
 else
     % Statistical tests
     [Results, Counts] = statTests(discStack, delayFlags, timeFlags);
@@ -545,8 +550,15 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     end
     psthFigs = gobjects( numel(psthFP), 1 );
     auxID = pclID(ordSubs); auxStack = discStack(filterIdx,:,:);
-    PSTH = cell(Nccond,1); %trig = PSTH;
+    PSTH = cell(Nccond,1); trig = PSTH;
+    try 
+        parpool('Processes', 2)
+    catch ME
+        delete(gcp('nocreate'))
+        parpool('Processes', 2)
+    end
     parfor cf = 1:Nccond
+    % for cf = 1:Nccond
         [PSTH{cf}, trig{cf}] = getPSTH(auxStack, timeLapse, ...
             ~delayFlags(:,cf), binSz, fs);
         psthFigs(cf) = plotClusterReactivity(PSTH{cf}(ordSubs,:), trig{cf},...
@@ -558,8 +570,9 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
         set( psthFigs(cf), 'UserData', PSTH{cf} )
         saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
     end
+    
 else
-    psthFigs = arrayfun(@(f) openfig(f + ".fig", 'visible'), psthFP);
+    psthFigs = arrayfun(@(f) openfig(f + ".fig", ofgOpts{:} ), psthFP);
     PSTH = arrayfun(@(f) get( f, 'UserData' ), psthFigs, fnOpts{:} );
     if all(cellfun(@(c)isempty(c),PSTH))
         [PSTH, trig] = arrayfun(@(x) getPSTH(discStack(filterIdx,:,:), ...
@@ -576,7 +589,7 @@ if ~exist(ephysFile, 'file')
         timeLapse, consCondNames);
     saveFigure(ppFig, ephysFile, 1, owFlag );
 else
-    uiopen(ephysFile, true);
+    openfig( ephysFile, ofgOpts{:} );
 end
 clearvars ppFig ephysPttrn ephysName ephysFile aux*
 %% Log PSTH
@@ -617,10 +630,10 @@ if ~exist(lpFP+".fig", "file")
         end
     end
 else
-    logFigs = openfig(lpFP+".fig");
+    logFigs = openfig(lpFP+".fig", ofgOpts{:} );
     load(resFP, "MIstruct")
     if Nccond > 1
-        logFigs(2) = openfig(lmiFP+".fig");
+        logFigs(2) = openfig(lmiFP+".fig", ofgOpts{:} );
     end
 end
 
@@ -669,7 +682,7 @@ MIspon = getMI(spFrC); SNr = evFr./spFrC;
 %% Plot proportional pies
 clrMap = lines(2); clrMap([3,4],:) = [0.65;0.8].*ones(2,3);
 % Responsive and non responsive clusters
-respFig = figure("Color", "w");
+respFig = figure( "Color", "w", figOpts{:} );
 pie([Ntn-Nrn, Nrn], [0, 1], {'Unresponsive', 'Responsive'});
 pObj = findobj(respFig, "Type", "Patch");
 arrayfun(@(x) set(x, "EdgeColor", "none"), pObj);
@@ -680,7 +693,7 @@ propPieFileName = fullfile(ephFigDir,...
 saveFigure(respFig, propPieFileName, 1, owFlag );
 % Potentiated, depressed and unmodulated clusters pie
 if Nccond == 2
-    potFig = figure("Color", "w");
+    potFig = figure("Color", "w", figOpts{:} );
     pie([Nrn - Nrsn, Nrsp, Nrsn - Nrsp], [0, 1, 1], {'Non-modulated', ...
         'Potentiated', 'Depressed'}); % set(potFig, axOpts{:})
     pObj = findobj(potFig, "Type", "Patch");
@@ -691,7 +704,7 @@ if Nccond == 2
         C_key, Nrn - Nrsn, Nrsp, Nrsn - Nrsp));
     saveFigure(potFig, modPropPieFigFileName, 1, owFlag )
     % Modulation index histogram
-    MIFig = figure; histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on;
+    MIFig = figure( figOpts{:} ); histogram(MIspon, hsOpts{:}, "Spontaneous"); hold on;
     histogram(MIevok, hsOpts{:}, "Evoked"); set(gca, axOpts{:});
     title("Modulation index distribution"); xlabel("MI");
     ylabel("Cluster proportion"); lgnd = legend("show");
@@ -760,7 +773,7 @@ if strcmpi(rasAns,'Yes')
     clSub = clSub(rasOrd(rasIdx));
     clSel = clSel(rasOrd(rasOrd ~= 0));
     Nma = min(Na(rasCondSel));
-    rasFig = figure;
+    rasFig = figure( figOpts{:} );
     Nrcond = length(rasCond);
     ax = gobjects(Nrcond*Nrcl,1);
     timeFlags = all([tx(:) >= timeLapse(1), tx(:) <= timeLapse(2)],2);
@@ -923,7 +936,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         % [p_amp, h_amp] = ranksum(cat(1, zamp{1,:}), cat(1, zamp{2,:}));
         %%
         clrMap = lines(Nccond);
-        countFig = figure; ax(1) = subplot(10,1,1:8);
+        countFig = figure( figOpts{:} ); ax(1) = subplot(10,1,1:8);
         bar(ax(1), (0:4)', (hg./sum(hg,2))', 'EdgeColor', 'none'); hold on;
         poaDist = cellfun(@(bi) fitdist(bi,"Poisson"), BIscale);
         ylim(ax(1), [0,1]); set(ax(1), axOpts{:}); 
