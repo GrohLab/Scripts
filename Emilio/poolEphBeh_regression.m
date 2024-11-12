@@ -123,7 +123,7 @@ svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
 end
-% save(behFP, "mice", svOpts{:})
+save(behFP, "mice", svOpts{:})
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
     m.Sessions), mice, fnOpts{:});
 cat( 1, habFlag{:} )
