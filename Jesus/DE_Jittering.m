@@ -552,10 +552,10 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     auxID = pclID(ordSubs); auxStack = discStack(filterIdx,:,:);
     PSTH = cell(Nccond,1); trig = PSTH;
     try 
-        parpool('Processes', 2)
+        parpool('Processes', 2);
     catch ME
         delete(gcp('nocreate'))
-        parpool('Processes', 2)
+        parpool('Processes', 2);
     end
     parfor cf = 1:Nccond
     % for cf = 1:Nccond
