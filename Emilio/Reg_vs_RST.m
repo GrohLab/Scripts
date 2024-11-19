@@ -55,38 +55,49 @@ xlabel( ax(cp), "R^2_{SWM}" )
 set( ax, 'TickDir', 'out' )
 arrayfun(@(x) set( get( x, 'XAxis' ), 'Visible', 'off' ), ax(1:2) )
 %%
+Bsel = 1;
 Nex = 3;
 f = figure("Color", "w" );
 t = createtiles( f, Nex+2, 1 );
 
-%clrMap = inferno( round( Nex*1.5) );
+getSEM = @(x) [mean( x, 2 ), std( x, 1, 2 )./sqrt( size( x, 2 ) )];
+mat2ptch = @(x) [x(1:end,:)*[1;1]; x(end:-1:1,:)*[1;-1]];
+phOpts = {'EdgeColor', 'none', 'FaceAlpha', 0.25, 'FaceColor'};
+
+clrMap = brighten( blues(2), -0.8 );
 ax = gobjects( Nex+1, 1 );
-[~, ord] = sort( rmse_trials, "ascend" );
+[~, ord] = sort( rmse_ltrials, "ascend" );
 cpi = 1;
 for cp = ord(1:round(end/Nex):end)
     ax(cpi) = nexttile( t ); 
     set( ax(cpi), 'NextPlot', 'add' ); cleanAxis( ax(cpi) );
-    line( ax(cpi), tr_tx, squeeze( y_trials(:,cp,1) ), 'Color', 0.15*ones(1,3), 'LineWidth', 0.5 )
-    line( ax(cpi), tr_tx, squeeze( y_ptrials(:,cp,1) ), 'Color', 0.55*ones(1,3), 'LineWidth', 0.5 )
+    line( ax(cpi), tr_tx, squeeze( y_ltrials(:,cp,Bsel) ), 'Color', 0.15*ones(1,3), 'LineWidth', 0.5 )
+    line( ax(cpi), tr_tx, squeeze( y_lptrials(:,cp,Bsel) ), 'Color', 0.55*ones(1,3), 'LineWidth', 0.5 )
     yticklabels( ax(cpi), yticks(ax(cpi)) - 90)
+    ax(cpi).YTickLabelRotation = 90;
     set( get( ax(cpi), 'XAxis' ), 'Visible', 'off' )
     cpi = cpi + 1;
 end
 ax(cpi) = nexttile( t, [2, 1] );
 cleanAxis( ax(cpi) )
-line(ax(cpi), tr_tx, squeeze( mean( y_trials(:,:,1), 2 ) ), 'LineWidth', 2, 'Color', 0.15*ones(1,3) )
-line(ax(cpi), tr_tx, squeeze( mean( y_ptrials(:,:,1), 2 ) ), 'LineWidth', 2, 'Color', 0.55*ones(1,3) )
+sem_lshadow = getSEM( y_ltrials );
+sem_lpshadow = getSEM( y_lptrials );
+line(ax(cpi), tr_tx, squeeze( mean( y_ltrials(:,:,Bsel), 2 ) ), 'LineWidth', 2, 'Color', clrMap(1,:) )
+line(ax(cpi), tr_tx, squeeze( mean( y_lptrials(:,:,Bsel), 2 ) ), 'LineWidth', 2, 'Color', clrMap(2,:) )
+patch( ax(cpi), [tr_tx(:); flip( tr_tx(:) )], mat2ptch( sem_lshadow(:,:,Bsel) ), 1, phOpts{:}, clrMap(1,:) )
+patch( ax(cpi), [tr_tx(:); flip( tr_tx(:) )], mat2ptch( sem_lpshadow(:,:,Bsel) ), 1, phOpts{:}, clrMap(2,:) )
 yticklabels( ax(cpi), yticks(ax(cpi)) - 90); ylabel( ax(cpi), 'Angle [°]')
 xticklabels( ax(cpi), xticks( ax(cpi) )*1e3 );
 xlabel(ax(cpi), 'Time [ms]')
 legend( ax(cpi), flip({'Predicted', 'Observed'}), 'Box', 'off', 'Color', 'none', ...
-    'Location', 'best' );
+    'Location', 'best', 'AutoUpdate', 'off' );
 set( ax, 'TickDir', 'out' )
 xline(ax(cpi), 0, 'k--')
+xline( ax(cpi), [-0.1, 0.2], 'b')
 
 saveFigure( f, fullfile( "Z:\Emilio\SuperiorColliculusExperiments\" + ...
     "Roller\Batch7_ephys\MC\GADi52\220808_C+F_2100\ephys_E1\Figures", ...
-    "Example reconstruction" ), true, false )
+    "Example reconstruction laser" ), true, false )
 
 %%
 f = figure("Color", "w");
