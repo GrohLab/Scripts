@@ -8,9 +8,10 @@ ctOpts = {'IgnoreCase', true};
 lsOpts = {'L\d+.\d+', 'match'};
 ephFF = 'Ephys VW(-?\d+\.\d+)-(\d+\.\d+) RW20.00-200.00 SW(-?\d+\.\d+)-(-?\d+\.\d+)';
 tblOpts = {'VariableNames', {'Conditions', 'MI'}};
-my_zscore = @(x, m, s) ( x - m ) ./ ( s .* (s~=0) + 1 .* (s==0) );
-getMI = @(x,d) diff(x, 1, d)./sum(x, d);
-total_var_dist = @(dmat) integral( @(x) abs( pdf( dmat(1), x ) - pdf( dmat(2), x ) ), -5, 5 );
+% my_zscore = @(x, m, s) ( x - m ) ./ ( s .* (s~=0) + 1 .* (s==0) );
+% getMI = @(x,d) diff(x, 1, d)./sum(x, d);
+% total_var_dist = @(dmat) integral( @(x) abs( pdf( dmat(1), x ) - pdf( dmat(2), x ) ), -5, 5 );
+getRMSE = @( r, x, d ) sqrt( mean( ( r - x ).^2, d, "omitmissing" ) );
 tocol = @(x) x(:);
 m = 1e-3;
 exclude_names = {'GADi13', 'GADi15', 'GADi53'};
@@ -28,7 +29,7 @@ if ~strcmp( computer, 'PCWIN64')
 else
     roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
 end
-parpool( pc )
+parpool( pc );
 
 iRN_mice = dir( fullfile( roller_path, "Batch*", "MC", "GADi*" ) );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
@@ -96,9 +97,14 @@ for cad = tocol(animalFolders(~exclude_flags))'
         SSE = sum( (DX{1} - y_pred).^2 );
         SST = sum( (DX{1} - mean( DX{1}, 1 ) ).^2 );
         r_sq = 1 - ( SSE./ SST );
-
-        dataTable = table( r_sq, {r_sq_trials}, ...
-            'VariableNames', {'R_squared', 'R_squared_trials'});
+        
+        y_lpred = DX{3} * mdl_mu;
+        
+        rmse_laser = getRMSE( DX{4}, y_lpred, 1 );
+        
+        dataTable = table( r_sq, {r_sq_trials}, {params.fit_error}, ...
+            rmse_laser, 'VariableNames', {'R_squared', 'R_squared_trials', ...
+            'RMSE_c', 'RMSE_l'} );
         if ( string(oldSess) ~= string(currSess) ) || ...
                 ( string(oldDepth) ~= string(depthSess) )
             oldSess = currSess;
