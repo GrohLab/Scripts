@@ -48,6 +48,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
         mc = mc + 1;
         sc = 0; oldSess = ""; oldDepth = "";
     end
+    fprintf(1, 'Mouse %s ', currMouse)
     sessDirs = getSubFolds(cad);
     % Just date sessions
     onlyDateSessFlag = arrayfun(@(x) string(regexp(x.name, '[0-9]{6}', ...
@@ -80,7 +81,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
             continue
         end
         data_path = curDir;
-
+        fprintf(1, ', Session %s\n', currSess )
         [mdl, params, DX] = regressEphysVSBehaviour( data_path, params );
         if isempty(DX) || (sum( isnan(mdl), "all" ) / numel(mdl) ) > 0.05
             continue
@@ -97,11 +98,11 @@ for cad = tocol(animalFolders(~exclude_flags))'
         SSE = sum( (DX{1} - y_pred).^2 );
         SST = sum( (DX{1} - mean( DX{1}, 1 ) ).^2 );
         r_sq = 1 - ( SSE./ SST );
-        
+
         y_lpred = DX{3} * mdl_mu;
-        
+
         rmse_laser = getRMSE( DX{4}, y_lpred, 1 );
-        
+
         dataTable = table( r_sq, {r_sq_trials}, {params.fit_error}, ...
             rmse_laser, 'VariableNames', {'R_squared', 'R_squared_trials', ...
             'RMSE_c', 'RMSE_l'} );
