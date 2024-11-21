@@ -29,7 +29,10 @@ if ~strcmp( computer, 'PCWIN64')
 else
     roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
 end
-parpool( pc );
+try
+    parpool( pc );
+catch
+end
 
 iRN_mice = dir( fullfile( roller_path, "Batch*", "MC", "GADi*" ) );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
@@ -83,7 +86,8 @@ for cad = tocol(animalFolders(~exclude_flags))'
         data_path = curDir;
         fprintf(1, ', Session %s\n', currSess )
         [mdl, params, DX] = regressEphysVSBehaviour( data_path, params );
-        if isempty(DX) || (sum( isnan(mdl), "all" ) / numel(mdl) ) > 0.05
+        if isempty(DX) || (sum( isnan(mdl), "all" ) / numel(mdl) ) > 0.05 || ...
+                any( cellfun(@isempty, DX) )
             continue
         end
         mdl_mu = squeeze( mean( mdl, 2 ) );
