@@ -1,9 +1,10 @@
-function [mavpt, mxT] = getMaxAbsPerTrial(inStack, responseWindow, timeAxis)
+function [mavpt, mxT] = getMaxAbsPerTrial(inStack, responseWindow, spontWindow, timeAxis)
 %GETMAXABSPERTRIAL gets as the name suggests, the maximum absolute
 %amplitude per trial in the given input stack
 %   Detailed explanation goes here, later.
 
 %% 
+my_xor = @(x) xor( x(:,1), x(:,2) );
 % Size of the stack: Number of signals (e.g. nose, left whisker), number of
 % time samples, and number of triggers (trials)
 [Nts, Ntg] = size(inStack);
@@ -18,13 +19,13 @@ if Nts ~= length(timeAxis)
     fprintf(1, "Please, verify they are the same size!\n");
     return
 end
-% Response period for all trials
-responseFlags = timeAxis >= responseWindow;
-responseFlags = xor(responseFlags(:,1), responseFlags(:,2));
+% Response and spontaneous periods for all trials
+responseFlags = my_xor( timeAxis(:) >= responseWindow );
+spontaneousFlags = my_xor( timeAxis(:) >= spontWindow );
 
 % mavpt = max(abs(inStack(responseFlags, :)-median(inStack,1)));
-[mavpt, ps] = max(abs(inStack(responseFlags,:) - ...
-    median(inStack(timeAxis<0,:),1)));
+[mavpt, ps] = max( abs( inStack(responseFlags,:) - ...
+    median( inStack(spontaneousFlags,:), 1 ) ) );
 % mavpt = arrayfun(@(mp, tr) ...
 %     inStack(find(responseFlags,1,'first')+mp-1, tr), ps(:), (1:Ntg)');
 mxT = timeAxis(ps+find(responseFlags,1,"first")-1);
