@@ -29,10 +29,9 @@ if ~strcmp( computer, 'PCWIN64')
 else
     roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
 end
-try
-    parpool( pc );
-catch
-end
+
+[~, ofgOpts] = checkSystem4Figures();
+ovwFlag = true;
 
 iRN_mice = dir( fullfile( roller_path, "Batch*", "MC", "GADi*" ) );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
@@ -85,37 +84,40 @@ for cad = tocol(animalFolders(~exclude_flags))'
         end
         data_path = curDir;
         fprintf(1, ', Session %s\n', currSess )
-        try
-            [results, f] = AnBeh_Bypass(data_path, [25, 350]*m);
-        catch ME
-            [mdl, params, DX] = regressEphysVSBehaviour( data_path, params );
-            display(ME.message)
-            continue
+        fig_path = dir( fullfile( data_path, 'ephys*', 'Fig*') );
+        if isempty( fig_path )
+            fig_path = data_path;
+        else
+            fig_path = expandName( fig_path );
         end
-        if isempty(DX) || (sum( isnan(mdl), "all" ) / numel(mdl) ) > 0.05 || ...
-                any( cellfun(@isempty, DX) )
-            continue
+        aiFN = fullfile( fig_path, 'Amplitude index model');
+        if ~exist( [aiFN, '.fig'], 'file' ) || ovwFlag
+            try
+                [results, f] = AnBeh_Bypass(data_path, [25, 350]*m);
+            catch ME
+                fprintf(1, 'Regression ongoing...\n')
+                DX = cell(4,1);
+                try
+                    parpool( pc );
+                catch
+                end
+                % [~, ~, DX] = regressEphysVSBehaviour( data_path, params );
+                if ~all( cellfun(@isempty, DX ) )
+                    [results, f] = AnBeh_Bypass(data_path, [25, 350]*m );
+                else
+                    display(ME.message)
+                    continue
+                end
+            end
+            saveFigure( f, [aiFN, '.fig'], true, ovwFlag )
+        else
+            f = openfig( [aiFN, '.fig'], ofgOpts{:} );
+            results = get( f, 'UserData' );
         end
-        mdl_mu = squeeze( mean( mdl, 2 ) );
-        y_trials = reshape( DX{1}, params.Nb, params.Nr, params.Ns );
-        y_pred = DX{2} * mdl_mu;
-        y_ptrials = reshape( y_pred, params.Nb, params.Nr, params.Ns );
 
-        SSEt = squeeze( sum( ( y_trials - y_ptrials ).^2, 1 ) );
-        SSTt = squeeze( sum( ( y_trials - mean( y_trials, 1 ) ).^2, 1 ) );
-        r_sq_trials = 1 - (SSEt./SSTt);
-
-        SSE = sum( (DX{1} - y_pred).^2 );
-        SST = sum( (DX{1} - mean( DX{1}, 1 ) ).^2 );
-        r_sq = 1 - ( SSE./ SST );
-
-        y_lpred = DX{3} * mdl_mu;
-
-        rmse_laser = getRMSE( DX{4}, y_lpred, 1 );
-
-        dataTable = table( r_sq, {r_sq_trials}, {params.fit_error}, ...
-            rmse_laser, 'VariableNames', {'R_squared', 'R_squared_trials', ...
-            'RMSE_c', 'RMSE_l'} );
+        dataTable = table( {results.AmplitudeIndex_pbp}, ...
+            results.AmplitudeIndex, results.AI_perCond(:)', ...
+            'VariableNames', {'AI_pbp', 'AmplitudeIndex','Names'} );
         if ( string(oldSess) ~= string(currSess) ) || ...
                 ( string(oldDepth) ~= string(depthSess) )
             oldSess = currSess;
@@ -133,9 +135,10 @@ for cad = tocol(animalFolders(~exclude_flags))'
         close all
     end
 end
+close all
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 
-behFP = fullfile( roller_path, "MCiRNs_regression_sm.mat" );
+behFP = fullfile( roller_path, "MCiRNs_reconstruction_sm.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
