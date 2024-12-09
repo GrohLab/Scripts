@@ -570,7 +570,7 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
         set( psthFigs(cf), 'UserData', PSTH{cf} )
         saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
     end
-    
+    delete( gcp( 'nocreate' ) )
 else
     psthFigs = arrayfun(@(f) openfig(f + ".fig", ofgOpts{:} ), psthFP);
     PSTH = arrayfun(@(f) get( f, 'UserData' ), psthFigs, fnOpts{:} );
