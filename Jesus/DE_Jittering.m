@@ -378,7 +378,7 @@ if metaNameFlag
     stFigSubfix = stFigSubfix + " " + RW_key + " " + SW_key;
 end
 
-cmbSubs = 0; snglSubs = 1; 
+cmbSubs = 0; snglSubs = 1;
 cmpCondNames = string(consCondNames(:)); prmSubs = ones(1,2);
 if Nccond > 1
     prmSubs = nchoosek(1:Nccond,2); Nsf = size(prmSubs,1) + Nccond;
@@ -389,7 +389,7 @@ if Nccond > 1
 end
 stFigFN = fullfile(ephFigDir, "Stat " + cmpCondNames + stFigSubfix);
 if cmbSubs
-    cmpCondNames_aux([snglSubs, cmbSubs]) = stFigFN; 
+    cmpCondNames_aux([snglSubs, cmbSubs]) = stFigFN;
     stFigFN = cmpCondNames_aux;
 end
 
@@ -470,8 +470,8 @@ isWithinResponsiveWindow =...
 relSpkFN = string(expName) + " " + RW_key + " " + SW_key + " " + ...
     VW_key + " ms " + C_key + " (" + string(filtStr) + ") RelSpkTms.mat";
 consVars = {'relativeSpkTmsStruct', 'firstSpkStruct', ...
-    'SpontaneousStruct', 'configStructure'}; 
-rspMF = matfile(fullfile(dataDir, relSpkFN)); 
+    'SpontaneousStruct', 'configStructure'};
+rspMF = matfile(fullfile(dataDir, relSpkFN));
 
 if ~exist( fullfile( dataDir, relSpkFN ),'file') || ...
         any(~contains(who(rspMF), consVars))
@@ -481,7 +481,7 @@ if ~exist( fullfile( dataDir, relSpkFN ),'file') || ...
     relativeSpkTmsStruct = struct('name', cellstr(consCondNames), ...
         'SpikeTimes', rst);
     firstSpkStruct = getFirstSpikeInfo(relativeSpkTmsStruct, configStructure);
-    
+
     % Spontaneous firing rates
     Texp = Ns/fs;
     trainDuration = 1;
@@ -531,7 +531,7 @@ if (Nbn - round( Nbn )) ~= 0
 end
 
 %psthTx = (0:Nbn-1) * binSz + timeLapse(1);
- Ntc = size(cst,2);
+Ntc = size(cst,2);
 psthFN = "PSTH " + consCondNames(:) + " " + BZ_key + " " + string(orderedStr);
 if filtFlag
     psthFN = psthFN + " " + filtStr;
@@ -619,7 +619,7 @@ if Nccond > 1
 end
 if filtFlag
     lpFN = lpFN + " (" + filtStr + ")";
-    if Nccond > 1 
+    if Nccond > 1
         lmiFP = lmiFP + " (" + filtStr + ")";
     end
 end
@@ -627,7 +627,7 @@ lpFP = fullfile(ephFigDir, lpFN);
 if ~exist(lpFP+".fig", "file")
     logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true, owFlag )
     if numel(logFigs) > 1
-        popEffects = logFigs(2).UserData; 
+        popEffects = logFigs(2).UserData;
         MIStruct = struct('ConditionNames', consCondNames, ...
             'MI', arrayfun(@(x) struct('Comparative', ...
             string(popEffects{x,1})+" vs "+...
@@ -932,16 +932,16 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         [pAreas, ~, behAreaFig] = createBehaviourIndex(behRes);
         behRes = arrayfun(@(bs, ba) setfield(bs,'BehIndex', ba), behRes, pAreas);
         set(behAreaFig, 'UserData', behRes)
-        
+
         biFN = sprintf(biFigPttrn, pAreas);
-        
+
         trMvFlag = arrayfun(@(cr) behRes(1).Results(cr).MovStrucure.MovmentFlags, ...
             1:size(behRes(1).Results,2), fnOpts{:}); trMvFlag = cat(3, trMvFlag{:});
         BIscaleMat = sum(trMvFlag,3);
         BIscale = arrayfun(@(cc) BIscaleMat(delayFlags(:,cc), cc), 1:Nccond, ...
             fnOpts{:});
         [hg, hg_bin] = cellfun(@(c) histcounts(c, hstOpts{:}), ...
-            BIscale, fnOpts{:}); 
+            BIscale, fnOpts{:});
         hg = cat(1, hg{:}); hg_bin = cat(1, hg_bin{:});
 
 
@@ -951,7 +951,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         countFig = figure( figOpts{:} ); ax(1) = subplot(10,1,1:8);
         bar(ax(1), (0:4)', (hg./sum(hg,2))', 'EdgeColor', 'none'); hold on;
         poaDist = cellfun(@(bi) fitdist(bi,"Poisson"), BIscale);
-        ylim(ax(1), [0,1]); set(ax(1), axOpts{:}); 
+        ylim(ax(1), [0,1]); set(ax(1), axOpts{:});
         legend(ax(1), consCondNames, 'AutoUpdate','off', lgOpts{:})
         lmbdaHeight = 0.95-(0.15/Nccond)*(0:Nccond-1);
         arrayfun(@(pd) scatter(ax(1), poaDist(pd).lambda, lmbdaHeight(pd), '|',...
