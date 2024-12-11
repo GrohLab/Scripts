@@ -551,26 +551,38 @@ if any(arrayfun(@(x) ~exist(x+".fig","file"), psthFP))
     psthFigs = gobjects( numel(psthFP), 1 );
     auxID = pclID(ordSubs); auxStack = discStack(filterIdx,:,:);
     PSTH = cell(Nccond,1); trig = PSTH;
-    try 
-        parpool('Processes', 2);
-    catch ME
-        delete(gcp('nocreate'))
-        parpool('Processes', 2);
+    try
+        parfor cf = 1:Nccond
+            % for cf = 1:Nccond
+            [PSTH{cf}, trig{cf}] = getPSTH(auxStack, timeLapse, ...
+                ~delayFlags(:,cf), binSz, fs);
+            psthFigs(cf) = plotClusterReactivity(PSTH{cf}(ordSubs,:), trig{cf},...
+                Na(cf), timeLapse, binSz, [consCondNames(cf); auxID], strrep(expName,'_',' '), ...
+                stims{cf}, csNames);
+            ylabel(psthFigs(cf).Children(end), ...
+                [psthFigs(cf).Children(end).YLabel.String, ...
+                sprintf('^{%s}',orderedStr)])
+            set( psthFigs(cf), 'UserData', PSTH{cf} )
+            saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
+        end
+    catch
+        fprintf(1, 'Not enough memory to run PSTH building in parallel!\n')
+        for cf = 1:Nccond
+            % for cf = 1:Nccond
+            [PSTH{cf}, trig{cf}] = getPSTH(auxStack, timeLapse, ...
+                ~delayFlags(:,cf), binSz, fs);
+            psthFigs(cf) = plotClusterReactivity(PSTH{cf}(ordSubs,:), trig{cf},...
+                Na(cf), timeLapse, binSz, [consCondNames(cf); auxID], strrep(expName,'_',' '), ...
+                stims{cf}, csNames);
+            ylabel(psthFigs(cf).Children(end), ...
+                [psthFigs(cf).Children(end).YLabel.String, ...
+                sprintf('^{%s}',orderedStr)])
+            set( psthFigs(cf), 'UserData', PSTH{cf} )
+        end
+        parfor cf = 1:Nccond
+            saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
+        end
     end
-    parfor cf = 1:Nccond
-    % for cf = 1:Nccond
-        [PSTH{cf}, trig{cf}] = getPSTH(auxStack, timeLapse, ...
-            ~delayFlags(:,cf), binSz, fs);
-        psthFigs(cf) = plotClusterReactivity(PSTH{cf}(ordSubs,:), trig{cf},...
-            Na(cf), timeLapse, binSz, [consCondNames(cf); auxID], strrep(expName,'_',' '), ...
-            stims{cf}, csNames);
-        ylabel(psthFigs(cf).Children(end), ...
-            [psthFigs(cf).Children(end).YLabel.String, ...
-            sprintf('^{%s}',orderedStr)])
-        set( psthFigs(cf), 'UserData', PSTH{cf} )
-        saveFigure( psthFigs(cf), psthFP(cf), true, owFlag );
-    end
-    delete( gcp( 'nocreate' ) )
 else
     psthFigs = arrayfun(@(f) openfig(f + ".fig", ofgOpts{:} ), psthFP);
     PSTH = arrayfun(@(f) get( f, 'UserData' ), psthFigs, fnOpts{:} );
