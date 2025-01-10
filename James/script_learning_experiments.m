@@ -10,7 +10,7 @@ mice_number= ["m1",
     "m3",
     "m4",
     "m5",
-    "m6"]
+    "m6"];
 
 data_path = "Z:\James\Learning Experiments";
 ss_means = NaN(24,6,8);
