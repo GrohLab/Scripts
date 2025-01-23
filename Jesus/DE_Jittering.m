@@ -910,7 +910,7 @@ flds = dir(getParentDir(dataDir,1));
 pointFlag = arrayfun(@(x) any(strcmpi(x.name, {'.','..'})), flds);
 flds(pointFlag) = [];
 behFoldFlag = arrayfun(@(x) any(strcmpi(x.name, 'Behaviour')), flds);
-possNames = ["P", "L"];
+possNames = ["P", "L"]; m = 1e-3;
 if any(behFoldFlag) && sum(behFoldFlag) == 1
     % If only one folder named Behaviour exists, chances are that this is
     % an awake experiment.
@@ -922,18 +922,30 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         hstOpts = {'BinMethod', 'integers', 'BinLimits', [-0.5,4.5]};
         behChCond = cellfun(@(x) contains(Conditions(chCond).name, x), ...
             {["Piezo", "Puff"];["Laser","Light"]});
-        [behRes, behFigDir, behData, aInfo] = analyseBehaviour(behDir, ...
-            'Condition', possNames(behChCond), ...
-            'PairedFlags', delayFlags, ...
-            'FigureDirectory', FigureDir, ...
-            'ConditionsNames', cellstr(consCondNames));
-        biFigPttrn = "BehIndex%s";
-        biFigPttrn = sprintf(biFigPttrn, sprintf(" %s (%%.3f)", consCondNames));
-        [pAreas, ~, behAreaFig] = createBehaviourIndex(behRes);
-        behRes = arrayfun(@(bs, ba) setfield(bs,'BehIndex', ba), behRes, pAreas);
-        set(behAreaFig, 'UserData', behRes)
 
-        biFN = sprintf(biFigPttrn, pAreas);
+        [behRes, behFig_path, behData, aInfo] = analyseBehaviour( beh_path, ...
+            "Condition", possNames(behChCond), ...
+            "ConditionsNames", cellstr( consCondNames ), ...
+            "PairedFlags", delayFlags, ...
+            "FigureDirectory", FigureDir, ...
+            "ResponseWindow", [25, 350] * m, ...
+            "ViewingWindow", [-450, 500] * m, ...
+            "figOverWrite", owFlag );
+
+        [pAreas, ~, behAreaFig] = createBehaviourIndex(behRes);
+        behMeasures = string({behAreaFig.Name});
+        biFigPttrn = behMeasures+"%s";
+        biFigPttrn = arrayfun(@(s) sprintf(s, sprintf(" %s (%%.3f)", ...
+            consCondNames ) ), biFigPttrn );
+
+        for it = 1:numel(behMeasures)
+            behRes = arrayfun(@(bs, ba) setfield( bs, ...
+                strrep( behMeasures(it), " ", "_" ), ba), behRes(:), pAreas(:,it) );
+        end
+
+        arrayfun(@(f) set( f, 'UserData', behRes ), behAreaFig );
+
+        biFN = arrayfun(@(s) sprintf( biFigPttrn(s), pAreas(:,s) ), 1:numel(behMeasures) );
 
         trMvFlag = arrayfun(@(cr) behRes(1).Results(cr).MovStrucure.MovmentFlags, ...
             1:size(behRes(1).Results,2), fnOpts{:}); trMvFlag = cat(3, trMvFlag{:});
@@ -944,7 +956,7 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
             BIscale, fnOpts{:});
         hg = cat(1, hg{:}); hg_bin = cat(1, hg_bin{:});
 
-
+        
         % [p_amp, h_amp] = ranksum(cat(1, zamp{1,:}), cat(1, zamp{2,:}));
         %%
         clrMap = lines(Nccond);
@@ -973,7 +985,8 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
         countFigName = sprintf("Count distributions P%s", ...
             sprintf(" %.3f", p(:)));
         %%
-        saveFigure(behAreaFig, fullfile(behFigDir, biFN), true, true, owFlag );
-        saveFigure(countFig, fullfile(behFigDir, countFigName), true, owFlag );
+        arrayfun(@(f, fn) saveFigure(f, fullfile(behFig_path, fn), true, owFlag), ...
+            behAreaFig(:), biFN(:) );
+        saveFigure(countFig, fullfile(behFig_path, countFigName), true, owFlag );
     end
 end
