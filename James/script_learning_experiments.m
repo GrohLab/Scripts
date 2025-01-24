@@ -44,7 +44,8 @@ for h = 0:11
                     pgObj.getFrequencyEdges(0.8);
                     pgObj.pairStimulus(0.2);
                     pgObj.saveConditions;
-
+                    
+                    try
                     [summStruct, behFig_path, behData, aInfo] = analyseBehaviour( ss_Path, ...
                         "ConditionsNames", "Puff", ...
                         "ResponseWindow", [25, 350] * 1e-3, ...
@@ -52,6 +53,14 @@ for h = 0:11
                         "figOverWrite", false );
 
                     close all;
+                    catch ME
+                        disp( ME.message )
+                        disp( ME.identifier )
+                        disp( ME.cause )
+                        fprintf( 1, ['Debugging necessary perhaps?\n',...
+                            'Will continue with the loop...\n'] )
+                        summStruct.Results = NaN;
+                    end
                 end
             end
             r = ((x-1)*12)+(h+1);
@@ -63,3 +72,5 @@ for h = 0:11
         end
     end
 end
+
+save( fullfile( data_path, 'AmplitudeIndices.mat' ), 'ss_max', "ss_means" )
