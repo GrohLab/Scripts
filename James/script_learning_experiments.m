@@ -2,7 +2,7 @@
 
 dt= datetime(2024,11,25);
 
-dt.Format = 'dd-MM-yy';
+dt.Format = 'd-MM-yy';
 
 daytime = ["AM","PM"];
 
