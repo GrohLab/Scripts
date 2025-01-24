@@ -16,13 +16,12 @@ mice_number= ["m1", ...
 data_path = "Z:\James\Learning Experiments";
 % HPC snipet
 if ~strcmp( computer, 'PCWIN64' )
-    data_path = "/mnt/sds-hd/sd19b001/James/Learning Experiments";
     fnOpts = {'UniformOutput', false};
-
+    unpackCell = @(x) {:};
     home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
     repo_paths = cellfun(@(x) char( fullfile( home_path, x) ), ...
         {'NeuroNetzAnalysis', 'AuxiliaryFuncs', 'Scripts'},  fnOpts{:} );
-    addpath( repo_paths{:} )
+    addpath( unpackCell( cellfun(@(x) genpath(x), repo_paths, fnOpts{:} ) ) )
 end
 
 ss_means = NaN(24,6,8);
