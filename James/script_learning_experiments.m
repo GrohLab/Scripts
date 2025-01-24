@@ -50,7 +50,8 @@ for h = 0:11
                         "ConditionsNames", "Puff", ...
                         "ResponseWindow", [25, 350] * 1e-3, ...
                         "ViewingWindow", [-450, 500] * 1e-3, ...
-                        "figOverWrite", false );
+                        "figOverWrite", false, ...
+                        "showPlots", false );
 
                     close all;
                     catch ME
@@ -59,7 +60,7 @@ for h = 0:11
                         disp( ME.cause )
                         fprintf( 1, ['Debugging necessary perhaps?\n',...
                             'Will continue with the loop...\n'] )
-                        summStruct.Results = NaN;
+                        continue;
                     end
                 end
             end
