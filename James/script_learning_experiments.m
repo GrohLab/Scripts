@@ -25,7 +25,7 @@ if ~strcmp( computer, 'PCWIN64' )
     sf_repo_paths = cellfun(@(x) genpath(x), repo_paths, fnOpts{:} );
     addpath( sf_repo_paths{:} );
     data_path = '/mnt/sds-hd/sd19b001/James/Learning Experiments';
-    
+
 end
 
 ss_means = NaN(24,6,8);
