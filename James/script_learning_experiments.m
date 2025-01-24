@@ -13,6 +13,17 @@ mice_number= ["m1",
     "m6"];
 
 data_path = "Z:\James\Learning Experiments";
+% HPC snipet
+if ~strcmp( computer, 'PCWIN64' )
+    data_path = "/mnt/sds-hd/sd19b001/James/Learning Experiments";
+    fnOpts = {'UniformOutput', false};
+
+    home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
+    repo_paths = cellfun(@(x) char( fullfile( home_path, x) ), ...
+        {'NeuroNetzAnalysis', 'AuxiliaryFuncs', 'Scripts'},  fnOpts{:} );
+    addpath( repo_paths{:} )
+end
+
 ss_means = NaN(24,6,8);
 ss_max = NaN(6,8);
 
@@ -36,7 +47,9 @@ for h = 0:11
                     fwrite( fID, [], 'int16' );
                     fclose(fID);
 
-                    prepare64ChanBin4KS( ss_Path, 'BinFileName', sprintf("%s_%s_%s",mice_number(m),string(dt+h),daytime(x)), 'AllBinFiles', true );
+                    prepare64ChanBin4KS( ss_Path, 'BinFileName', ...
+                        sprintf("%s_%s_%s",mice_number(m),string(dt+h),daytime(x)), ...
+                        'AllBinFiles', true, 'Overwrite', true );
 
                     pgObj = ProtocolGetter(ss_Path);
                     pgObj.getConditionSignals;
