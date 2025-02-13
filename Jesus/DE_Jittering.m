@@ -613,6 +613,7 @@ logPSTH = getLogTimePSTH(relativeSpkTmsStruct, true(ncl,1),...
     'normalization', 'fr');
 lpFN = sprintf("Log-likePSTH %s %d-conditions NB%d",...
     logPSTH.Normalization, Nccond, Nbin);
+%% Saving Log PSTH figures
 if Nccond > 1
     lmiFN = sprintf("LogMI %d-conditions NB%d", Nccond, Nbin);
     lmiFP = fullfile(ephFigDir, lmiFN);
@@ -624,7 +625,7 @@ if filtFlag
     end
 end
 lpFP = fullfile(ephFigDir, lpFN);
-if ~exist(lpFP+".fig", "file")
+if ~exist(lpFP+".fig", "file") || owFlag
     logFigs = plotLogPSTH(logPSTH); saveFigure(logFigs(1), lpFP, true, owFlag )
     if numel(logFigs) > 1
         popEffects = logFigs(2).UserData;
@@ -648,7 +649,7 @@ else
         logFigs(2) = openfig(lmiFP+".fig", ofgOpts{:} );
     end
 end
-
+%% Save log MI results
 logRF = fullfile( ephFigDir, ...
     sprintf( "LogPSTH_Structure %s %d-conditions NB%d", ...
     logPSTH.Normalization, Nccond, Nbin ) );
