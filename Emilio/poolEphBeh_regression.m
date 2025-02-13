@@ -108,8 +108,9 @@ for cad = tocol(animalFolders(~exclude_flags))'
         SST = sum( (DX{1} - mean( DX{1}, 1 ) ).^2 );
         r_sq = 1 - ( SSE./ SST );
 
-        y_lpred = DX{3} * mdl_mu;
-
+        y_lpred = reshape( DX{3} * mdl_mu, params.Nb, [], params.Ns );
+        y_ltrials = reshape( DX{end}, params.Nb, [], params.Ns );
+        
         rmse_laser = getRMSE( DX{4}, y_lpred, 1 );
 
         dataTable = table( r_sq, {r_sq_trials}, {params.fit_error}, ...
