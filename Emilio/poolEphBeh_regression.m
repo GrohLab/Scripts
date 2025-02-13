@@ -18,7 +18,10 @@ exclude_names = {'GADi13', 'GADi15', 'GADi53'};
 
 params = struct( 'relative_window', [-1,1]*800*m, 'delay_window', ...
     [-1,1]*100*m, 'bin_size', 5*m, 'kfold', 20 );
-
+Nbins = diff(params.relative_window)/params.bin_size;
+time_mdl = fit_poly( [1,Nbins], params.relative_window + ...
+    [1,-1]*(params.bin_size/2), 1 );
+tx = ( ( 1:Nbins)'.^[1,0] ) * time_mdl;
 pc = parcluster('local');
 if ~strcmp( computer, 'PCWIN64')
     home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
