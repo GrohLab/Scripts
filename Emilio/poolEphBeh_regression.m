@@ -22,6 +22,9 @@ Nbins = diff(params.relative_window)/params.bin_size;
 time_mdl = fit_poly( [1,Nbins], params.relative_window + ...
     [1,-1]*(params.bin_size/2), 1 );
 tx = ( ( 1:Nbins)'.^[1,0] ) * time_mdl;
+sponFlags = tx < 0;
+getTimeBoAT = @(s,f,p) reshape( s(f,:,:), size(s,2) * sum( f ), p.Ns );
+
 pc = parcluster('local');
 if ~strcmp( computer, 'PCWIN64')
     home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
@@ -98,26 +101,42 @@ for cad = tocol(animalFolders(~exclude_flags))'
                 any( cellfun(@isempty, DX) )
             continue
         end
+        %%
         mdl_mu = squeeze( mean( mdl, 2 ) );
         y_trials = reshape( DX{1}, params.Nb, params.Nr, params.Ns );
         y_pred = DX{2} * mdl_mu;
         y_ptrials = reshape( y_pred, params.Nb, params.Nr, params.Ns );
+        
+        r_sq_trials = goodnessFit2( y_trials, y_ptrials, 1 );
+        r_sq = goodnessFit2( DX{1}, y_pred, 1 );
 
-        SSEt = squeeze( sum( ( y_trials - y_ptrials ).^2, 1 ) );
-        SSTt = squeeze( sum( ( y_trials - mean( y_trials, 1 ) ).^2, 1 ) );
-        r_sq_trials = 1 - (SSEt./SSTt);
+        y_trials_pre = getTimeBoAT(y_trials, sponFlags, params);
+        y_ptrials_pre = getTimeBoAT(y_ptrials, sponFlags, params);
+        r_sq_pre = goodnessFit2(y_trials_pre, y_ptrials_pre, 1);
 
-        SSE = sum( (DX{1} - y_pred).^2 );
-        SST = sum( (DX{1} - mean( DX{1}, 1 ) ).^2 );
-        r_sq = 1 - ( SSE./ SST );
+        y_trials_post = getTimeBoAT( y_trials, ~sponFlags, params );
+        y_ptrials_post = getTimeBoAT( y_ptrials, ~sponFlags, params );
+        r_sq_post = goodnessFit2(y_trials_post, y_ptrials_post, 1);
 
-        y_lpred = reshape( DX{3} * mdl_mu, params.Nb, [], params.Ns );
-        y_ltrials = reshape( DX{end}, params.Nb, [], params.Ns );
+        y_lpred = DX{3} * mdl_mu;
+        y_lptrials = reshape( y_lpred, params.Nb, [], params.Ns );
+        y_ltrials = reshape( DX{4}, size( y_lptrials ) );
+        
+        r_sq_l = goodnessFit2( DX{4}, y_lpred, 1 );
+
+        y_trials_pre = getTimeBoAT(y_ltrials, sponFlags, params);
+        y_ptrials_pre = getTimeBoAT(y_lptrials, sponFlags, params);
+        r_sq_lpre = goodnessFit2(y_trials_pre, y_ptrials_pre, 1);
+
+        y_trials_post = getTimeBoAT( y_ltrials, ~sponFlags, params );
+        y_ptrials_post = getTimeBoAT( y_lptrials, ~sponFlags, params );
+        r_sq_lpost = goodnessFit2(y_trials_post, y_ptrials_post, 1);
         
         rmse_laser = getRMSE( DX{4}, y_lpred, 1 );
 
-        dataTable = table( r_sq, {r_sq_trials}, {params.fit_error}, ...
-            rmse_laser, 'VariableNames', {'R_squared', 'R_squared_trials', ...
+        dataTable = table( {[r_sq;r_sq_pre;r_sq_post],[r_sq_l;r_sq_lpre;r_sq_post]}, ...
+            {r_sq_trials}, {params.fit_error}, ...
+            rmse_laser, 'VariableNames', {'R_2_p_L', 'R_squared_trials', ...
             'RMSE_c', 'RMSE_l'} );
         if ( string(oldSess) ~= string(currSess) ) || ...
                 ( string(oldDepth) ~= string(depthSess) )
