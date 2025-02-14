@@ -16,6 +16,16 @@ tocol = @(x) x(:);
 m = 1e-3;
 exclude_names = {'GADi13', 'GADi15', 'GADi53'};
 
+if ~strcmp( computer, 'PCWIN64')
+    home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
+    repo_paths = cellfun(@(x) char( fullfile( home_path, x) ), ...
+        {'NeuroNetzAnalysis', 'AuxiliaryFuncs', 'Scripts'},  fnOpts{:} );
+    cellfun(@(x) addpath( genpath( x ) ), repo_paths )
+    roller_path = "/mnt/sds-hd/sd19b001/Emilio/SuperiorColliculusExperiments/Roller";
+else
+    roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
+end
+
 params = struct( 'relative_window', [-1,1]*800*m, 'delay_window', ...
     [-1,1]*100*m, 'bin_size', 5*m, 'kfold', 20 );
 Nbins = diff(params.relative_window)/params.bin_size;
@@ -26,15 +36,7 @@ sponFlags = tx < 0;
 getTimeBoAT = @(s,f,p) reshape( s(f,:,:), size(s,2) * sum( f ), p.Ns );
 
 pc = parcluster('local');
-if ~strcmp( computer, 'PCWIN64')
-    home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
-    repo_paths = cellfun(@(x) char( fullfile( home_path, x) ), ...
-        {'NeuroNetzAnalysis', 'AuxiliaryFuncs', 'Scripts'},  fnOpts{:} );
-    cellfun(@(x) addpath( genpath( x ) ), repo_paths )
-    roller_path = "/mnt/sds-hd/sd19b001/Emilio/SuperiorColliculusExperiments/Roller";
-else
-    roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
-end
+
 try
     parpool( pc );
 catch
