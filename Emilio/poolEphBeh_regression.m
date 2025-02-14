@@ -157,7 +157,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
 end
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 
-behFP = fullfile( roller_path, "MCiRNs_regression_sm.mat" );
+behFP = fullfile( roller_path, "MCiRNs_reconstruction_sm.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
