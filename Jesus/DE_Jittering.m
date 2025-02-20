@@ -49,9 +49,9 @@ if ~exist(spk_path, "file")
     % Total duration of the recording
     Nt = Ns/fs;
     % Useless clusters (labeled as noise or they have very low firing rate)
-    badsIdx = cellfun(@(x) x==3,sortedData(:,3));
+    badsIdx = cellfun(@(x) x==3, sortedData(:,3) );
     bads = find(badsIdx);
-    totSpkCount = cellfun(@numel,sortedData(:,2));
+    totSpkCount = cellfun( @numel, sortedData(:,2) );
     clusterSpikeRate = totSpkCount/Nt;
     silentUnits = clusterSpikeRate < 0.1;
     bads = union(bads,find(silentUnits));
