@@ -42,7 +42,12 @@ try
 catch
 end
 
-iRN_mice = dir( fullfile( roller_path, "Batch*", "MC", "GADi*" ) );
+struct_search = "eOPN3"; % or "MC"
+selCondition = "cont"; %  or "freq" Continuous or frquency
+verb = true; % verbose 
+iRN_mice = dir( fullfile( roller_path, "Batch*.MC", struct_search, "*" ) );
+iRN_mice = iRN_mice( [iRN_mice.isdir] & ...
+    ~arrayfun(@(x) any( ismember({'.','..'}, x.name ) ), iRN_mice )' );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
 exclude_flags = contains( animalFolders, exclude_names );
 %% Looping animals
@@ -94,7 +99,8 @@ for cad = tocol(animalFolders(~exclude_flags))'
         data_path = curDir;
         fprintf(1, ', Session %s\n', currSess )
         try
-            [mdl, params, DX] = regressEphysVSBehaviour( data_path, params );
+            [mdl, params, DX] = regressEphysVSBehaviour( data_path, params, ...
+                'Condition', selCondition, 'Verbose', verb );
         catch ME
             display(ME.message)
             continue
@@ -159,7 +165,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
 end
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 
-behFP = fullfile( roller_path, "MCiRNs_reconstruction_sm.mat" );
+behFP = fullfile( roller_path, struct_search + "iRNs_reconstruction_sm.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
