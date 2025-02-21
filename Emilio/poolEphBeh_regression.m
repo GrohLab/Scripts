@@ -42,10 +42,11 @@ try
 catch
 end
 
-struct_search = "eOPN3"; % or "MC"
-selCondition = "cont"; %  or "freq" Continuous or frquency
+struct_search = "BC"; % or "MC" "eOPN3" "ChR2"
+selCondition = "freq"; %  or "freq" "cont" Continuous or frquency
+extra_id = "iRNs";
 verb = true; % verbose 
-iRN_mice = dir( fullfile( roller_path, "Batch*.MC", struct_search, "*" ) );
+iRN_mice = dir( fullfile( roller_path, "Batch*", struct_search, "GADi*" ) );
 iRN_mice = iRN_mice( [iRN_mice.isdir] & ...
     ~arrayfun(@(x) any( ismember({'.','..'}, x.name ) ), iRN_mice )' );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
@@ -165,7 +166,8 @@ for cad = tocol(animalFolders(~exclude_flags))'
 end
 mice( arrayfun(@(x) isempty(x.Sessions), mice) ) = [];
 
-behFP = fullfile( roller_path, struct_search + "iRNs_reconstruction_sm.mat" );
+behFP = fullfile( roller_path, struct_search + extra_id + ...
+    "_reconstruction_sm.mat" );
 svOpts = {'-mat'};
 if exist(behFP, "file")
     svOpts = {'-append'};
