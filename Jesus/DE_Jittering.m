@@ -948,46 +948,46 @@ if any(behFoldFlag) && sum(behFoldFlag) == 1
 
         biFN = arrayfun(@(s) sprintf( biFigPttrn(s), pAreas(:,s) ), 1:numel(behMeasures) );
 
-        trMvFlag = arrayfun(@(cr) behRes(1).Results(cr).MovStrucure.MovmentFlags, ...
-            1:size(behRes(1).Results,2), fnOpts{:}); trMvFlag = cat(3, trMvFlag{:});
-        BIscaleMat = sum(trMvFlag,3);
-        BIscale = arrayfun(@(cc) BIscaleMat(delayFlags(:,cc), cc), 1:Nccond, ...
-            fnOpts{:});
-        [hg, hg_bin] = cellfun(@(c) histcounts(c, hstOpts{:}), ...
-            BIscale, fnOpts{:});
-        hg = cat(1, hg{:}); hg_bin = cat(1, hg_bin{:});
+        % trMvFlag = arrayfun(@(cr) behRes(1).Results(cr).MovStrucure.MovmentFlags, ...
+        %     1:size(behRes(1).Results,2), fnOpts{:}); trMvFlag = cat(3, trMvFlag{:});
+        % BIscaleMat = sum(trMvFlag,3);
+        % BIscale = arrayfun(@(cc) BIscaleMat(delayFlags(:,cc), cc), 1:Nccond, ...
+        %     fnOpts{:});
+        % [hg, hg_bin] = cellfun(@(c) histcounts(c, hstOpts{:}), ...
+        %     BIscale, fnOpts{:});
+        % hg = cat(1, hg{:}); hg_bin = cat(1, hg_bin{:});
 
         
         % [p_amp, h_amp] = ranksum(cat(1, zamp{1,:}), cat(1, zamp{2,:}));
         %%
-        clrMap = lines(Nccond);
-        countFig = figure( figOpts{:} ); ax(1) = subplot(10,1,1:8);
-        bar(ax(1), (0:4)', (hg./sum(hg,2))', 'EdgeColor', 'none'); hold on;
-        poaDist = cellfun(@(bi) fitdist(bi,"Poisson"), BIscale);
-        ylim(ax(1), [0,1]); set(ax(1), axOpts{:});
-        legend(ax(1), consCondNames, 'AutoUpdate','off', lgOpts{:})
-        lmbdaHeight = 0.95-(0.15/Nccond)*(0:Nccond-1);
-        arrayfun(@(pd) scatter(ax(1), poaDist(pd).lambda, lmbdaHeight(pd), '|',...
-            'MarkerEdgeColor', clrMap(pd,:)), 1:Nccond)
-        arrayfun(@(pd) line(ax(1), paramci(poaDist(pd)), ...
-            lmbdaHeight([pd,pd]), 'Color', clrMap(pd,:), ...
-            'Marker', '|'), 1:Nccond)
-        [p, chiVal] = arrayfun(@(ps) chi2test(hg(prmSubs(ps,:), :)), ...
-            1:size(prmSubs,1));
-        ax(2) = subplot(10,1,9:10);
-        signBeh = arrayfun(@(x) sprintf("%s vs %s p=%.3f", ...
-            consCondNames(prmSubs(x,:)), p(x)), 1:size(prmSubs,1));
-        text(ax(2), 0, -0.3, sprintf('%s vs. %s P=%.3f\n', ...
-            [consCondNames(prmSubs), string(p(:))]'))
-        set(ax(2), 'Visible', 'off')
-        set(countFig, 'UserData', {signBeh, p})
-        title(ax(1), strrep(expName, '_',' ')); xlabel(ax(1),'Moving body parts')
-        ylabel(ax(1),'Trial proportion')
-        countFigName = sprintf("Count distributions P%s", ...
-            sprintf(" %.3f", p(:)));
+        % clrMap = lines(Nccond);
+        % countFig = figure( figOpts{:} ); ax(1) = subplot(10,1,1:8);
+        % bar(ax(1), (0:4)', (hg./sum(hg,2))', 'EdgeColor', 'none'); hold on;
+        % poaDist = cellfun(@(bi) fitdist(bi,"Poisson"), BIscale);
+        % ylim(ax(1), [0,1]); set(ax(1), axOpts{:});
+        % legend(ax(1), consCondNames, 'AutoUpdate','off', lgOpts{:})
+        % lmbdaHeight = 0.95-(0.15/Nccond)*(0:Nccond-1);
+        % arrayfun(@(pd) scatter(ax(1), poaDist(pd).lambda, lmbdaHeight(pd), '|',...
+        %     'MarkerEdgeColor', clrMap(pd,:)), 1:Nccond)
+        % arrayfun(@(pd) line(ax(1), paramci(poaDist(pd)), ...
+        %     lmbdaHeight([pd,pd]), 'Color', clrMap(pd,:), ...
+        %     'Marker', '|'), 1:Nccond)
+        % [p, chiVal] = arrayfun(@(ps) chi2test(hg(prmSubs(ps,:), :)), ...
+        %     1:size(prmSubs,1));
+        % ax(2) = subplot(10,1,9:10);
+        % signBeh = arrayfun(@(x) sprintf("%s vs %s p=%.3f", ...
+        %     consCondNames(prmSubs(x,:)), p(x)), 1:size(prmSubs,1));
+        % text(ax(2), 0, -0.3, sprintf('%s vs. %s P=%.3f\n', ...
+        %     [consCondNames(prmSubs), string(p(:))]'))
+        % set(ax(2), 'Visible', 'off')
+        % set(countFig, 'UserData', {signBeh, p})
+        % title(ax(1), strrep(expName, '_',' ')); xlabel(ax(1),'Moving body parts')
+        % ylabel(ax(1),'Trial proportion')
+        % countFigName = sprintf("Count distributions P%s", ...
+        %     sprintf(" %.3f", p(:)));
         %%
         arrayfun(@(f, fn) saveFigure(f, fullfile(behFig_path, fn), true, owFlag), ...
             behAreaFig(:), biFN(:) );
-        saveFigure(countFig, fullfile(behFig_path, countFigName), true, owFlag );
+        % saveFigure(countFig, fullfile(behFig_path, countFigName), true, owFlag );
     end
 end
