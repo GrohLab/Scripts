@@ -92,7 +92,7 @@ for ca = 1:Nm
         cf_flags = ctrlSub | ~cellfun( 'isempty', cf_flags );
 
         brAll = cat( 1, brAll, behRes(cf_flags) );
-        if ~isempty(rstPath) || numel( rstPath ) == 1
+        if ~isempty(rstPath) || isscalar( rstPath )
             rstCont = load( expandName( rstPath ), rstVars2load{:} );
         else
             fprintf(1, 'Either empty or more than 1 file found!\n');
