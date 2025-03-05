@@ -42,7 +42,7 @@ try
 catch
 end
 
-struct_search = "BC"; % or "MC" "eOPN3" "ChR2"
+struct_search = "MC"; % or "MC" "eOPN3" "ChR2" "BC"
 selCondition = "freq"; %  or "freq" "cont" Continuous or frquency
 extra_id = "iRNs";
 verb = true; % verbose 
