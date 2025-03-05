@@ -42,11 +42,12 @@ try
 catch
 end
 
-struct_search = "eOPN3"; % or "MC" "eOPN3" "ChR2" "BC"
-selCondition = "cont"; %  or "freq" "cont" Continuous or frquency
-extra_id = ""; % "iRNs"
+struct_search = "BC"; % or "MC" "eOPN3" "ChR2" "BC"
+selCondition = "freq"; %  or "freq" "cont" Continuous or frquency
+extra_id = "iRNs"; % "iRNs" "eRNs" "RNs" ""
+mouse_line = "GADi"; % "GADi" "Rb" "vGlut" ""
 verb = true; % verbose 
-iRN_mice = dir( fullfile( roller_path, "Batch*", struct_search, "*" ) );
+iRN_mice = dir( fullfile( roller_path, "Batch*", struct_search, mouse_line+"*" ) );
 iRN_mice = iRN_mice( [iRN_mice.isdir] & ...
     ~arrayfun(@(x) any( ismember({'.','..'}, x.name ) ), iRN_mice )' );
 animalFolders = arrayfun(@(f) string( expandName( f ) ), iRN_mice(:));
