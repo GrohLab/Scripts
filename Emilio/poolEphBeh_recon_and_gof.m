@@ -105,7 +105,7 @@ for cad = tocol(animalFolders(~exclude_flags))'
                 continue
             end
             if isempty(DX) || (sum( isnan(mdl), "all" ) / numel(mdl) ) > 0.05 || ...
-                    any( cellfun(@isempty, DX) )
+                    any( cellfun(@isempty, DX) ) || numel(DX)~= 4
                 continue
             end
         else
