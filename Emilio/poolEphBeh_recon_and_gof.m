@@ -36,7 +36,7 @@ sponFlags = tx < 0;
 laserFlags = my_xor(tx < [-0.1, 0.2]);
 getTimeBoAT = @(s,f,p) reshape( s(f,:,:), size(s,2) * sum( f ), p.Ns );
 
-struct_search = "BC"; % or "MC" "eOPN3" "ChR2" "BC"
+struct_search = "MC"; % or "MC" "eOPN3" "ChR2" "BC"
 selCondition = "freq"; %  or "freq" "cont" Continuous or frquency
 extra_id = "iRNs"; % "iRNs" "eRNs" "RNs" ""
 mouse_line = "GADi"; % "GADi" "Rb" "vGlut" ""
