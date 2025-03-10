@@ -15,7 +15,7 @@ getRMSE = @( r, x, d ) sqrt( mean( ( r - x ).^2, d, "omitmissing" ) );
 tocol = @(x) x(:);
 m = 1e-3;
 exclude_names = {'GADi13', 'GADi15', 'GADi53'};
-
+%%
 if ~strcmp( computer, 'PCWIN64')
     home_path = '/gpfs/bwfor/home/hd/hd_hd/hd_bf154/';
     repo_paths = cellfun(@(x) char( fullfile( home_path, x) ), ...
@@ -25,7 +25,7 @@ if ~strcmp( computer, 'PCWIN64')
 else
     roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
 end
-
+%%
 params = struct( 'relative_window', [-1,1]*800*m, 'delay_window', ...
     [-1,1]*100*m, 'bin_size', 5*m, 'kfold', 20 );
 Nbins = diff(params.relative_window)/params.bin_size;
@@ -34,14 +34,14 @@ time_mdl = fit_poly( [1,Nbins], params.relative_window + ...
 tx = ( ( 1:Nbins)'.^[1,0] ) * time_mdl;
 sponFlags = tx < 0;
 getTimeBoAT = @(s,f,p) reshape( s(f,:,:), size(s,2) * sum( f ), p.Ns );
-
+%%
 pc = parcluster('local');
 
 try
     parpool( pc );
 catch
 end
-
+%%
 struct_search = "BC"; % or "MC" "eOPN3" "ChR2" "BC"
 selCondition = "freq"; %  or "freq" "cont" Continuous or frquency
 extra_id = "iRNs"; % "iRNs" "eRNs" "RNs" ""
