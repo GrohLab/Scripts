@@ -155,7 +155,7 @@ cleanAxis( ax ); ytickangle( ax, 90 ); set( ax, 'TickDir', 'out' );
 ylabel( ax, 'R²' )
 xticks( ax, 1:Ns ); xticklabels( ax, bp_names ); 
 xlim( ax, [1,Ns] + [-1,1]/2 ); 
-ylim( ax, [0, 1] )
+ylim( ax, [-1, 1] )
 set( f, 'UserData', {r2_mean_c, r2_mean_l, bpID, preVSpostID, mouseID, sessID} )
 title( ax, 'Reconstruction R² for overall, pre-, and post-stimulus for BC→iRNs' )
 %%
@@ -168,8 +168,8 @@ x = (1:Ns) + [-1;1]/4;
 y = [1;1] * max( cat(1, r2_mean_l(1,:,:), r2_mean_c(1,:,:) ), [], [3,1] ) * 1.05;
 line( ax, x, y, 'Color', 'k' )
 txt = [arrayfun( @(a) replace( join( repmat("\ast", 1, a) ), " ", "" ), astk, fnOpts{:} );
-arrayfun(@(h) sprintf( "$p=%.3f$", h) , p)];
+arrayfun(@(h) sprintf( "$p=%.2g$", h) , p)];
 %txt = arrayfun(@(s) replace( join( txt(:,s) ), " ", ""), 1:Ns );
-text( ax, mean( x, 1 ), y(1,:)+0.035, txt(1,:), txOpts{:}, "FontSize", 10 )
+text( ax, mean( x, 1 ), y(1,:)*1.1, txt(1,:), txOpts{:}, "FontSize", 10 )
 text( ax, mean( x, 1 ), y(1,:), txt(2,:), txOpts{:}, "FontSize", 8, ...
     "Interpreter", "latex" )
