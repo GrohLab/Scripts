@@ -1,8 +1,9 @@
 %%
 expandName = @(x) fullfile( x.folder, x.name );
+roller_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller";
 %%
 % mice_results = "Z:\Emilio\SuperiorColliculusExperiments\Roller\PoolFigures\MC-iegRNs";
-mice_results = fullfile("Z:\Emilio\SuperiorColliculusExperiments\Roller\PoolFigures\MC-iegRNs\iRNs");
+mice_results = fullfile(roller_path, "PoolFigures/MC-iegRNs/iRNs");
 % pool_fig_path = "Z:\Emilio\SuperiorColliculusExperiments\Roller\PoolFigures\MC-iegRNs\iRNs";
 pool_fig_path = mice_results;
 r2_fp = dir( fullfile( mice_results,'*_gof.mat') );
