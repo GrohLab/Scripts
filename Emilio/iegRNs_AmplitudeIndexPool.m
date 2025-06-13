@@ -12,7 +12,7 @@ bs_subs = 2;
 mt_subs = [11, 14, 17];
 
 exp_type_subs_cell = {mc_subs, bc_subs, bs_subs, mt_subs};
-clearvars *_subs -except exp_type_subs_cell
+% clearvars *_subs -except exp_type_subs_cell
 
 mice_bulk = arrayfun( @(x) load( expandPath( x ), "mice" ), ...
     bp_paths );
@@ -25,9 +25,9 @@ summMice = cellfun(@(x) summariseMiceBeh( cat(1, mice_bulk(x).mice ) ), ...
 fnOpts = {'UniformOutput', false};
 exp_subtype = {'iRNs', 'eRNs', 'RNs'};
 % exp_subtype = {'terminal inhib'};
-% name_keys = {'GADi', {'GADe', 'vGlut'}, 'WTg'};
+name_keys = {'GADi', {'GADe', 'vGlut'}, 'WTg'};
 % name_keys = {'GADi', 'vGlut', 'WTg'};
-name_keys = {'GADi', 'GADe', 'WTg'};
+% name_keys = {'GADi', 'GADe', 'WTg'};
 % name_keys = {{'Rb', 'WT'}};
 bodypart_names = ["Stim-whisker mean", "Stim-whisker fan arc", ...
     "Nonstim-whisker mean", "Nonstim-whisker fan arc", "Interwhisk arc", ...
@@ -42,7 +42,7 @@ txOpts = {'HorizontalAlignment','left','VerticalAlignment', 'middle', ...
 cleanAxis = @(x) set( x, "Box", "off", "Color", "none" );
 fig_path = fullfile( ...
     "Z:\Emilio\SuperiorColliculusExperiments\Roller\PoolFigures" );
-load( fullfile( fig_path, "MC, BC, BS, MCterminals pool.mat" ), "summMice" );
+% load( fullfile( fig_path, "MC, BC, BS, MCterminals pool.mat" ), "summMice" );
 
 expMice = summMice{1}(3);
 ovwtFlag = false;
