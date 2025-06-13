@@ -59,68 +59,72 @@ exp_subtype_flags = cat( 2, exp_subtype_flags{:} );
 figs = gobjects( numel( exp_subtype ), 1 );
 % exp_type = join( ['MC-', expMice.ExperimentalGroup] );
 exp_type = expMice.ExperimentalGroup;
+%%
 for cest = 1:numel(exp_subtype)
     cons_mice = exp_subtype_flags(:,cest) & ~exclude_mice;
     exp_subtype_flags(:,cest) = exp_subtype_flags(:,cest) & ~exclude_mice;
     if sum( cons_mice )
 
         figs(cest) = figure( "Color", "w" );
-        t = createtiles( figs(cest), 2, 1 ); ax = nexttile(t);
+        % t = createtiles( figs(cest), 2, 1 ); ax = nexttile(t);
+        t = createtiles( figs(cest), 1, 1 ); ax = nexttile(t);
         aux = squeeze( mean( expMice.AmplitudeIndex(:,:, ...
             cons_mice), 1, "omitmissing" ) )';
         boxchart( ax, aux, bxOpts{:} );
         ylabel( ax, 'Amplitude index' ); xticklabels( ax, xLabels );
-        ylim(ax, [0,1]); cleanAxis(ax); ax.XAxis.Visible = "off";
+        ylim(ax, [0,1]); cleanAxis(ax); %ax.XAxis.Visible = "off";
         p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
             "ErrorHandler", @(s,a) nan(1) );
         mark_flag = p(:) < signTh;
         text( ax, 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
-            arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
+            arrayfun(@(x) sprintf("$$p=%.3g$$", x), p(:) ), txOpts{:} )
+        xticklabels( xLabels );
 
-        ax = nexttile(t);
-        aux = squeeze( mean( expMice.TrialProportions(:,:, ...
-            cons_mice), 1, "omitmissing" ) )';
-        boxchart(ax, aux, bxOpts{:} );
-        ylabel( ax, 'Trial proportions' )
-        xticklabels( xLabels ); ylim([0,2]); cleanAxis( ax );
-        p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
-            "ErrorHandler", @(s,a) nan(1) );
-        text(ax, 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
-            arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
-        title(t, sprintf( "Area/%s", exp_subtype{cest} ) )
+        % ax = nexttile(t);
+        % aux = squeeze( mean( expMice.TrialProportions(:,:, ...
+        %     cons_mice), 1, "omitmissing" ) )';
+        % boxchart(ax, aux, bxOpts{:} );
+        % ylabel( ax, 'Trial proportions' )
+        % xticklabels( xLabels ); ylim([0,2]); cleanAxis( ax );
+        % p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
+        %     "ErrorHandler", @(s,a) nan(1) );
+        % text(ax, 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
+            % arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
+        title(t, sprintf( "%s Area/%s", exp_type, exp_subtype{cest} ) )
 
-        for cbp = 1:numel(bodypart_names)
-            fig = figure("Color", "w"); t2 = createtiles( fig, 2, 1 );
-            ax = nexttile(t2);
-            aux = squeeze( mean( expMice.PolygonUnfoldAmplIndx(:,:, ...
-                cbp, cons_mice), 2, "omitmissing" ) )';
-            boxchart( ax, aux, bxOpts{:} );
-            ylabel( ax, 'Amplitude index' ); xticklabels( ax, xLabels );
-            ylim(ax, [0,1]); cleanAxis(ax); ax.XAxis.Visible = "off";
-            p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
-                "ErrorHandler", @(s,a) nan(1) );
-            text( 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
-                arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
+        % for cbp = 1:numel(bodypart_names)
+        %     % fig = figure("Color", "w"); t2 = createtiles( fig, 2, 1 );
+        %     fig = figure("Color", "w"); t2 = createtiles( fig, 1, 1 );
+        %     ax = nexttile(t2);
+        %     aux = squeeze( mean( expMice.PolygonUnfoldAmplIndx(:,:, ...
+        %         cbp, cons_mice), 2, "omitmissing" ) )';
+        %     boxchart( ax, aux, bxOpts{:} );
+        %     ylabel( ax, 'Amplitude index' ); xticklabels( ax, xLabels );
+        %     ylim(ax, [0,1]); cleanAxis(ax); ax.XAxis.Visible = "off";
+        %     p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
+        %         "ErrorHandler", @(s,a) nan(1) );
+        %     text( 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
+        %         arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
 
-            ax = nexttile(t2);
-            aux = squeeze( mean( expMice.PolygonUnfoldTrialProp(:,:, ...
-                cbp, cons_mice), 2, "omitmissing" ) )';
-            boxchart(ax, aux, bxOpts{:} );
-            ylabel( ax, 'Trial proportions' )
-            xticklabels( xLabels ); ylim([0,2]); cleanAxis( ax );
-            p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
-                "ErrorHandler", @(s,a) nan(1) );
-            text( 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
-                arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
-            title(t2, sprintf( "%s/%s", bodypart_names(cbp), exp_subtype{cest} ) )
+            % ax = nexttile(t2);
+            % aux = squeeze( mean( expMice.PolygonUnfoldTrialProp(:,:, ...
+            %     cbp, cons_mice), 2, "omitmissing" ) )';
+            % boxchart(ax, aux, bxOpts{:} );
+            % ylabel( ax, 'Trial proportions' )
+            % xticklabels( xLabels ); ylim([0,2]); cleanAxis( ax );
+            % p = arrayfun(@(x) signrank( aux(:,1), aux(:,x) ), 2:size(aux,2), ...
+            %     "ErrorHandler", @(s,a) nan(1) );
+            % text( 2:size(aux,2), 1.15*max( aux(:,2:end), [], 1 ), ...
+            %     arrayfun(@(x) sprintf("$$p=%.3f$$", x), p(:) ), txOpts{:} )
+            % title(t2, sprintf( "%s/%s", bodypart_names(cbp), exp_subtype{cest} ) )
 
             % saveFigure( fig, fullfile( fig_path, join( [bodypart_names(cbp), ...
             %     exp_type, exp_subtype{cest}, "all mice pool" ] ) ), ...
             %     true, ovwtFlag )
-            saveFigure( fig, fullfile( fig_path, join( [bodypart_names(cbp), ...
-                exp_type, exp_subtype{cest}, sum( cons_mice ) ] ) ), ...
-                true, ovwtFlag )
-        end
+            % saveFigure( fig, fullfile( fig_path, join( [bodypart_names(cbp), ...
+            %     exp_type, exp_subtype{cest}, sum( cons_mice ) ] ) ), ...
+            %     true, ovwtFlag )
+        % end
     end
 end
 
@@ -128,7 +132,7 @@ end
 %     join( ["Areas", exp_type, exp_subtype{f}, "all mice pool"] ) ), true, ovwtFlag ), ...
 %     find( arrayfun(@(f) ~isa( f, 'matlab.graphics.GraphicsPlaceholder'), figs ) ) );
 
-arrayfun(@(f) saveFigure( figs(f), fullfile( fig_path, ...
-    join( ["Areas", exp_type, exp_subtype{f}, ...
-    sum( exp_subtype_flags(:,f) ) ] ) ), true, ovwtFlag ), ...
-    find( arrayfun(@(f) ~isa( f, 'matlab.graphics.GraphicsPlaceholder'), figs ) ) );
+% arrayfun(@(f) saveFigure( figs(f), fullfile( fig_path, ...
+%     join( ["Areas", exp_type, exp_subtype{f}, ...
+%     sum( exp_subtype_flags(:,f) ) ] ) ), true, ovwtFlag ), ...
+%     find( arrayfun(@(f) ~isa( f, 'matlab.graphics.GraphicsPlaceholder'), figs ) ) );
