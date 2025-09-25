@@ -119,14 +119,14 @@ save(behFP, var2save{:}, svOpts{:})
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
     m.Sessions), mice, fnOpts{:});
 cat( 1, habFlag{:} )
-%{
+
 %% multiple
 jittDist = makedist('Normal', 'mu', 0, 'sigma', 1/9);
 habFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "multi", ...
     m.Sessions), mice, fnOpts{:});
 habTable = arrayfun(@(m, f) {m.Sessions(f{:}).DataTable}, mice, habFlag, ...
     fnOpts{:});
-pBehIdx = cellfun(@(x) cellfun(@(y) cell2mat(y.BehaviourIndices), x, ...
+pBehIdx = cellfun(@(x) cellfun(@(y) cell2mat(y.Trial_and_Amp_Indices{end}), x, ...
     fnOpts{:}), habTable, fnOpts{:});
 Ncc = cellfun(@(x) cellfun(@(y) numel(y), x), pBehIdx, fnOpts{:});
 rSz = cellfun(@(x) max(cellfun(@(y) numel(y), x)), pBehIdx);
@@ -157,7 +157,7 @@ xticks(ax, 1:max(rSz));
 
 lgObj = legend(ax, mNames);
 set(lgObj, "Box", 'off', 'Color', 'none', 'Location', 'best', 'AutoUpdate', 'off')
-
+%{
 %% single
 singFlag = arrayfun(@(m) arrayfun(@(s) string(s.Type) == "single", ...
     m.Sessions), mice, fnOpts{:});
