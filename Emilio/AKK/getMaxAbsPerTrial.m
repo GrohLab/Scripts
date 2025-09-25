@@ -1,4 +1,5 @@
-function [mavpt, mxT] = getMaxAbsPerTrial(inStack, responseWindow, spontWindow, timeAxis)
+function [mavpt, mxT, bl_lvl] = getMaxAbsPerTrial(inStack, ...
+    responseWindow, spontWindow, timeAxis)
 %GETMAXABSPERTRIAL gets as the name suggests, the maximum absolute
 %amplitude per trial in the given input stack
 %   Detailed explanation goes here, later.
@@ -24,8 +25,8 @@ responseFlags = my_xor( timeAxis(:) >= responseWindow );
 spontaneousFlags = my_xor( timeAxis(:) >= spontWindow );
 
 % mavpt = max(abs(inStack(responseFlags, :)-median(inStack,1)));
-[mavpt, ps] = max( abs( inStack(responseFlags,:) - ...
-    median( inStack(spontaneousFlags,:), 1 ) ) );
+bl_lvl = median( inStack(spontaneousFlags,:), 1 );
+[mavpt, ps] = max( abs( inStack(responseFlags,:) - bl_lvl ) );
 % mavpt = arrayfun(@(mp, tr) ...
 %     inStack(find(responseFlags,1,'first')+mp-1, tr), ps(:), (1:Ntg)');
 mxT = timeAxis(ps+find(responseFlags,1,"first")-1);
