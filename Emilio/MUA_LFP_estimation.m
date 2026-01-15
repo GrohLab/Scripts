@@ -1,9 +1,12 @@
-exp_paths = ["Z:\PainData\Corrected_Channel_Map\L6\Cortex\20.8.21\KS2", ...
-"Z:\PainData\Corrected_Channel_Map\L6\Cortex\26.8.21", ...
-"Z:\PainData\Corrected_Channel_Map\Dual\L6_VPL\S1\Nblocks0\th10_2\AUC0pt7\Lambda10", ...
-"Z:\PainData\Corrected_Channel_Map\L6\Cortex\m8", ...
-"Z:\PainData\Corrected_Channel_Map\L6\Cortex\27.8.21"];
+base_path = "Z:\PainData\Corrected_Channel_Map\";
+exp_paths = base_path + ["L6\Cortex\20.8.21\KS2", ...
+    "L6\Cortex\26.8.21", ...
+    "Dual\L6_VPL\S1\Nblocks0\th10_2\AUC0pt7\Lambda10", ...
+    "L6\Cortex\m8", ...
+    "L6\Cortex\27.8.21"];
 anaesthesia_states = cell(size(exp_paths));
+fullpath = @(f) fullfile(f.folder,f.name);
+load_data = @(f) load(fullpath(f));
 %%
 for ce = 1:numel(exp_paths)
     data_dir = exp_paths(ce);
@@ -11,8 +14,10 @@ for ce = 1:numel(exp_paths)
     if numel(spike_file)~=1 
         spike_file = dir(fullfile(data_dir, "*all_channels_clean.mat"));
     end
-    load(fullfile(spike_file.folder, spike_file.name));
-
+    load(fullpath(spike_file));
+    
+    cond_file = dir(fullfile(data_dir,'*analysis.mat'));
+    load(fullpath(cond_file))
     unit_flag = sum([sortedData{:,3}] == [1;2]) > 0;
     % unit_flag = [sortedData{:,3}] == 1;
     spike_times = sortedData(unit_flag,2);
@@ -54,14 +59,15 @@ for ce = 1:numel(exp_paths)
     ylabel(axs(1), 'Anaesthesia state')
     legend(axs(1), 'Box', 'off', 'Color', 'none', 'Location', 'best', ...
         'AutoUpdate', 'off')
-    yline(axs(1), 0.85, 'k--', 'LineWidth', 1)
+    yline(axs(1), 0.864, 'k--', 'LineWidth', 1)
     xlabel(axs(1), 'Time [s]'); axs(1).YAxis(2).Color=0.15*ones(1,3);
     xlim(axs(1),[0,exp_duration])
 
     axs(2) = nexttile(t);
     jit_width = 0.33;
-    sc = scatter(axs(2), rand(numel(spike_times),1) * jit_width + 1-(jit_width/2), ...
-        fr_per_unit, 'k.', 'MarkerEdgeAlpha',0.75, 'displayname', 'Unit fr');
+    sc = scatter(axs(2), rand(numel(spike_times),1) * jit_width + ...
+        1-(jit_width/2), fr_per_unit, 'k.', 'MarkerEdgeAlpha', 0.75, ...
+        'displayname', 'Unit fr');
     hold(axs(2),"on")
     boxchart(axs(2),ones(size(fr_per_unit)),fr_per_unit,"Notch","on", ...
         "BoxEdgeColor","k","BoxFaceColor","none","MarkerStyle","none")
@@ -76,7 +82,8 @@ for ce = 1:numel(exp_paths)
     cleanAxis(axs);
     title(t,data_dir,"interpreter","none")
     %%
-    saveFigure(f, fullfile(data_dir,'Anaesthesia state estimation and fr'), true, true)
+    saveFigure(f, fullfile(data_dir,'Anaesthesia state estimation and fr'), ...
+        true, true)
     close(f)
     clearvars -except exp_paths ce anaesthesia_states
 end
@@ -91,3 +98,6 @@ for cth = ths
     props(ii,:) = prop;
     ii = ii + 1;
 end
+
+opt_th = props>((1/6)*0.99) & props <((1/6)*1.01);
+th = mean(ths(any(opt_th,2)));
