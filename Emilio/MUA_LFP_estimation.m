@@ -11,40 +11,69 @@ load_data = @(f) load(fullpath(f));
 for ce = 1:numel(exp_paths)
     data_dir = exp_paths(ce);
     spike_file = dir(fullfile(data_dir,"*All_all_channels_clean.mat"));
-    if numel(spike_file)~=1 
+    if numel(spike_file)~=1
         spike_file = dir(fullfile(data_dir, "*all_channels_clean.mat"));
     end
     load(fullpath(spike_file));
-    
+
     cond_file = dir(fullfile(data_dir,'*analysis.mat'));
     load(fullpath(cond_file))
+    Ns = numel(Triggers.Laser);
+    exp_duration = Ns/fs;
     unit_flag = sum([sortedData{:,3}] == [1;2]) > 0;
-    % unit_flag = [sortedData{:,3}] == 1;
     spike_times = sortedData(unit_flag,2);
     all_spikes = cat(1, spike_times{:});
 
     bin_files = dir(fullfile(data_dir,'*.bin'));
+    %{
     if numel(bin_files)>=1
         bin_files = bin_files([bin_files.bytes]==max([bin_files.bytes]));
         exp_duration = (bin_files.bytes/(64*2))/fs;
     else
         exp_duration = max(all_spikes)*1.001;
     end
+    %}
     fr_per_unit = cellfun(@(x) numel(x)/exp_duration, spike_times);
     %%
+    th = 0.864;
     bin_size = 0.1;
-    bins = (bin_size/2):bin_size:exp_duration;
+    bins = 0:bin_size:exp_duration;
     centres = mean([bins(1:end-1);bins(2:end)]);
 
     muah = histcounts(all_spikes, bins);
     [b1,a1] = butter(3,[0.8,1.8]*2*bin_size,'bandpass');
     [blow, alow] = butter(2,[0.0005, 0.01]*2*bin_size,'bandpass');
     bouts = filtfilt(b1, a1, muah);
-    pad_size = ceil(1000/bin_size);
-    extra_bout = padarray(bouts(:), pad_size,"symmetric","pre");
+    pad_size = ceil(1000/bin_size); % 1000 seconds
+    extra_bout = padarray(bouts(:), pad_size, "symmetric", "pre");
     brain_state = filtfilt(blow, alow, abs(extra_bout));
     brain_state(1:pad_size) = [];
     anaesthesia_states{ce} = brain_state;
+    %%
+    sync_flag = zscore(brain_state)>th;
+    anaObj = StepWaveform(sync_flag,1/bin_size);
+    anaObj.MinIEI = 1;
+    oo_ana_triggers = anaObj.Triggers*bin_size;
+    tx = ((1:Ns)-0.5)/fs;
+    ana_signal = false(1,Ns);
+    for cr = 1:size(oo_ana_triggers,1)
+        ana_signal = ana_signal | ...
+            (tx>=oo_ana_triggers(cr,1) & tx<=oo_ana_triggers(cr,2));
+    end
+    Triggers.Anaesthesia = ana_signal;
+    cons_cond = contains({Conditions.name}, 'block', 'IgnoreCase', true);
+    sync_flag = cell(sum(cons_cond),1);
+    ii = 1;
+    for ccond = find(cons_cond)
+        trig_times = Conditions(ccond).Triggers/fs;
+        sync_state = any(trig_times(:,1) >= oo_ana_triggers(:,1)' & ...
+            trig_times(:,1) < oo_ana_triggers(:,2)', 2);
+        sync_flag{ii} = sync_state;
+        ii = ii + 1;
+    end
+    save(fullpath(cond_file), 'sync_flag', 'Triggers', '-append')
+    % Conditions_state(arrayfun(@(x) numel(x.Triggers)==0, ...
+    %     Conditions_state)) = [];
     %%
     f = figure('PaperSize', [21, 14.8], 'Units', 'centimeters', ...
         'Position', [2 2 21 14.8]);
@@ -82,10 +111,10 @@ for ce = 1:numel(exp_paths)
     cleanAxis(axs);
     title(t,data_dir,"interpreter","none")
     %%
-    saveFigure(f, fullfile(data_dir,'Anaesthesia state estimation and fr'), ...
+    saveFigure(f, fullfile(data_dir,'Anaesthesia state and fr'), ...
         true, true)
     close(f)
-    clearvars -except exp_paths ce anaesthesia_states
+    clearvars -except exp_paths ce anaesthesia_states fullpath load_data
 end
 
 %%
