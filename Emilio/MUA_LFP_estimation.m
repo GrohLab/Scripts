@@ -35,7 +35,7 @@ for ce = 1:numel(exp_paths)
     %}
     fr_per_unit = cellfun(@(x) numel(x)/exp_duration, spike_times);
     %%
-    th = 0.864;
+    th = 0;
     bin_size = 0.1;
     bins = 0:bin_size:exp_duration;
     centres = mean([bins(1:end-1);bins(2:end)]);
@@ -50,6 +50,7 @@ for ce = 1:numel(exp_paths)
     brain_state(1:pad_size) = [];
     anaesthesia_states{ce} = brain_state;
     %%
+    
     sync_flag = zscore(brain_state)>th;
     anaObj = StepWaveform(sync_flag,1/bin_size);
     anaObj.MinIEI = 1;
@@ -72,23 +73,28 @@ for ce = 1:numel(exp_paths)
         ii = ii + 1;
     end
     save(fullpath(cond_file), 'sync_flag', 'Triggers', '-append')
-    % Conditions_state(arrayfun(@(x) numel(x.Triggers)==0, ...
-    %     Conditions_state)) = [];
     %%
     f = figure('PaperSize', [21, 14.8], 'Units', 'centimeters', ...
         'Position', [2 2 21 14.8]);
     t = createtiles(f,1,5);
     axs(1) = nexttile(t,1,[1,4]);
-    plot(axs(1),centres, muah, 'Color', (2/3)*ones(1,3), ...
+    plot(axs(1), centres, muah, 'Color', (2/3)*ones(1,3), ...
         'DisplayName', 'MUA histogram');
     ylabel(axs(1),'MUA counts')
     yyaxis(axs(1), "right");
     plot(axs(1), centres, zscore(brain_state), 'k','LineWidth', 2, ...
-        'DisplayName', 'Anaesthesia state');
-    ylabel(axs(1), 'Anaesthesia state')
+        'DisplayName', 'LFP estimation');
+    ylabel(axs(1), '1\ Hz envelope', 'Interpreter', 'latex')
+    y = axs(1).YLim;
+    y2 = repmat(y(:), [1,size(oo_ana_triggers,1)]);
+    y2 = padarray(y2,2,"symmetric","post");
+    x = padarray(oo_ana_triggers,[0,1],"symmetric","both")';
+    patch(axs(1),x,y2,ones(size(x)), 'EdgeColor', 'none', ...
+        'FaceColor', 'b', 'FaceAlpha', 0.15, ...
+        'DisplayName', 'Synchronised state')
     legend(axs(1), 'Box', 'off', 'Color', 'none', 'Location', 'best', ...
         'AutoUpdate', 'off')
-    yline(axs(1), 0.864, 'k--', 'LineWidth', 1)
+    yline(axs(1), th, 'k--', 'LineWidth', 1)
     xlabel(axs(1), 'Time [s]'); axs(1).YAxis(2).Color=0.15*ones(1,3);
     xlim(axs(1),[0,exp_duration])
 
@@ -111,13 +117,14 @@ for ce = 1:numel(exp_paths)
     cleanAxis(axs);
     title(t,data_dir,"interpreter","none")
     %%
-    saveFigure(f, fullfile(data_dir,'Anaesthesia state and fr'), ...
-        true, true)
+    saveFigure(f, fullfile(data_dir,'LFP estimation and fr'), ...
+        true, false)
     close(f)
     clearvars -except exp_paths ce anaesthesia_states fullpath load_data
 end
 
 %%
+prop_th = 1/2;
 nas = cellfun(@(x) zscore(x), anaesthesia_states, 'UniformOutput', false);
 ths = -3.5:0.01:3.5;
 props = zeros(numel(ths), numel(nas));
@@ -128,5 +135,5 @@ for cth = ths
     ii = ii + 1;
 end
 
-opt_th = props>((1/6)*0.99) & props <((1/6)*1.01);
+opt_th = props>(prop_th*0.99) & props <(prop_th*1.01);
 th = mean(ths(any(opt_th,2)));
