@@ -5,8 +5,8 @@ fnOpts = {'UniformOutput', false};
 ideal_prop = 57/40;
 
 
-img_dir = "Z:\Leonie\AC\M65\M65 ThSC";
-original_resolution = 2.302;
+img_dir = fullfile("Z:\Leonie\AC\M68\M68 fit");
+original_resolution = 1.15;
 desired_resolution = 10;
 homogenised_img_folder = fullfile(img_dir, 'Homogenised and downsampled');
 if ~exist(homogenised_img_folder,"dir")
@@ -15,7 +15,7 @@ end
 scaling_factor = original_resolution/desired_resolution;
 
 img_paths = dir(fullfile(img_dir, "*Merged_overlay.tif"));
-roi_paths = dir(fullfile(img_dir, "*Merged_overlay ROIs.csv"));
+roi_paths = dir(fullfile(img_dir, "*Merged_overlay.csv"));
 t_objs = arrayfun(@(x) Tiff(fullpath(x), 'r'), img_paths);
 img_size = arrayfun(@(x) get_img_size(x), t_objs, fnOpts{:});
 arrayfun(@(x) x.close, t_objs);
@@ -27,6 +27,7 @@ for ci = 1:numel(img_paths)
     img = imread(fullpath(img_paths(ci)));
     img2 = padarray(img, [shift_px, 0], 0, 'both');
     img2 = imresize(img2, scaling_factor);
+    img2 = img2(1:800,1:1140,:);
     roi_table = readtable(fullpath(roi_paths(ci)), ...
         'Delimiter',',','VariableNamingRule','preserve');
     roi_table{:,{'X','Y'}} = round((roi_table{:,{'X','Y'}} + ...
